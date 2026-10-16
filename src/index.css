@@ -4,9 +4,16 @@
 
 @layer base {
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #1e293b;
-    background-color: #f1f5f9;
+    font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #0f172a;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  code, kbd, samp, pre {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
   }
 }
 
@@ -25,14 +32,14 @@
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* Continuous tractor feed print preview */
 .paper-continuous {
   background-color: #fdfbf7;
   color: #111827;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', monospace;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   border: 1px solid #e5e7eb;
 }
