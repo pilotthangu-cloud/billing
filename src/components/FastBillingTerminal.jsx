@@ -3,12 +3,25 @@ import {
   Search, 
   Trash2, 
   Plus, 
+  Minus,
   Layers, 
   Printer, 
   User, 
   PlusCircle,
   PauseCircle,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  ShoppingBag,
+  CreditCard,
+  Banknote,
+  QrCode,
+  ShieldAlert,
+  ArrowRight,
+  Clock,
+  ChevronRight,
+  AlertCircle,
+  Command,
+  CornerDownLeft
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
@@ -32,23 +45,21 @@ export default function FastBillingTerminal({
   onRestoreHeldBill,
   onOpenNewMedModal
 }) {
+  const isDark = theme === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedMedIndex, setSelectedMedIndex] = useState(0);
 
-  // Selected Medicine for current entry
-  const [activeMedicine, setActiveMedicine] = useState(null);
-  const [activeBatch, setActiveBatch] = useState(null);
-  const [entryQty, setEntryQty] = useState(10);
+  // Selected item / medicine to inspect in live radar
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+  const [inspectedMedicine, setInspectedMedicine] = useState(null);
 
   // Input refs
   const searchInputRef = useRef(null);
-  const qtyInputRef = useRef(null);
   const patientInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Strict Prefix Matching & Scoring algorithm
+  // Fast prefix search & scoring algorithm
   const q = searchQuery.trim().toLowerCase();
   let filtered = [];
 
@@ -62,7 +73,6 @@ export default function FastBillingTerminal({
 
       let score = 0;
       if (name.startsWith(q)) {
-        // Highest priority: Medicine brand name starts with typed query (e.g. PAC -> PACIMOL, PACIFAST)
         score = 1000 - (name.length - q.length);
       } else {
         const words = name.split(' ');
@@ -80,7 +90,6 @@ export default function FastBillingTerminal({
       }
 
       if (score > 0) {
-        // Bonus for available stock
         if (m.stock_shop1 > 0) score += 20;
         scored.push({ med: m, score });
       }
@@ -91,10 +100,10 @@ export default function FastBillingTerminal({
       return a.med.name.localeCompare(b.med.name);
     });
 
-    filtered = scored.slice(0, 35).map(s => s.med);
+    filtered = scored.slice(0, 30).map(s => s.med);
   }
 
-  // Keyboard navigation inside search
+  // Keyboard navigation inside search dropdown
   const handleSearchKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -106,7 +115,6 @@ export default function FastBillingTerminal({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filtered[selectedMedIndex]) {
-        // Direct enter on Enter key
         handleDirectAddMedicine(filtered[selectedMedIndex]);
       }
     } else if (e.key === 'Escape') {
@@ -117,16 +125,14 @@ export default function FastBillingTerminal({
   // Type anywhere on table to activate search
   useEffect(() => {
     const handleGlobalTyping = (e) => {
-      // Ignore if user is already typing in an input, textarea, or select
       const tag = document.activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') {
         return;
       }
-      // If user pressed a single character (letter or digit)
-      if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (e.key === '/' || (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey)) {
         e.preventDefault();
         searchInputRef.current?.focus();
-        setSearchQuery(e.key);
+        setSearchQuery(e.key === '/' ? '' : e.key);
         setIsDropdownOpen(true);
         setSelectedMedIndex(0);
       }
@@ -148,7 +154,7 @@ export default function FastBillingTerminal({
         e.preventDefault();
         handleRemoveItem(selectedRowIndex);
       }
-      if (e.key === '*' || (e.ctrlKey && e.key === 'p')) {
+      if (e.key === '*' || (e.ctrlKey && e.key === 'Enter') || (e.ctrlKey && e.key === 'p')) {
         if (items.length > 0) {
           e.preventDefault();
           onCompleteBill();
@@ -169,7 +175,7 @@ export default function FastBillingTerminal({
     }
   }, [selectedMedIndex]);
 
-  // DIRECT ENTER: Clicking medicine immediately enters it into the bill table!
+  // DIRECT ENTER: Clicking or pressing enter instantly adds medicine into bill
   const handleDirectAddMedicine = (med) => {
     const chosenBatch = med.batches && med.batches.length > 0 ? med.batches[0] : {
       batch_no: 'B' + med.code.slice(-4),
@@ -189,47 +195,18 @@ export default function FastBillingTerminal({
 
     setItems((prev) => [...prev, newLine]);
     setSelectedRowIndex(items.length);
+    setInspectedMedicine(med);
 
-    // Clear search and refocus immediately for fast uninterrupted typing
+    // Reset search
     setSearchQuery('');
     setIsDropdownOpen(false);
-    setActiveMedicine(null);
-    setActiveBatch(null);
 
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 50);
+    }, 40);
   };
 
-  // Add line item manually from input bar
-  const handleAddLineItem = (e) => {
-    if (e) e.preventDefault();
-    if (!activeMedicine || !activeBatch || entryQty <= 0) return;
-
-    const lineVal = (activeBatch.mrp / (activeBatch.per || 10)) * entryQty;
-    const newLine = {
-      medicine: activeMedicine,
-      batch: activeBatch,
-      qty: Number(entryQty),
-      totalValue: lineVal
-    };
-
-    setItems((prev) => [...prev, newLine]);
-    setSelectedRowIndex(items.length);
-
-    // Reset entry bar
-    setActiveMedicine(null);
-    setActiveBatch(null);
-    setSearchQuery('');
-    setEntryQty(10);
-
-    // Focus back on search input
-    setTimeout(() => {
-      searchInputRef.current?.focus();
-    }, 50);
-  };
-
-  // Update item quantity directly in the table
+  // Quantity Increments & Decrements
   const handleUpdateItemQty = (index, newQty) => {
     const qtyNum = Math.max(1, parseInt(newQty) || 1);
     setItems((prev) => prev.map((item, i) => {
@@ -239,13 +216,23 @@ export default function FastBillingTerminal({
     }));
   };
 
-  const handleRemoveItem = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-    if (selectedRowIndex === index) setSelectedRowIndex(null);
+  const handleStepQty = (index, delta) => {
+    const current = items[index];
+    if (!current) return;
+    const newQty = Math.max(1, (current.qty || 1) + delta);
+    handleUpdateItemQty(index, newQty);
   };
 
-  // Financial calculations
-  const totalQty = items.reduce((acc, it) => acc + (it.qty || 0), 0);
+  const handleRemoveItem = (index) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+    if (selectedRowIndex === index) {
+      setSelectedRowIndex(null);
+      setInspectedMedicine(null);
+    }
+  };
+
+  // Financial Calculations
+  const totalUnits = items.reduce((acc, it) => acc + (it.qty || 0), 0);
   const grossTotal = items.reduce((acc, it) => acc + it.totalValue, 0);
   const gstRate = 0.12;
   const taxableAmount = grossTotal / (1 + gstRate);
@@ -254,87 +241,27 @@ export default function FastBillingTerminal({
   const netPayable = Math.round(grossTotal);
   const roundOff = netPayable - grossTotal;
 
-  // Medicine to inspect in bottom radar
-  const inspectedMed = activeMedicine || (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || null;
+  // Schedule H/H1 Detection
+  const hasScheduledDrugs = items.some(it => it.medicine.schedule && it.medicine.schedule !== 'Normal');
 
-  // Always show at least 12 grid rows so the table is never a blank hole!
-  const DISPLAY_ROWS = Math.max(12, items.length + 2);
-
-  // Focus search input helper
-  const focusSearchInput = () => {
-    searchInputRef.current?.focus();
-    searchInputRef.current?.select();
-  };
+  // Active medicine to inspect in radar
+  const activeInspectMed = inspectedMedicine || (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || (items.length > 0 ? items[items.length - 1].medicine : null);
 
   return (
-    <div className={`flex-1 flex flex-col overflow-hidden font-sans ${
-      theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
+    <div className={`flex-1 flex flex-col overflow-hidden font-sans select-none transition-colors ${
+      isDark ? 'bg-zinc-950 text-slate-100' : 'bg-slate-50 text-slate-900'
     }`}>
-      {/* 1. Patient, Doctor & Invoice Metadata Bar */}
-      <div className={`px-4 py-2 border-b grid grid-cols-12 gap-3 text-xs items-center ${
-        theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-100 border-slate-300'
+      {/* 1. 2026 Sleek Omnibar Search & Fast Entry Bar */}
+      <div className={`px-4 sm:px-6 py-3 border-b shrink-0 ${
+        isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-xs'
       }`}>
-        <div className="col-span-2 flex items-center space-x-2 font-mono">
-          <span className="text-slate-600 dark:text-zinc-400 text-[10px] uppercase font-bold">Bill No:</span>
-          <span className="font-black text-sky-600 text-sm">{billNo}</span>
-          <span className="text-slate-500 text-[11px]">({billDate})</span>
-        </div>
-
-        {/* Patient Name */}
-        <div className={`col-span-4 flex items-center space-x-2 border rounded px-2.5 py-1 ${
-          theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-sm'
-        }`}>
-          <User className="w-3.5 h-3.5 text-slate-500" />
-          <span className="text-slate-500 font-mono text-[10px] uppercase font-bold">Patient [F2]:</span>
-          <input
-            ref={patientInputRef}
-            type="text"
-            value={patientName}
-            onChange={(e) => setPatientName(e.target.value)}
-            placeholder="Patient / Customer Name (Optional)"
-            className={`w-full bg-transparent font-bold text-xs focus:outline-none ${
-              theme === 'dark' ? 'text-zinc-100 placeholder-zinc-500' : 'text-slate-950 placeholder-slate-400'
-            }`}
-          />
-        </div>
-
-        {/* Doctor Dropdown */}
-        <div className="col-span-4">
-          <DoctorSelector
-            doctorName={doctorName}
-            setDoctorName={setDoctorName}
-            theme={theme}
-          />
-        </div>
-
-        {/* Payment Mode */}
-        <div className="col-span-2 flex items-center justify-end space-x-1">
-          {['cash', 'upi', 'credit'].map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setPaymentMode(mode)}
-              className={`px-2.5 py-1 rounded font-mono font-bold uppercase text-[10px] transition border ${
-                paymentMode === mode
-                  ? 'bg-sky-600 text-white border-sky-600 shadow'
-                  : (theme === 'dark' ? 'border-zinc-700 text-zinc-400 hover:text-white' : 'border-slate-300 text-slate-700 hover:text-slate-950 bg-white')
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. Fast Dedicated Medicine Entry Bar */}
-      <div className={`p-3 border-b ${
-        theme === 'dark' ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'
-      }`}>
-        <div className="flex items-center space-x-2 relative">
-          {/* Medicine Search Input */}
+        <div className="max-w-7xl mx-auto flex items-center space-x-3 relative">
+          {/* Smart Omnibar Input */}
           <div className="flex-1 relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
               <Search className="w-4 h-4" />
             </div>
+
             <input
               ref={searchInputRef}
               type="text"
@@ -348,41 +275,50 @@ export default function FastBillingTerminal({
                 if (searchQuery.trim().length > 0) setIsDropdownOpen(true);
               }}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Type medicine name or salt to search (or click medicine in table to add directly)..."
-              className={`w-full pl-9 pr-3 py-2 rounded-lg border text-xs font-black transition focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                theme === 'dark'
-                  ? 'bg-zinc-950 border-zinc-700 text-white placeholder-zinc-500'
-                  : 'bg-white border-slate-400 text-slate-950 placeholder-slate-500 shadow-sm'
+              placeholder="Search 24.6k medicines by brand, generic salt (e.g. PACIMOL, AUGMENTIN), or scan barcode..."
+              className={`w-full pl-11 pr-24 py-2.5 rounded-2xl border text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-xs ${
+                isDark 
+                  ? 'bg-zinc-950 border-zinc-700 text-white placeholder-zinc-500' 
+                  : 'bg-slate-50 border-slate-300 text-slate-950 placeholder-slate-400'
               }`}
             />
 
-            {/* Dropdown ONLY opens when there is a search query */}
+            {/* Keyboard shortcut hint inside input */}
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 pointer-events-none">
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
+                isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-400' : 'bg-white border-slate-200 text-slate-400 shadow-xs'
+              }`}>
+                / or Type
+              </span>
+            </div>
+
+            {/* 2026 Floating Smart Search Dropdown */}
             {isDropdownOpen && searchQuery.trim().length > 0 && (
               <div 
                 ref={dropdownRef}
-                className={`absolute left-0 top-full mt-1.5 w-full rounded-lg border shadow-2xl z-50 max-h-72 overflow-y-auto divide-y font-sans ${
-                  theme === 'dark' 
-                    ? 'bg-zinc-900 border-zinc-700 divide-zinc-800 text-zinc-100' 
-                    : 'bg-white border-slate-400 divide-slate-200 text-slate-950 shadow-2xl'
+                className={`absolute left-0 top-full mt-2 w-full rounded-2xl border shadow-2xl z-50 max-h-80 overflow-y-auto divide-y font-sans ${
+                  isDark 
+                    ? 'bg-zinc-900 border-zinc-700 divide-zinc-800 text-white' 
+                    : 'bg-white border-slate-200 divide-slate-100 text-slate-900'
                 }`}
               >
                 {filtered.length === 0 ? (
-                  <div className="p-4 text-center text-slate-700 font-bold text-xs font-mono">
-                    No medicines found matching "{searchQuery}".
+                  <div className="p-6 text-center text-slate-500 text-xs font-bold">
+                    No medicine found matching "{searchQuery}".
                     <button 
                       onClick={() => {
                         setIsDropdownOpen(false);
                         onOpenNewMedModal();
                       }}
-                      className="ml-2 font-bold text-sky-600 underline"
+                      className="ml-2 text-sky-600 hover:underline font-black"
                     >
-                      + Add to Catalog Now
+                      + Add New Medicine to Master Catalog
                     </button>
                   </div>
                 ) : (
                   filtered.map((med, idx) => {
                     const isSelected = idx === selectedMedIndex;
-                    const stock = med.stock_shop1;
+                    const stock = med.stock_shop1 || 0;
                     const isOut = stock <= 0;
 
                     return (
@@ -390,77 +326,76 @@ export default function FastBillingTerminal({
                         key={med.code + idx}
                         onMouseDown={(e) => {
                           e.preventDefault();
-                          // Clicking medicine row DIRECTLY adds it into the bill table!
                           handleDirectAddMedicine(med);
                         }}
-                        className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition ${
+                        className={`px-4 py-3 flex items-center justify-between cursor-pointer transition ${
                           isSelected
                             ? 'bg-sky-600 text-white font-bold'
-                            : (theme === 'dark' ? 'hover:bg-zinc-800 bg-zinc-900' : 'hover:bg-sky-50 bg-white')
+                            : isDark ? 'hover:bg-zinc-800' : 'hover:bg-sky-50'
                         }`}
                       >
-                        <div>
+                        <div className="space-y-0.5">
                           <div className="flex items-center space-x-2">
                             <span className={`text-sm font-black ${
-                              isSelected 
-                                ? 'text-white' 
-                                : (theme === 'dark' ? 'text-white' : 'text-slate-950')
+                              isSelected ? 'text-white' : (isDark ? 'text-white' : 'text-slate-950')
                             }`}>
                               {med.name}
                             </span>
 
-                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                               isSelected 
-                                ? 'bg-sky-800 text-white' 
-                                : (theme === 'dark' ? 'bg-zinc-800 text-zinc-300' : 'bg-slate-200 text-slate-900 border border-slate-300')
+                                ? 'bg-white/20 text-white' 
+                                : isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-slate-100 text-slate-700 border border-slate-200'
                             }`}>
                               {med.group_label}
                             </span>
 
                             {med.schedule && med.schedule !== 'Normal' && (
-                              <span className="text-[9px] font-mono font-bold px-1 rounded bg-purple-900 text-purple-200">
-                                {med.schedule}
+                              <span className={`text-[9px] font-mono font-black px-1.5 py-0.5 rounded-full ${
+                                isSelected ? 'bg-rose-900 text-white' : 'bg-rose-100 text-rose-900 border border-rose-300'
+                              }`}>
+                                Sched {med.schedule}
                               </span>
                             )}
                           </div>
 
-                          <div className={`text-[11px] font-mono font-bold truncate mt-0.5 ${
-                            isSelected 
-                              ? 'text-sky-100' 
-                              : (theme === 'dark' ? 'text-sky-300' : 'text-sky-800')
+                          <p className={`text-xs font-bold ${
+                            isSelected ? 'text-sky-100' : (isDark ? 'text-sky-300' : 'text-sky-700')
                           }`}>
                             {med.generic || med.company}
-                          </div>
+                          </p>
                         </div>
 
-                        <div className="text-right flex items-center space-x-3 justify-end">
-                          <span className={`font-mono text-xs px-2 py-0.5 rounded font-black ${
-                            isSelected 
-                              ? 'bg-sky-800 text-white' 
-                              : (theme === 'dark' ? 'bg-amber-950 text-amber-300 border border-amber-600' : 'bg-amber-100 text-amber-950 border border-amber-400')
+                        <div className="flex items-center space-x-3 text-right">
+                          {/* Shelf Rack Pill */}
+                          <span className={`text-xs font-mono font-black px-2.5 py-1 rounded-xl border ${
+                            isSelected
+                              ? 'bg-amber-800 text-white border-amber-700'
+                              : isDark ? 'bg-amber-950/70 border-amber-800 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-950'
                           }`}>
                             RACK {med.rack}
                           </span>
 
-                          <span className={`font-mono text-xs font-black ${
-                            isSelected ? 'text-white' : (theme === 'dark' ? 'text-zinc-100' : 'text-slate-950')
+                          {/* Price */}
+                          <span className={`text-sm font-black font-mono ${
+                            isSelected ? 'text-white' : (isDark ? 'text-white' : 'text-slate-950')
                           }`}>
                             ₹{med.mrp.toFixed(2)}
                           </span>
 
-                          <span className={`font-mono px-2 py-0.5 rounded text-xs font-black ${
+                          {/* Stock Availability Pill */}
+                          <span className={`text-xs font-black font-mono px-2.5 py-1 rounded-xl border ${
                             isOut
-                              ? (isSelected ? 'bg-rose-900 text-white' : 'bg-rose-100 text-rose-900 border border-rose-300')
-                              : (isSelected ? 'bg-emerald-800 text-white' : 'bg-emerald-100 text-emerald-900 border border-emerald-300')
+                              ? (isSelected ? 'bg-rose-900 text-white border-rose-800' : 'bg-rose-50 border-rose-200 text-rose-700')
+                              : (isSelected ? 'bg-emerald-800 text-white border-emerald-700' : 'bg-emerald-50 border-emerald-200 text-emerald-800')
                           }`}>
                             {stock} in stock
                           </span>
 
-                          {/* 1-Click Enter Pill */}
-                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
-                            isSelected ? 'bg-white text-sky-900 border-white' : 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-zinc-800 dark:text-sky-400 dark:border-zinc-700'
+                          <span className={`hidden sm:inline text-[10px] font-mono px-2 py-0.5 rounded-lg border ${
+                            isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 border-slate-200'
                           }`}>
-                            Click to Add ↵
+                            Enter ↵
                           </span>
                         </div>
                       </div>
@@ -471,362 +406,448 @@ export default function FastBillingTerminal({
             )}
           </div>
 
-          {/* Active Shelf Rack Tag */}
-          {activeMedicine && (
-            <div className="bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-300 px-3 py-2 rounded-lg font-mono font-black text-xs border border-amber-400 flex items-center space-x-1">
-              <Layers className="w-3.5 h-3.5 text-amber-600" />
-              <span>RACK {activeMedicine.rack}</span>
-            </div>
-          )}
-
-          {/* Quantity Input */}
-          <div className="w-24">
-            <input
-              ref={qtyInputRef}
-              type="number"
-              min="1"
-              value={entryQty}
-              onChange={(e) => setEntryQty(Math.max(1, parseInt(e.target.value) || 0))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleAddLineItem(e);
-                }
-              }}
-              placeholder="Qty"
-              className={`w-full py-2 px-2 text-center rounded-lg border font-mono font-black text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                theme === 'dark'
-                  ? 'bg-zinc-950 border-zinc-700 text-white'
-                  : 'bg-white border-slate-400 text-slate-950 shadow-sm'
-              }`}
-            />
-          </div>
-
-          {/* Add Item Button */}
-          <button
-            onClick={handleAddLineItem}
-            disabled={!activeMedicine}
-            className={`px-4 py-2 rounded-lg font-bold text-xs flex items-center space-x-1.5 transition ${
-              activeMedicine
-                ? 'bg-sky-600 hover:bg-sky-500 text-white shadow'
-                : 'bg-slate-200 dark:bg-zinc-800 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add (Enter)</span>
-          </button>
-
-          {/* + Add New Medicine Button */}
+          {/* Quick Add New Medicine Button */}
           <button
             type="button"
             onClick={onOpenNewMedModal}
-            className={`py-2 px-3 rounded-lg border text-xs font-bold font-mono flex items-center space-x-1 transition ${
-              theme === 'dark' 
-                ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-sky-400' 
-                : 'border-slate-300 bg-white hover:bg-slate-100 text-sky-700 shadow-sm'
+            className={`px-3.5 py-2.5 rounded-2xl border text-xs font-bold flex items-center space-x-1.5 transition shrink-0 ${
+              isDark 
+                ? 'bg-zinc-950 border-zinc-700 text-sky-400 hover:bg-zinc-800' 
+                : 'bg-white border-slate-300 text-sky-700 hover:bg-slate-100 shadow-xs'
             }`}
-            title="Add a new medicine to Master Catalog"
           >
             <PlusCircle className="w-4 h-4 text-sky-600" />
-            <span>+ New Med</span>
+            <span className="hidden md:inline">+ New Medicine</span>
           </button>
         </div>
       </div>
 
-      {/* 3. The Full Structured Table Grid (12 Rows with Grid Lines - Never a blank hole!) */}
-      <div className="flex-1 overflow-y-auto">
-        <table className={`w-full text-left border-collapse text-xs font-mono border ${
-          theme === 'dark' ? 'border-zinc-800' : 'border-slate-300'
-        }`}>
-          <thead>
-            <tr className={`border-b text-[11px] uppercase tracking-wider font-extrabold ${
-              theme === 'dark' 
-                ? 'bg-zinc-900 border-zinc-800 text-zinc-300' 
-                : 'bg-slate-200 border-slate-300 text-slate-900'
-            }`}>
-              <th className="py-2 px-3 text-center w-12 border-r border-inherit">Sr</th>
-              <th className="py-2 px-3 border-r border-inherit cursor-pointer" onClick={focusSearchInput}>
-                Product Description & Salt Composition
-              </th>
-              <th className="py-2 px-3 text-center border-r border-inherit w-24">Shelf Rack</th>
-              <th className="py-2 px-3 border-r border-inherit w-28">Batch No</th>
-              <th className="py-2 px-3 text-center border-r border-inherit w-24">Expiry</th>
-              <th className="py-2 px-3 text-right border-r border-inherit w-24">M.R.P.</th>
-              <th className="py-2 px-3 text-center border-r border-inherit w-20">Pack</th>
-              <th className="py-2 px-3 text-center border-r border-inherit w-24">Qty (Edit)</th>
-              <th className="py-2 px-3 text-right border-r border-inherit w-28">Amount (₹)</th>
-              <th className="py-2 px-3 text-center w-16">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(DISPLAY_ROWS)].map((_, idx) => {
-              const item = items[idx];
-              const isEven = idx % 2 === 0;
-              const isRowSelected = selectedRowIndex === idx;
-
-              return (
-                <tr 
-                  key={idx}
-                  onClick={() => {
-                    if (item) {
-                      setSelectedRowIndex(idx);
-                    } else {
-                      focusSearchInput();
-                    }
-                  }}
-                  className={`border-b transition-colors cursor-pointer ${
-                    isRowSelected
-                      ? (theme === 'dark' ? 'bg-sky-950/40 border-sky-600' : 'bg-sky-100/70 border-sky-400')
-                      : item
-                      ? (theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50/60')
-                      : (theme === 'dark' ? 'hover:bg-zinc-900/40' : 'hover:bg-slate-100/60')
-                  } ${
-                    theme === 'dark' 
-                      ? (isEven ? 'bg-zinc-950' : 'bg-zinc-900/40') + ' border-zinc-800' 
-                      : (isEven ? 'bg-white' : 'bg-slate-50/60') + ' border-slate-300'
-                  }`}
-                  style={{ height: '34px' }}
-                >
-                  {/* Sr */}
-                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                    item ? 'text-slate-600 dark:text-zinc-400' : 'text-slate-300 dark:text-zinc-700'
-                  }`}>
-                    {idx + 1}
-                  </td>
-
-                  {/* Product Description */}
-                  <td 
-                    className="py-1.5 px-3 font-sans border-r border-inherit"
-                    onClick={focusSearchInput}
-                  >
-                    {item ? (
-                      <div>
-                        <div className={`font-black text-xs ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                          {item.medicine.name}
-                        </div>
-                        {item.medicine.generic && (
-                          <div className={`text-[10px] font-mono font-bold mt-0.5 ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
-                            {item.medicine.generic}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-slate-200 dark:text-zinc-800 select-none">-</span>
-                    )}
-                  </td>
-
-                  {/* Shelf Rack */}
-                  <td className="py-1.5 px-3 text-center border-r border-inherit">
-                    {item ? (
-                      <span className="bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-300 px-1.5 py-0.5 rounded font-black text-[10px] border border-amber-300">
-                        R-{item.medicine.rack}
-                      </span>
-                    ) : (
-                      <span className="text-slate-200 dark:text-zinc-800 select-none">-</span>
-                    )}
-                  </td>
-
-                  {/* Batch */}
-                  <td className={`py-1.5 px-3 font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                  }`}>
-                    {item ? item.batch.batch_no : ''}
-                  </td>
-
-                  {/* Expiry */}
-                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
-                  }`}>
-                    {item ? item.batch.exp_date : ''}
-                  </td>
-
-                  {/* MRP */}
-                  <td className={`py-1.5 px-3 text-right font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                  }`}>
-                    {item ? item.batch.mrp.toFixed(2) : ''}
-                  </td>
-
-                  {/* Pack */}
-                  <td className="py-1.5 px-3 text-center text-slate-600 dark:text-zinc-400 font-bold border-r border-inherit">
-                    {item ? `${item.batch.per || 10}s` : ''}
-                  </td>
-
-                  {/* Qty (Directly Editable) */}
-                  <td className="py-1 px-2 text-center border-r border-inherit">
-                    {item ? (
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.qty}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
-                        className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
-                          theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
-                        }`}
-                      />
-                    ) : ''}
-                  </td>
-
-                  {/* Amount */}
-                  <td className="py-1.5 px-3 text-right font-black text-emerald-700 dark:text-emerald-400 text-sm border-r border-inherit">
-                    {item ? `₹${item.totalValue.toFixed(2)}` : ''}
-                  </td>
-
-                  {/* Action */}
-                  <td className="py-1.5 px-3 text-center">
-                    {item && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveItem(idx);
-                        }}
-                        className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50"
-                        title="Delete Item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* 4. Docked Live Medicine Inspector / Radar Bar */}
-      <MedicineDetailRadar
-        selectedMed={inspectedMed}
-        theme={theme}
-      />
-
-      {/* 5. Financial Accounting Ledger Footer */}
-      <div className={`p-3 border-t flex items-center justify-between select-none ${
-        theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-100 border-slate-300'
-      }`}>
-        <div className="flex items-center space-x-6 font-mono text-xs">
-          <div>
-            <span className="text-slate-500 font-bold text-[10px] block uppercase">Items:</span>
-            <span className={`font-black text-sm ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-              {items.length} Products ({totalQty} Units)
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 font-bold text-[10px] block uppercase">Taxable:</span>
-            <span className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-slate-900'}`}>
-              ₹{taxableAmount.toFixed(2)}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 font-bold text-[10px] block uppercase">CGST (6%):</span>
-            <span className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-slate-900'}`}>
-              ₹{cgst.toFixed(2)}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 font-bold text-[10px] block uppercase">SGST (6%):</span>
-            <span className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-slate-900'}`}>
-              ₹{sgst.toFixed(2)}
-            </span>
-          </div>
-          {Math.abs(roundOff) > 0.001 && (
-            <div>
-              <span className="text-slate-500 font-bold text-[10px] block uppercase">Round off:</span>
-              <span className={`font-bold ${theme === 'dark' ? 'text-zinc-200' : 'text-slate-900'}`}>
-                {roundOff > 0 ? `+${roundOff.toFixed(2)}` : roundOff.toFixed(2)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onHoldBill}
-            disabled={items.length === 0}
-            className={`px-3 py-1.5 rounded font-mono font-bold text-xs uppercase border transition ${
-              items.length === 0 
-                ? 'opacity-40 cursor-not-allowed border-slate-300' 
-                : 'border-amber-500 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950 font-bold'
-            }`}
-          >
-            Hold Bill (F12)
-          </button>
-
-          <div className={`border px-4 py-1.5 rounded text-right ${
-            theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-sm'
+      {/* 2. 2026 Main Asymmetric Cockpit Workspace */}
+      <div className="flex-1 overflow-hidden p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 max-w-7xl mx-auto w-full">
+        {/* ================= LEFT / CENTER COLUMN (68% width): CART TABLE ================= */}
+        <div className="lg:col-span-8 flex flex-col h-full overflow-hidden space-y-4">
+          {/* Active Bill Header Card */}
+          <div className={`p-4 rounded-2xl border flex items-center justify-between shrink-0 ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-xs'
           }`}>
-            <span className="text-slate-500 text-[10px] font-mono font-bold block uppercase">Net Amount</span>
-            <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-              ₹{netPayable.toFixed(2)}
-            </span>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-black shrink-0">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className={`font-black text-sm tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                    Active Sales Invoice #{billNo}
+                  </h3>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    isDark ? 'bg-sky-950 text-sky-300 border border-sky-800' : 'bg-sky-50 text-sky-900 border border-sky-200'
+                  }`}>
+                    {items.length} Products
+                  </span>
+                </div>
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'} font-medium mt-0.5`}>
+                  Date: {billDate} • Counter 01 (Chirakkara)
+                </p>
+              </div>
+            </div>
+
+            {/* Park / Restore Bill Action */}
+            <div className="flex items-center space-x-2">
+              {heldBillsCount > 0 && (
+                <button
+                  onClick={onRestoreHeldBill}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center space-x-1 animate-pulse"
+                >
+                  <PauseCircle className="w-3.5 h-3.5" />
+                  <span>Restore {heldBillsCount} Parked (F12)</span>
+                </button>
+              )}
+
+              <button
+                onClick={onHoldBill}
+                disabled={items.length === 0}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1 ${
+                  items.length === 0
+                    ? 'opacity-40 cursor-not-allowed border-slate-200 text-slate-400'
+                    : isDark ? 'bg-zinc-800 border-zinc-700 text-amber-300 hover:bg-zinc-700' : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100'
+                }`}
+                title="Hold / Park current invoice (F12)"
+              >
+                <PauseCircle className="w-3.5 h-3.5 text-amber-500" />
+                <span>Park (F12)</span>
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={onCompleteBill}
-            disabled={items.length === 0}
-            className={`px-5 py-2.5 rounded-lg font-black text-xs font-mono uppercase flex items-center space-x-2 transition shadow ${
-              items.length === 0
-                ? 'bg-slate-300 dark:bg-zinc-800 text-slate-500 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30'
-            }`}
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Bill (*+)</span>
-          </button>
+          {/* Interactive Cart Table Card */}
+          <div className={`flex-1 rounded-2xl border overflow-hidden flex flex-col ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
+            {items.length === 0 ? (
+              /* 2026 Sleek Empty State Canvas */
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-sky-50 dark:bg-zinc-800 border border-sky-100 dark:border-zinc-700 flex items-center justify-center text-sky-600 shadow-sm">
+                  <Command className="w-8 h-8" />
+                </div>
+                <div>
+                  <h4 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                    Counter 01 Ready for Billing
+                  </h4>
+                  <p className={`text-xs mt-1 max-w-sm ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Type any medicine name or salt above to add items instantly. Press <strong>/</strong> to search, or scan product barcode.
+                  </p>
+                </div>
+
+                {/* Keyboard Quick Navigation Cheatsheet */}
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs font-mono">
+                  <span className={`px-2.5 py-1 rounded-lg border font-bold ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                    / Search Medicine
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-lg border font-bold ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                    F2 Patient Name
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-lg border font-bold ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                    F3 Doctor
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-lg border font-bold ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                    F12 Hold Bill
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* 2026 Interactive Cart Grid */
+              <div className="flex-1 overflow-y-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className={`border-b text-[11px] font-black uppercase tracking-wider ${
+                      isDark ? 'bg-zinc-950/80 text-zinc-300 border-zinc-800' : 'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}>
+                      <th className="py-3 px-3 w-10 text-center">#</th>
+                      <th className="py-3 px-3">Medicine & Salt Composition</th>
+                      <th className="py-3 px-3 text-center w-24">Rack</th>
+                      <th className="py-3 px-3 text-center w-24">Batch</th>
+                      <th className="py-3 px-3 text-center w-20">Exp</th>
+                      <th className="py-3 px-3 text-right w-24">Unit Price</th>
+                      <th className="py-3 px-3 text-center w-36">Quantity</th>
+                      <th className="py-3 px-3 text-right w-28">Total (₹)</th>
+                      <th className="py-3 px-3 text-center w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-inherit">
+                    {items.map((item, idx) => {
+                      const isSelected = selectedRowIndex === idx;
+                      const unitPrice = (item.batch.mrp / (item.batch.per || 10));
+
+                      return (
+                        <tr 
+                          key={idx}
+                          onClick={() => {
+                            setSelectedRowIndex(idx);
+                            setInspectedMedicine(item.medicine);
+                          }}
+                          className={`transition cursor-pointer ${
+                            isSelected
+                              ? (isDark ? 'bg-sky-950/40' : 'bg-sky-50')
+                              : (isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-slate-50')
+                          }`}
+                        >
+                          <td className="py-3 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                          
+                          {/* Medicine & Generic Description */}
+                          <td className="py-3 px-3">
+                            <div className={`font-black text-xs ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                              {item.medicine.name}
+                            </div>
+                            <div className={`text-[10px] font-bold mt-0.5 truncate max-w-xs ${isDark ? 'text-sky-300' : 'text-sky-700'}`}>
+                              {item.medicine.generic || item.medicine.company}
+                            </div>
+                          </td>
+
+                          {/* Shelf Rack Pill */}
+                          <td className="py-3 px-3 text-center">
+                            <span className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-lg border ${
+                              isDark ? 'bg-amber-950/70 border-amber-800 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-900'
+                            }`}>
+                              R-{item.medicine.rack}
+                            </span>
+                          </td>
+
+                          {/* Batch */}
+                          <td className="py-3 px-3 text-center font-mono font-bold text-slate-500">
+                            {item.batch.batch_no}
+                          </td>
+
+                          {/* Expiry */}
+                          <td className="py-3 px-3 text-center font-mono font-bold text-slate-600 dark:text-zinc-400">
+                            {item.batch.exp_date}
+                          </td>
+
+                          {/* Unit MRP */}
+                          <td className="py-3 px-3 text-right font-mono font-bold">
+                            ₹{unitPrice.toFixed(2)}
+                          </td>
+
+                          {/* 2026 Interactive Stepper Quantity */}
+                          <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center space-x-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStepQty(idx, -1)}
+                                className={`w-7 h-7 rounded-lg border flex items-center justify-center transition font-black ${
+                                  isDark ? 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                                }`}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.qty}
+                                onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                                className={`w-14 py-1 text-center rounded-lg border font-mono font-black text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none ${
+                                  isDark ? 'bg-zinc-950 border-zinc-700 text-sky-400' : 'bg-white border-slate-300 text-sky-900 shadow-xs'
+                                }`}
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => handleStepQty(idx, 1)}
+                                className={`w-7 h-7 rounded-lg border flex items-center justify-center transition font-black ${
+                                  isDark ? 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                                }`}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Line Total */}
+                          <td className="py-3 px-3 text-right font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+                            ₹{item.totalValue.toFixed(2)}
+                          </td>
+
+                          {/* Delete Item */}
+                          <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleRemoveItem(idx)}
+                              className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition"
+                              title="Delete Item (Del)"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ================= RIGHT COCKPIT COLUMN (32% width): PRESCRIPTION, RADAR & CHECKOUT ================= */}
+        <div className="lg:col-span-4 flex flex-col space-y-4 overflow-y-auto">
+          {/* Card 1: Prescription & Patient Meta */}
+          <div className={`p-5 rounded-2xl border space-y-4 ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 ${
+                isDark ? 'text-zinc-200' : 'text-slate-900'
+              }`}>
+                <User className="w-3.5 h-3.5 text-sky-600" />
+                <span>Customer & Prescription</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">F2 / F3</span>
+            </div>
+
+            {/* Patient Name */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono font-black uppercase text-slate-500">
+                Patient Name [F2]
+              </label>
+              <input
+                ref={patientInputRef}
+                type="text"
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                placeholder="Walk-in Customer / Patient (Optional)"
+                className={`w-full py-2 px-3 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 transition ${
+                  isDark ? 'bg-zinc-950 border-zinc-700 text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-300 text-slate-950 placeholder-slate-400'
+                }`}
+              />
+            </div>
+
+            {/* Doctor Selector */}
+            <DoctorSelector
+              doctorName={doctorName}
+              setDoctorName={setDoctorName}
+              theme={theme}
+            />
+
+            {/* Schedule H / H1 Regulatory Compliance Warning */}
+            {hasScheduledDrugs && (
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-start space-x-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-tight">
+                  <strong className="block font-black text-[11px]">Schedule H / H1 Drug in Cart:</strong>
+                  <span>Doctor prescription details recommended for drug audit compliance.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Mode Segmented Selector */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[10px] font-mono font-black uppercase text-slate-500">
+                Payment Channel
+              </label>
+              <div className={`grid grid-cols-3 gap-1.5 p-1 rounded-xl border ${
+                isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-200'
+              }`}>
+                {[
+                  { id: 'cash', label: 'Cash', icon: Banknote },
+                  { id: 'upi', label: 'UPI / QR', icon: QrCode },
+                  { id: 'credit', label: 'Credit', icon: CreditCard }
+                ].map((m) => {
+                  const Icon = m.icon;
+                  const isChosen = paymentMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setPaymentMode(m.id)}
+                      className={`py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                        isChosen
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Live Drug Inspector & Stock Radar */}
+          <MedicineDetailRadar
+            selectedMed={activeInspectMed}
+            theme={theme}
+          />
+
+          {/* Card 3: Executive Checkout & Final Payment Total */}
+          <div className={`p-5 rounded-2xl border space-y-4 ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Items Total ({items.length} meds, {totalUnits} units)</span>
+              <span className="font-mono text-slate-900 dark:text-zinc-100">₹{grossTotal.toFixed(2)}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>GST Split (CGST 6% + SGST 6%)</span>
+              <span className="font-mono text-slate-700 dark:text-zinc-300">₹{(cgst + sgst).toFixed(2)}</span>
+            </div>
+
+            {Math.abs(roundOff) > 0.001 && (
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>Round off adjustment</span>
+                <span className="font-mono text-slate-700 dark:text-zinc-300">
+                  {roundOff > 0 ? `+${roundOff.toFixed(2)}` : roundOff.toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {/* Massive 2026 High-Contrast Net Amount */}
+            <div className={`p-4 rounded-2xl border text-center ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-emerald-50/70 border-emerald-200'
+            }`}>
+              <span className="text-[10px] font-mono uppercase font-black tracking-wider text-emerald-800 dark:text-emerald-400 block">
+                Net Payable Amount
+              </span>
+              <div className="text-4xl font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight mt-1">
+                ₹{netPayable.toFixed(2)}
+              </div>
+            </div>
+
+            {/* Primary Action Button: Complete Bill & Print */}
+            <button
+              onClick={onCompleteBill}
+              disabled={items.length === 0}
+              className={`w-full py-3.5 px-4 rounded-xl font-black text-sm uppercase transition flex items-center justify-center space-x-2 shadow-lg ${
+                items.length === 0
+                  ? 'bg-slate-200 dark:bg-zinc-800 text-slate-400 cursor-not-allowed shadow-none'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/25 cursor-pointer active:scale-[0.98]'
+              }`}
+            >
+              <Printer className="w-5 h-5" />
+              <span>Print Bill (*+) (Enter)</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 6. Function Key Footer Strip */}
-      <div className={`border-t px-3 py-1.5 flex items-center justify-between text-[11px] font-mono select-none ${
-        theme === 'dark' ? 'bg-zinc-950 border-zinc-800 text-zinc-400' : 'bg-slate-200 border-slate-300 text-slate-700'
+      {/* 3. 2026 Function Key Footer Strip */}
+      <footer className={`px-4 sm:px-6 py-2 border-t flex flex-wrap items-center justify-between text-xs font-mono shrink-0 select-none ${
+        isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-slate-200 text-slate-600'
       }`}>
-        <div className="flex items-center space-x-3 font-semibold">
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-sky-700 dark:text-sky-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F2</kbd>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-sky-400' : 'bg-slate-100 border-slate-300 text-sky-800 shadow-xs'
+            }`}>F2</kbd>
             <span>Patient</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-sky-700 dark:text-sky-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F3</kbd>
+
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-sky-400' : 'bg-slate-100 border-slate-300 text-sky-800 shadow-xs'
+            }`}>F3</kbd>
             <span>Doctor</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">Enter</kbd>
-            <span>Add / Next</span>
+
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-amber-400' : 'bg-slate-100 border-slate-300 text-amber-800 shadow-xs'
+            }`}>Enter</kbd>
+            <span>Add Item</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">Del</kbd>
-            <span>Remove Row</span>
+
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-rose-400' : 'bg-slate-100 border-slate-300 text-rose-800 shadow-xs'
+            }`}>Del</kbd>
+            <span>Remove</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F12</kbd>
-            <span>Hold / Park</span>
+
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-amber-400' : 'bg-slate-100 border-slate-300 text-amber-800 shadow-xs'
+            }`}>F12</kbd>
+            <span>Hold / Restore</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">*+</kbd>
+
+          <span className="flex items-center space-x-1.5">
+            <kbd className={`px-2 py-0.5 rounded-lg border font-bold text-[10px] ${
+              isDark ? 'bg-zinc-800 border-zinc-700 text-emerald-400' : 'bg-slate-100 border-slate-300 text-emerald-800 shadow-xs'
+            }`}>*+ / Enter</kbd>
             <span>Print Bill</span>
           </span>
         </div>
 
-        <div className="flex items-center space-x-3">
-          {heldBillsCount > 0 && (
-            <button
-              onClick={onRestoreHeldBill}
-              className="flex items-center space-x-1.5 bg-amber-200 dark:bg-amber-950 text-amber-950 dark:text-amber-300 border border-amber-500 px-2.5 py-0.5 rounded-full font-bold text-[10px] animate-pulse hover:bg-amber-300"
-            >
-              <PauseCircle className="w-3 h-3 text-amber-600" />
-              <span>{heldBillsCount} Parked Bill(s) Available [F12]</span>
-            </button>
-          )}
-          <span className="text-slate-600 dark:text-zinc-500 text-[10px] font-bold">
-            Beta Pharmacy POS • Offline-Ready
+        <div className="flex items-center space-x-3 text-[11px]">
+          <span className="text-emerald-600 font-bold flex items-center space-x-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Counter 01 Active</span>
           </span>
+          <span>•</span>
+          <span>ESC/P Dot Matrix Ready</span>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

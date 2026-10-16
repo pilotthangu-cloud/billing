@@ -15,9 +15,13 @@ import {
   PlusCircle,
   Lock,
   Unlock,
-  ShieldCheck,
   CreditCard,
-  Banknote
+  Banknote,
+  Search,
+  Store,
+  Layers,
+  Sparkles,
+  Command
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -34,6 +38,7 @@ export default function TopNavigationMenu({
   onLogoutRole
 }) {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const isDark = theme === 'dark';
 
   const toggleDropdown = (menu) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -44,448 +49,271 @@ export default function TopNavigationMenu({
     setOpenDropdown(null);
   };
 
+  // Primary Quick Navigation Tabs (2026 Sleek Segmented Controller)
+  const primaryTabs = [
+    { id: 'billing', label: 'Counter POS', icon: ShoppingCart, hotkey: 'F1' },
+    { id: 'purchases', label: 'Inward Purchase', icon: Truck, hotkey: 'F5', lock: !authenticatedRole },
+    { id: 'expiry', label: 'Near Expiry', icon: AlertTriangle, hotkey: 'F6', badge: '1.1k', badgeColor: 'bg-rose-500 text-white' },
+    { id: 'shortages', label: 'Shortages', icon: Package, hotkey: 'F7', badge: '476', badgeColor: 'bg-amber-500 text-white' },
+    { id: 'radar', label: 'Multi-Store', icon: Store, hotkey: 'F8' }
+  ];
+
   return (
-    <div className={`border-b select-none text-xs transition-colors ${
-      theme === 'dark' 
-        ? 'bg-zinc-900 border-zinc-800 text-zinc-200' 
-        : 'bg-slate-100 border-slate-300 text-slate-800'
+    <header className={`px-4 py-2 border-b select-none transition-colors z-40 relative ${
+      isDark ? 'bg-zinc-900 border-zinc-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900 shadow-xs'
     }`}>
-      {/* Level 1: Pharmacy Title & Menu Bar */}
-      <div className="px-3 py-1.5 flex items-center justify-between border-b border-inherit">
-        <div className="flex items-center space-x-4">
-          {/* Pharmacy Identity */}
-          <div className="flex items-center space-x-2">
-            <span className="font-black text-sm tracking-wider text-sky-600 font-mono">BETA PHARMACY</span>
-            <span className={`text-[11px] font-mono ${theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'}`}>
-              Chirakkara, Thalassery • Counter 01
-            </span>
+      <div className="flex items-center justify-between gap-3">
+        {/* Brand & Store Identity */}
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20 font-black text-sm">
+            B
           </div>
 
-          <span className="text-slate-400">|</span>
-
-          {/* Traditional Software Menu Dropdowns */}
-          <div className="flex items-center space-x-1 font-medium">
-            {/* Masters */}
-            <div className="relative">
-              <button
-                onClick={() => toggleDropdown('masters')}
-                className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['product-master', 'supplier-master'].includes(activePage) || openDropdown === 'masters'
-                    ? (theme === 'dark' ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <span>Masters</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-
-              {openDropdown === 'masters' && (
-                <div className={`absolute left-0 top-full mt-1 w-52 rounded-md shadow-xl border z-50 py-1 font-sans ${
-                  theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
-                }`}>
-                  <button 
-                    onClick={() => navigateTo('product-master')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold"
-                  >
-                    <span>Product Master Catalog</span>
-                    <span className="text-[10px] font-mono opacity-70">24k</span>
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setOpenDropdown(null);
-                      onOpenNewMedModal();
-                    }} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold text-sky-600 flex items-center space-x-1"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>+ Add New Medicine</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('supplier-master')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
-                  >
-                    <span>Supplier / Distributors</span>
-                    <span className="text-[10px] font-mono opacity-70">370</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('shortages')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white"
-                  >
-                    <span>Shelf Rack Locations</span>
-                  </button>
-                </div>
-              )}
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className={`font-black text-sm tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                Beta Pharmacy
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                isDark ? 'bg-sky-950 text-sky-300 border border-sky-800' : 'bg-sky-50 text-sky-900 border border-sky-200'
+              }`}>
+                Counter 01 • Main
+              </span>
             </div>
-
-            {/* Transactions */}
-            <div className="relative">
-              <button
-                onClick={() => toggleDropdown('transactions')}
-                className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['billing', 'purchases'].includes(activePage) || openDropdown === 'transactions'
-                    ? (theme === 'dark' ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <span>Transactions</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-
-              {openDropdown === 'transactions' && (
-                <div className={`absolute left-0 top-full mt-1 w-52 rounded-md shadow-xl border z-50 py-1 font-sans ${
-                  theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
-                }`}>
-                  <button 
-                    onClick={() => navigateTo('billing')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between"
-                  >
-                    <span>Sale Billing (POS)</span>
-                    <span className="text-[10px] font-mono opacity-80">Alt+B</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('purchases')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between"
-                  >
-                    <span>Purchase Inward Entry</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('due-bills')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
-                  >
-                    <span>Customer Credit / Due Bills</span>
-                    <span className="text-[10px] font-mono text-amber-500 font-bold">DUEBILL</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('distributor-payments')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
-                  >
-                    <span>Distributor Payments & Cheques</span>
-                    <span className="text-[10px] font-mono opacity-70">PAYMENTS</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('expiry')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white"
-                  >
-                    <span>Expiry Return to Distributor</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Reports */}
-            <div className="relative">
-              <button
-                onClick={() => toggleDropdown('reports')}
-                className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['expiry', 'sales-register', 'shortages'].includes(activePage) || openDropdown === 'reports'
-                    ? (theme === 'dark' ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <span>Reports</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-
-              {openDropdown === 'reports' && (
-                <div className={`absolute left-0 top-full mt-1 w-56 rounded-md shadow-xl border z-50 py-1 font-sans ${
-                  theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
-                }`}>
-                  <button 
-                    onClick={() => navigateTo('expiry')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between text-amber-600"
-                  >
-                    <span>Near-Expiry Watchdog</span>
-                    <span className="text-[10px] font-mono px-1 rounded bg-amber-100 text-amber-800">1,089</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('shortages')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
-                  >
-                    <span>Stock Shortages / Reorder</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('sales-register')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold"
-                  >
-                    <span>Daily Sales Register & Margins</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('admin')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-purple-600 hover:text-white flex items-center justify-between font-bold text-purple-700 dark:text-purple-400"
-                  >
-                    <span>Owner Admin HQ Portal</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Utilities */}
-            <div className="relative">
-              <button
-                onClick={() => toggleDropdown('utilities')}
-                className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['radar', 'sales-register'].includes(activePage) || openDropdown === 'utilities'
-                    ? (theme === 'dark' ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
-                    : 'hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <span>Utilities</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </button>
-
-              {openDropdown === 'utilities' && (
-                <div className={`absolute left-0 top-full mt-1 w-52 rounded-md shadow-xl border z-50 py-1 font-sans ${
-                  theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
-                }`}>
-                  <button 
-                    onClick={() => navigateTo('radar')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold"
-                  >
-                    <span>Multi-Store Batch Radar</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('sales-register')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white"
-                  >
-                    <span>Day Begin & Cash Tally</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <p className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-slate-500'} font-medium`}>
+              Chirakkara, Thalassery • Sadanada Pai Rd
+            </p>
           </div>
         </div>
 
-        {/* Right: Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
-        <div className="flex items-center space-x-2 font-mono text-[11px]">
-          {/* Owner Admin HQ Portal Quick Access */}
+        {/* 2026 Segmented Navigation Controller */}
+        <nav className="hidden lg:flex items-center space-x-1 p-1 rounded-xl border transition ${
+          isDark ? 'bg-zinc-950/80 border-zinc-800' : 'bg-slate-100/90 border-slate-200'
+        }">
+          {primaryTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activePage === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => navigateTo(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                  isActive
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : isDark 
+                      ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60' 
+                      : 'text-slate-700 hover:text-slate-950 hover:bg-white'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : (isDark ? 'text-zinc-500' : 'text-slate-500')}`} />
+                <span>{tab.label}</span>
+                {tab.lock && <Lock className="w-2.5 h-2.5 opacity-70 text-amber-500 ml-0.5" />}
+                {tab.badge && (
+                  <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${tab.badgeColor}`}>
+                    {tab.badge}
+                  </span>
+                )}
+                <span className={`text-[9px] font-mono px-1 py-0.2 rounded ${
+                  isActive ? 'bg-white/20 text-white' : (isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-slate-200 text-slate-500')
+                }`}>
+                  {tab.hotkey}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* More Masters & Ledgers Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => toggleDropdown('more')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 ${
+                ['product-master', 'supplier-master', 'due-bills', 'distributor-payments', 'sales-register'].includes(activePage) || openDropdown === 'more'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : isDark 
+                    ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/60' 
+                    : 'text-slate-700 hover:text-slate-950 hover:bg-white'
+              }`}
+            >
+              <span>More Modules</span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+
+            {openDropdown === 'more' && (
+              <div className={`absolute left-0 top-full mt-2 w-64 rounded-2xl shadow-2xl border z-50 p-1.5 font-sans divide-y ${
+                isDark ? 'bg-zinc-900 border-zinc-700 divide-zinc-800 text-white' : 'bg-white border-slate-200 divide-slate-100 text-slate-900'
+              }`}>
+                <div className="py-1">
+                  <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Catalogs & Masters
+                  </div>
+                  <button 
+                    onClick={() => navigateTo('product-master')} 
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <BookOpen className="w-3.5 h-3.5 text-sky-500" />
+                      <span>Product Master Catalog</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">24.6k</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('supplier-master')} 
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Distributor Agencies</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">370</span>
+                  </button>
+                </div>
+
+                <div className="py-1">
+                  <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Ledgers & Accounts
+                  </div>
+                  <button 
+                    onClick={() => navigateTo('due-bills')} 
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <CreditCard className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Customer Due Bills</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-amber-500">DUEBILL</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('distributor-payments')} 
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <Banknote className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Distributor Payments & Cheques</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">PAYMENTS</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('sales-register')} 
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      <BarChart3 className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Daily Sales Register & Margins</span>
+                    </span>
+                    {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500" />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </nav>
+
+        {/* Right Cockpit Actions */}
+        <div className="flex items-center space-x-2">
+          {/* Quick + Add Medicine Modal Button */}
+          <button
+            onClick={onOpenNewMedModal}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition ${
+              isDark 
+                ? 'bg-zinc-800 border-zinc-700 text-sky-400 hover:bg-zinc-700' 
+                : 'bg-slate-100 border-slate-200 text-sky-700 hover:bg-slate-200 shadow-xs'
+            }`}
+            title="Add a new medicine to Master Catalog"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-sky-600" />
+            <span className="hidden sm:inline">+ Medicine</span>
+          </button>
+
+          {/* Dedicated Owner Admin HQ Button */}
           <button
             onClick={() => navigateTo('admin')}
-            className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-black transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition shadow-xs ${
               activePage === 'admin'
-                ? 'bg-purple-600 text-white border-purple-500 shadow-md'
-                : (theme === 'dark' 
-                    ? 'bg-purple-950/70 border-purple-800 text-purple-300 hover:bg-purple-900' 
-                    : 'bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200 shadow-xs')
+                ? 'bg-purple-600 text-white shadow-purple-600/30'
+                : isDark
+                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800 hover:bg-purple-900'
+                  : 'bg-purple-100 text-purple-900 border border-purple-300 hover:bg-purple-200'
             }`}
             title="Open Multi-Pharmacy Owner Admin HQ Portal"
           >
             <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>ADMIN HQ</span>
-            {!authenticatedRole && <Lock className="w-2.5 h-2.5 text-amber-500 opacity-80" />}
+            <span>Admin HQ</span>
           </button>
 
-          {/* Security Status Badge */}
+          {/* Security Role Pill (Clipper CC / DD) */}
           {authenticatedRole ? (
             <button
               onClick={onLogoutRole}
-              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold ${
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-black flex items-center space-x-1.5 transition ${
                 authenticatedRole === 'MANAGER'
-                  ? 'bg-emerald-100 text-emerald-950 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300'
-                  : 'bg-sky-100 text-sky-950 border-sky-400 dark:bg-sky-950 dark:text-sky-300'
+                  ? (isDark ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-300 text-emerald-900')
+                  : (isDark ? 'bg-sky-950 border-sky-800 text-sky-300' : 'bg-sky-50 border-sky-300 text-sky-900')
               }`}
-              title="Click to lock session"
+              title="Session Authenticated. Click to lock session."
             >
-              <Unlock className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              <span>{authenticatedRole === 'MANAGER' ? 'MANAGER (CC)' : 'STAFF (DD)'}</span>
+              <Unlock className="w-3 h-3 text-emerald-600" />
+              <span>{authenticatedRole === 'MANAGER' ? 'Manager (CC)' : 'Staff (DD)'}</span>
             </button>
           ) : (
             <button
-              onClick={() => onOpenPasswordModal('Manager Authorization', 'Enter 2-character PIN to access protected modules.')}
-              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold ${
-                theme === 'dark' ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+              onClick={() => onOpenPasswordModal('Manager Authorization', 'Enter 2-character security PIN (CC or DD) to unlock protected modules.')}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition ${
+                isDark 
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white' 
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
               }`}
               title="Click to authenticate as Manager or Staff"
             >
               <Lock className="w-3 h-3 text-amber-500" />
-              <span>PIN [CC/DD]</span>
+              <span className="hidden sm:inline">Unlock PIN</span>
             </button>
           )}
 
-          {/* Cloud Sync Status Indicator */}
+          {/* Offline / Online Sync Pill */}
           <button
             onClick={() => setIsOffline(!isOffline)}
-            className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 cursor-pointer transition ${
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition ${
               isOffline
-                ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700'
-                : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700'
+                ? (isDark ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-amber-50 text-amber-900 border-amber-300')
+                : (isDark ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-emerald-50 text-emerald-900 border-emerald-300')
             }`}
-            title="Click to simulate offline / online sync"
+            title="Click to simulate offline / online status"
           >
-            {isOffline ? (
-              <>
-                <WifiOff className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                <span>OFFLINE (Local)</span>
-              </>
-            ) : (
-              <>
-                <Wifi className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                <span>CLOUD SYNC: ACTIVE</span>
-              </>
-            )}
+            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+            <span className="hidden md:inline">{isOffline ? 'Local Mode' : 'Cloud Sync Live'}</span>
           </button>
 
-          {/* Theme Toggle (Sun / Moon) */}
+          {/* Theme Switcher */}
           <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`p-1.5 rounded border flex items-center justify-center transition ${
-              theme === 'dark'
-                ? 'bg-zinc-800 border-zinc-700 text-amber-300 hover:bg-zinc-700'
-                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm'
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className={`p-2 rounded-xl border transition ${
+              isDark 
+                ? 'bg-zinc-800 border-zinc-700 text-amber-300 hover:bg-zinc-700' 
+                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 shadow-xs'
             }`}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
+            title="Toggle Light / Dark mode"
           >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* Clock */}
-          <div className={`px-2 py-0.5 rounded border font-mono ${
-            theme === 'dark' ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-white border-slate-300 text-slate-800 shadow-sm font-bold'
+          {/* Realtime Clock */}
+          <div className={`hidden sm:flex px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold ${
+            isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-slate-100 border-slate-200 text-slate-800'
           }`}>
             {currentTime}
           </div>
         </div>
       </div>
-
-      {/* Level 2: Fast Navigation Tabs Bar */}
-      <div className={`px-3 py-1 flex items-center justify-between text-xs border-b border-inherit font-mono ${
-        theme === 'dark' ? 'bg-zinc-950' : 'bg-slate-200/70'
-      }`}>
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => navigateTo('billing')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'billing'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            <span>Sale Billing (POS)</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('product-master')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'product-master'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Product Master (24k)</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('purchases')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'purchases'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" />
-            <span>Purchase Entry</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
-          </button>
-
-          <button
-            onClick={() => navigateTo('expiry')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'expiry'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            <span>Near Expiry (Watchdog)</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('supplier-master')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'supplier-master'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Suppliers (370)</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('shortages')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'shortages'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Shortages</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('due-bills')}
-            className={`px-2.5 py-1 rounded text-xs font-bold transition flex items-center space-x-1 ${
-              activePage === 'due-bills'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5 text-amber-500" />
-            <span>Due Bills</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('distributor-payments')}
-            className={`px-2.5 py-1 rounded text-xs font-bold transition flex items-center space-x-1 ${
-              activePage === 'distributor-payments'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <Banknote className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Payments</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('sales-register')}
-            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
-              activePage === 'sales-register'
-                ? 'bg-sky-600 text-white shadow-sm'
-                : (theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-300 text-slate-800')
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Sales & Margins</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
-          </button>
-
-          <button
-            onClick={() => navigateTo('admin')}
-            className={`px-3 py-1 rounded text-xs font-black transition flex items-center space-x-1.5 ${
-              activePage === 'admin'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : (theme === 'dark' 
-                    ? 'hover:bg-purple-950/80 text-purple-300 border border-purple-900/60' 
-                    : 'hover:bg-purple-100 text-purple-900 bg-purple-100/70 border border-purple-300')
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>Admin HQ Portal</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
-          </button>
-        </div>
-
-        <div className="flex items-center space-x-2 text-[10px] text-slate-500">
-          <span>Esc: Back to Billing</span>
-          <span>•</span>
-          <span>Alt+B: POS</span>
-        </div>
-      </div>
-    </div>
+    </header>
   );
 }
