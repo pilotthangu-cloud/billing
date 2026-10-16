@@ -1,0 +1,467 @@
+import React, { useState, useEffect } from 'react';
+import TopNavigationMenu from './components/TopNavigationMenu';
+import FastBillingTerminal from './components/FastBillingTerminal';
+import ProductCatalogPage from './components/ProductCatalogPage';
+import SupplierMasterPage from './components/SupplierMasterPage';
+import PurchaseEntryPage from './components/PurchaseEntryPage';
+import ExpiryReportPage from './components/ExpiryReportPage';
+import ShortagesPage from './components/ShortagesPage';
+import MultiStoreRadarPage from './components/MultiStoreRadarPage';
+import DailySalesRegisterPage from './components/DailySalesRegisterPage';
+import CustomerCreditLedgerPage from './components/CustomerCreditLedgerPage';
+import DistributorPaymentsPage from './components/DistributorPaymentsPage';
+import DotMatrixReceiptModal from './components/DotMatrixReceiptModal';
+import NewMedicineModal from './components/NewMedicineModal';
+import PasswordAuthModal from './components/PasswordAuthModal';
+import AdminDashboardApp from './components/AdminDashboardApp';
+import { pushSalesBillToSupabase } from './utils/supabaseClient';
+
+import initialMedicines from './data/medicines.json';
+
+// URL-based direct routing (e.g. /admin or #admin directly opens the Admin Dashboard!)
+function getInitialPage() {
+  try {
+    const path = (window.location.pathname || '').toLowerCase();
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = (window.location.search || '').toLowerCase();
+    if (path.includes('admin') || hash.includes('admin') || search.includes('admin')) {
+      return 'admin';
+    }
+    if (hash) {
+      const clean = hash.replace('#', '').trim();
+      if (clean) return clean;
+    }
+  } catch (e) {}
+  return 'billing';
+}
+
+export default function App() {
+  const initialRoute = getInitialPage();
+  const [theme, setTheme] = useState('light');
+  const [activePage, setActivePage] = useState(initialRoute);
+  const [isOffline, setIsOffline] = useState(false);
+  const [currentTime, setCurrentTime] = useState('');
+
+  // Medicines Catalog (Dynamic state so user can add new products & update stock from purchases!)
+  const [medicines, setMedicines] = useState(initialMedicines);
+  const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
+
+  // Security & Password Authorization Subsystem (Clipper USER.DBF)
+  // MANAGER: CC, STAFF: DD. If owner opens direct /admin URL, auto-authorize as MANAGER!
+  const [authenticatedRole, setAuthenticatedRole] = useState(initialRoute === 'admin' ? 'MANAGER' : null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordModalInfo, setPasswordModalInfo] = useState({
+    title: 'Manager Authorization',
+    description: 'Enter security PIN to access protected operations.'
+  });
+  const [pendingPage, setPendingPage] = useState(null);
+
+  // Active Bill States (Starts clean & empty)
+  const [billNo, setBillNo] = useState('025316');
+  const [billDate, setBillDate] = useState('16/10/2026');
+  const [patientName, setPatientName] = useState('');
+  const [doctorName, setDoctorName] = useState(''); // Optional by default
+  const [paymentMode, setPaymentMode] = useState('cash');
+
+  // Starts with 0 items (clean slate, no auto-attached dummy medicines!)
+  const [items, setItems] = useState([]);
+  const [heldBills, setHeldBills] = useState([]);
+
+  // Dot Matrix Print Modal
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [completedBillData, setCompletedBillData] = useState(null);
+
+  // Sync theme with HTML class for tailwind darkMode: 'class'
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // Live Clock
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Guard navigation to password-protected operations
+  const handleNavigatePage = (page) => {
+    // Sales & Margins is STRICTLY ADMIN/MANAGER (CC) only!
+    if (page === 'sales-register' && authenticatedRole !== 'MANAGER') {
+      setPendingPage(page);
+      setPasswordModalInfo({
+        title: 'Admin Authorization: Sales & Margins [REP023]',
+        description: 'Sales totals, gross margins, and cash drawer tallies are restricted strictly to Admin/Manager (Code CC).'
+      });
+      setIsPasswordModalOpen(true);
+      return;
+    }
+
+    // Purchases requires Manager authorization
+    if (page === 'purchases' && authenticatedRole !== 'MANAGER') {
+      setPendingPage(page);
+      setPasswordModalInfo({
+        title: 'Purchase Inward Entry [TRN001]',
+        description: 'Access to distributor purchase bills and cost rates requires Manager authorization (Code CC).'
+      });
+      setIsPasswordModalOpen(true);
+      return;
+    }
+
+    // Owner Admin HQ Portal is strictly Admin/Manager (CC) only!
+    if (page === 'admin' && authenticatedRole !== 'MANAGER') {
+      setPendingPage(page);
+      setPasswordModalInfo({
+        title: 'Owner Admin HQ Authorization [SYS001 / CC]',
+        description: 'Multi-Store Consolidated Analytics, profit margins, dead capital analysis, and cloud settings are restricted strictly to Admin/Manager (Code CC).'
+      });
+      setIsPasswordModalOpen(true);
+      return;
+    }
+
+    setActivePage(page);
+    try {
+      if (page === 'admin') {
+        window.history.replaceState(null, '', '/admin');
+      } else if (page === 'billing') {
+        window.history.replaceState(null, '', '/');
+      } else {
+        window.history.replaceState(null, '', `/#${page}`);
+      }
+    } catch (e) {}
+  };
+
+  // Sync with browser back/forward and direct hash/URL changes
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const page = getInitialPage();
+      setActivePage(page);
+      if (page === 'admin') {
+        setAuthenticatedRole('MANAGER');
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
+  const handlePasswordSuccess = (role) => {
+    setAuthenticatedRole(role);
+    if (pendingPage) {
+      setActivePage(pendingPage);
+      try {
+        if (pendingPage === 'admin') {
+          window.history.replaceState(null, '', '/admin');
+        } else {
+          window.history.replaceState(null, '', `/#${pendingPage}`);
+        }
+      } catch (e) {}
+      setPendingPage(null);
+    }
+  };
+
+  const handleLogoutRole = () => {
+    setAuthenticatedRole(null);
+    if (activePage === 'purchases' || activePage === 'sales-register' || activePage === 'admin') {
+      setActivePage('billing');
+      try {
+        window.history.replaceState(null, '', '/');
+      } catch (e) {}
+    }
+    alert('Security session locked. Returning to Sale Billing.');
+  };
+
+  // Global Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Escape returns to billing from any page
+      if (e.key === 'Escape' && activePage !== 'billing') {
+        setActivePage('billing');
+      }
+      // F12 holds bill if on billing page
+      if (e.key === 'F12' && activePage === 'billing') {
+        e.preventDefault();
+        if (items.length > 0) {
+          handleHoldBill();
+        } else if (heldBills.length > 0) {
+          handleRestoreHeldBill();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activePage, items, heldBills]);
+
+  // Add new medicine to master catalog
+  const handleAddNewMedicine = (newMed) => {
+    setMedicines(prev => [newMed, ...prev]);
+    alert(`Success! "${newMed.name}" added to Product Master in RACK ${newMed.rack}. You can now search and bill it immediately.`);
+  };
+
+  // Update existing medicine in master catalog
+  const handleUpdateMedicine = (updatedMed) => {
+    setMedicines(prev => prev.map(m => (m.code === updatedMed.code || m.name.toLowerCase() === updatedMed.name.toLowerCase()) ? updatedMed : m));
+  };
+
+  // Update stock when Purchase Invoice is saved
+  const handleUpdateCatalogStock = (purchaseItems) => {
+    setMedicines(prev => {
+      const updated = [...prev];
+      for (const item of purchaseItems) {
+        const idx = updated.findIndex(m => m.code === item.medCode || m.name.toLowerCase() === item.name.toLowerCase());
+        if (idx !== -1) {
+          const med = { ...updated[idx] };
+          med.stock_shop1 = (med.stock_shop1 || 0) + item.totalUnits;
+          const existingBatches = med.batches ? [...med.batches] : [];
+          const bIdx = existingBatches.findIndex(b => b.batch_no === item.batch);
+          if (bIdx !== -1) {
+            existingBatches[bIdx] = {
+              ...existingBatches[bIdx],
+              exp_date: item.exp,
+              mrp: item.mrp
+            };
+          } else {
+            existingBatches.unshift({
+              batch_no: item.batch,
+              exp_date: item.exp,
+              mrp: item.mrp,
+              per: item.packSize
+            });
+          }
+          med.batches = existingBatches;
+          updated[idx] = med;
+        }
+      }
+      return updated;
+    });
+  };
+
+  // Hold Bill
+  const handleHoldBill = () => {
+    if (items.length === 0) return;
+    const parked = { billNo, patientName, doctorName, paymentMode, items };
+    setHeldBills(prev => [...prev, parked]);
+    setItems([]);
+    setPatientName('');
+    alert(`Bill ${billNo} parked in Hold Queue (F12).`);
+  };
+
+  // Restore Parked Bill
+  const handleRestoreHeldBill = () => {
+    if (heldBills.length === 0) return;
+    const [restored, ...remaining] = heldBills;
+    setHeldBills(remaining);
+    setBillNo(restored.billNo);
+    setPatientName(restored.patientName);
+    setDoctorName(restored.doctorName);
+    setPaymentMode(restored.paymentMode);
+    setItems(restored.items);
+    setActivePage('billing');
+  };
+
+  // Complete and Open Dot Matrix Preview
+  const handleCompleteBill = () => {
+    if (items.length === 0) return;
+
+    const gross = items.reduce((acc, it) => acc + it.totalValue, 0);
+    const net = Math.round(gross);
+
+    const billPayload = {
+      billNo,
+      date: billDate,
+      time: currentTime,
+      patientName: patientName || 'CUSTOMER',
+      doctorName: doctorName || 'GENERAL OTC',
+      paymentMode,
+      items: [...items],
+      grossTotal: gross,
+      netPayable: net,
+      store: 'Beta Pharmacy (Thalassery)'
+    };
+
+    setCompletedBillData(billPayload);
+    // Background async sync to Supabase (does not block counter or dot-matrix printing!)
+    pushSalesBillToSupabase(billPayload);
+
+    setIsReceiptOpen(true);
+  };
+
+  const handleNewBill = () => {
+    const num = parseInt(billNo) + 1;
+    setBillNo(num.toString().padStart(6, '0'));
+    setItems([]);
+    setPatientName('');
+  };
+
+  return (
+    <div className={`h-screen w-screen flex flex-col overflow-hidden transition-colors ${
+      theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
+    }`}>
+      {/* 1. Global Navigation Menu (Only shown on cashier counter POS; hidden in standalone Admin App!) */}
+      {activePage !== 'admin' && (
+        <TopNavigationMenu
+          activePage={activePage}
+          setActivePage={handleNavigatePage}
+          theme={theme}
+          setTheme={setTheme}
+          isOffline={isOffline}
+          setIsOffline={setIsOffline}
+          currentTime={currentTime}
+          onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
+          authenticatedRole={authenticatedRole}
+          onOpenPasswordModal={(title, desc) => {
+            setPasswordModalInfo({ title, description: desc });
+            setIsPasswordModalOpen(true);
+          }}
+          onLogoutRole={handleLogoutRole}
+        />
+      )}
+
+      {/* 2. Full Page Router (All pages connected with high contrast) */}
+      {activePage === 'billing' && (
+        <FastBillingTerminal
+          theme={theme}
+          items={items}
+          setItems={setItems}
+          medicines={medicines}
+          billNo={billNo}
+          billDate={billDate}
+          patientName={patientName}
+          setPatientName={setPatientName}
+          doctorName={doctorName}
+          setDoctorName={setDoctorName}
+          paymentMode={paymentMode}
+          setPaymentMode={setPaymentMode}
+          heldBillsCount={heldBills.length}
+          onCompleteBill={handleCompleteBill}
+          onHoldBill={handleHoldBill}
+          onRestoreHeldBill={handleRestoreHeldBill}
+          onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
+        />
+      )}
+
+      {activePage === 'product-master' && (
+        <ProductCatalogPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+          onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
+          onUpdateMedicine={handleUpdateMedicine}
+        />
+      )}
+
+      {activePage === 'supplier-master' && (
+        <SupplierMasterPage
+          theme={theme}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'purchases' && (
+        <PurchaseEntryPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+          onUpdateCatalogStock={handleUpdateCatalogStock}
+        />
+      )}
+
+      {activePage === 'expiry' && (
+        <ExpiryReportPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'shortages' && (
+        <ShortagesPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'radar' && (
+        <MultiStoreRadarPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'sales-register' && (
+        <DailySalesRegisterPage
+          theme={theme}
+          onBackToBilling={() => setActivePage('billing')}
+          authenticatedRole={authenticatedRole}
+          onOpenPasswordModal={(title, desc) => {
+            setPasswordModalInfo({ title, description: desc });
+            setIsPasswordModalOpen(true);
+          }}
+        />
+      )}
+
+      {activePage === 'due-bills' && (
+        <CustomerCreditLedgerPage
+          theme={theme}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'distributor-payments' && (
+        <DistributorPaymentsPage
+          theme={theme}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'admin' && (
+        <AdminDashboardApp
+          theme={theme}
+          onBackToCounter={() => setActivePage('billing')}
+          onSwitchTheme={setTheme}
+        />
+      )}
+
+      {/* Password Authentication Modal (Clipper Security CC / DD) */}
+      <PasswordAuthModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => {
+          setIsPasswordModalOpen(false);
+          setPendingPage(null);
+        }}
+        onSuccess={handlePasswordSuccess}
+        actionTitle={passwordModalInfo.title}
+        actionDescription={passwordModalInfo.description}
+        theme={theme}
+      />
+
+      {/* New Medicine Master Modal */}
+      <NewMedicineModal
+        isOpen={isNewMedModalOpen}
+        onClose={() => setIsNewMedModalOpen(false)}
+        onAddMedicine={handleAddNewMedicine}
+        theme={theme}
+      />
+
+      {/* Dot Matrix Tractor-Feed Receipt Preview Modal */}
+      <DotMatrixReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        billData={completedBillData}
+        onNewBill={handleNewBill}
+      />
+    </div>
+  );
+}

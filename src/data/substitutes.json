@@ -1,0 +1,2330 @@
+[
+  {
+    "IT_CODEt^\u00a3": "D077C008",
+    "SB_ITEMt^\u00a3": "T321C008"
+  },
+  {
+    "IT_CODEt^\u00a3": "B036C008",
+    "SB_ITEMt^\u00a3": "G098I040"
+  },
+  {
+    "IT_CODEt^\u00a3": "G098I040",
+    "SB_ITEMt^\u00a3": "B036C008"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212A000",
+    "SB_ITEMt^\u00a3": "L141A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212A001",
+    "SB_ITEMt^\u00a3": "L141A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "K131E021",
+    "SB_ITEMt^\u00a3": "D063L062"
+  },
+  {
+    "IT_CODEt^\u00a3": "D063L062",
+    "SB_ITEMt^\u00a3": "K131E021"
+  },
+  {
+    "IT_CODEt^\u00a3": "N169S064",
+    "SB_ITEMt^\u00a3": "S236S087"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236S087",
+    "SB_ITEMt^\u00a3": "N169S064"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246C045",
+    "SB_ITEMt^\u00a3": "T281E011"
+  },
+  {
+    "IT_CODEt^\u00a3": "T281E011",
+    "SB_ITEMt^\u00a3": "T246C045"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "C056A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "C056A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "L141A004"
+  },
+  {
+    "IT_CODEt^\u00a3": "L141A004",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "S221A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S221A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "T246A004"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A004",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "O179A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "O179A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "C048A183"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048A183",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "O177A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "O177A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "B023A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "B023A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "S236A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "M156A056",
+    "SB_ITEMt^\u00a3": "L134A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "L134A001",
+    "SB_ITEMt^\u00a3": "M156A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "A005A060",
+    "SB_ITEMt^\u00a3": "T241A006"
+  },
+  {
+    "IT_CODEt^\u00a3": "T241A006",
+    "SB_ITEMt^\u00a3": "A005A060"
+  },
+  {
+    "IT_CODEt^\u00a3": "F087A051",
+    "SB_ITEMt^\u00a3": "C048L205"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L205",
+    "SB_ITEMt^\u00a3": "F087A051"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A183",
+    "SB_ITEMt^\u00a3": "S236R144"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236R144",
+    "SB_ITEMt^\u00a3": "C058A183"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A212",
+    "SB_ITEMt^\u00a3": "S236A137"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A137",
+    "SB_ITEMt^\u00a3": "T246A212"
+  },
+  {
+    "IT_CODEt^\u00a3": "F081A094",
+    "SB_ITEMt^\u00a3": "T246B023"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246B023",
+    "SB_ITEMt^\u00a3": "F081A094"
+  },
+  {
+    "IT_CODEt^\u00a3": "F081A094",
+    "SB_ITEMt^\u00a3": "U255S017"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255S017",
+    "SB_ITEMt^\u00a3": "F081A094"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012A002",
+    "SB_ITEMt^\u00a3": "A017R048"
+  },
+  {
+    "IT_CODEt^\u00a3": "A017R048",
+    "SB_ITEMt^\u00a3": "A012A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012A002",
+    "SB_ITEMt^\u00a3": "G093G081"
+  },
+  {
+    "IT_CODEt^\u00a3": "G093G081",
+    "SB_ITEMt^\u00a3": "A012A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012A002",
+    "SB_ITEMt^\u00a3": "E072B001"
+  },
+  {
+    "IT_CODEt^\u00a3": "E072B001",
+    "SB_ITEMt^\u00a3": "A012A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012A002",
+    "SB_ITEMt^\u00a3": "S237E017"
+  },
+  {
+    "IT_CODEt^\u00a3": "S237E017",
+    "SB_ITEMt^\u00a3": "A012A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "P194A073",
+    "SB_ITEMt^\u00a3": "N173T081"
+  },
+  {
+    "IT_CODEt^\u00a3": "N173T081",
+    "SB_ITEMt^\u00a3": "P194A073"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "T246T181"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T181",
+    "SB_ITEMt^\u00a3": "S216A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "C048S166"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048S166",
+    "SB_ITEMt^\u00a3": "S216A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "S236S145"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236S145",
+    "SB_ITEMt^\u00a3": "S216A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "A017S055"
+  },
+  {
+    "IT_CODEt^\u00a3": "A017S055",
+    "SB_ITEMt^\u00a3": "S216A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "A006S072"
+  },
+  {
+    "IT_CODEt^\u00a3": "A006S072",
+    "SB_ITEMt^\u00a3": "S216A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216A069",
+    "SB_ITEMt^\u00a3": "W271S046"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A001",
+    "SB_ITEMt^\u00a3": "S232E005"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232E005",
+    "SB_ITEMt^\u00a3": "S222A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A001",
+    "SB_ITEMt^\u00a3": "A008C033"
+  },
+  {
+    "IT_CODEt^\u00a3": "A008C033",
+    "SB_ITEMt^\u00a3": "S222A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A002",
+    "SB_ITEMt^\u00a3": "S232E006"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232E006",
+    "SB_ITEMt^\u00a3": "S222A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A002",
+    "SB_ITEMt^\u00a3": "A008C034"
+  },
+  {
+    "IT_CODEt^\u00a3": "A008C034",
+    "SB_ITEMt^\u00a3": "S222A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222B005",
+    "SB_ITEMt^\u00a3": "G093T060"
+  },
+  {
+    "IT_CODEt^\u00a3": "G093T060",
+    "SB_ITEMt^\u00a3": "S222B005"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246B024",
+    "SB_ITEMt^\u00a3": "U255S018"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255S018",
+    "SB_ITEMt^\u00a3": "T246B024"
+  },
+  {
+    "IT_CODEt^\u00a3": "K131B010",
+    "SB_ITEMt^\u00a3": "T239O046"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O046",
+    "SB_ITEMt^\u00a3": "K131B010"
+  },
+  {
+    "IT_CODEt^\u00a3": "I115B039",
+    "SB_ITEMt^\u00a3": "H101C004"
+  },
+  {
+    "IT_CODEt^\u00a3": "H101C004",
+    "SB_ITEMt^\u00a3": "I115B039"
+  },
+  {
+    "IT_CODEt^\u00a3": "I115B039",
+    "SB_ITEMt^\u00a3": "B031P068"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031P068",
+    "SB_ITEMt^\u00a3": "I115B039"
+  },
+  {
+    "IT_CODEt^\u00a3": "I115B039",
+    "SB_ITEMt^\u00a3": "C278B004"
+  },
+  {
+    "IT_CODEt^\u00a3": "C278B004",
+    "SB_ITEMt^\u00a3": "I115B039"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058S192",
+    "SB_ITEMt^\u00a3": "S232S037"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232S037",
+    "SB_ITEMt^\u00a3": "C058S192"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058S201",
+    "SB_ITEMt^\u00a3": "S232S039"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232S039",
+    "SB_ITEMt^\u00a3": "C058S201"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058S193",
+    "SB_ITEMt^\u00a3": "S232S038"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232S038",
+    "SB_ITEMt^\u00a3": "C058S193"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058O181",
+    "SB_ITEMt^\u00a3": "S236R144"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236R144",
+    "SB_ITEMt^\u00a3": "C058O181"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236P069",
+    "SB_ITEMt^\u00a3": "P190M033"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190M033",
+    "SB_ITEMt^\u00a3": "S236P069"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H020",
+    "SB_ITEMt^\u00a3": "C048O117"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O117",
+    "SB_ITEMt^\u00a3": "A001H020"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H020",
+    "SB_ITEMt^\u00a3": "T246T193"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T193",
+    "SB_ITEMt^\u00a3": "A001H020"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H020",
+    "SB_ITEMt^\u00a3": "I116T112"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116T112",
+    "SB_ITEMt^\u00a3": "A001H020"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H020",
+    "SB_ITEMt^\u00a3": "U259T038"
+  },
+  {
+    "IT_CODEt^\u00a3": "U259T038",
+    "SB_ITEMt^\u00a3": "A001H020"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H021",
+    "SB_ITEMt^\u00a3": "C048O118"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O118",
+    "SB_ITEMt^\u00a3": "A001H021"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H021",
+    "SB_ITEMt^\u00a3": "T246T192"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T192",
+    "SB_ITEMt^\u00a3": "A001H021"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H021",
+    "SB_ITEMt^\u00a3": "I116T113"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116T113",
+    "SB_ITEMt^\u00a3": "A001H021"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001H021",
+    "SB_ITEMt^\u00a3": "U259T037"
+  },
+  {
+    "IT_CODEt^\u00a3": "U259T037",
+    "SB_ITEMt^\u00a3": "A001H021"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "C048A004"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048A004",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "T246A009"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A009",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "A007A005"
+  },
+  {
+    "IT_CODEt^\u00a3": "A007A005",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "P190A055"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190A055",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "M163A005"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A005",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "L142A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "U251U090",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "C058A010"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A010",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "G368A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368A007",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "S236A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A007",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "S208A057"
+  },
+  {
+    "IT_CODEt^\u00a3": "S208A057",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "M144A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A002",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "P192A023"
+  },
+  {
+    "IT_CODEt^\u00a3": "P192A023",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "F081A104"
+  },
+  {
+    "IT_CODEt^\u00a3": "F081A104",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "U259C011"
+  },
+  {
+    "IT_CODEt^\u00a3": "U259C011",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "W271M025"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "I117C006"
+  },
+  {
+    "IT_CODEt^\u00a3": "I117C006",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A003",
+    "SB_ITEMt^\u00a3": "S233S030"
+  },
+  {
+    "IT_CODEt^\u00a3": "S233S030",
+    "SB_ITEMt^\u00a3": "S238A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F074",
+    "SB_ITEMt^\u00a3": "A019P036"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019P036",
+    "SB_ITEMt^\u00a3": "C058F074"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F074",
+    "SB_ITEMt^\u00a3": "H104R034"
+  },
+  {
+    "IT_CODEt^\u00a3": "H104R034",
+    "SB_ITEMt^\u00a3": "C058F074"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F073",
+    "SB_ITEMt^\u00a3": "H104R033"
+  },
+  {
+    "IT_CODEt^\u00a3": "H104R033",
+    "SB_ITEMt^\u00a3": "C058F073"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F073",
+    "SB_ITEMt^\u00a3": "A019P035"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019P035",
+    "SB_ITEMt^\u00a3": "C058F073"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F072",
+    "SB_ITEMt^\u00a3": "H104R032"
+  },
+  {
+    "IT_CODEt^\u00a3": "H104R032",
+    "SB_ITEMt^\u00a3": "C058F072"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058F072",
+    "SB_ITEMt^\u00a3": "A019P034"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019P034",
+    "SB_ITEMt^\u00a3": "C058F072"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052C013",
+    "SB_ITEMt^\u00a3": "A019R040"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019R040",
+    "SB_ITEMt^\u00a3": "C052C013"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052C014",
+    "SB_ITEMt^\u00a3": "A019R041"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019R041",
+    "SB_ITEMt^\u00a3": "C052C014"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052C015",
+    "SB_ITEMt^\u00a3": "A019R042"
+  },
+  {
+    "IT_CODEt^\u00a3": "A019R042",
+    "SB_ITEMt^\u00a3": "C052C015"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K124",
+    "SB_ITEMt^\u00a3": "T246N186"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246N186",
+    "SB_ITEMt^\u00a3": "S236K124"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K124",
+    "SB_ITEMt^\u00a3": "W271C086"
+  },
+  {
+    "IT_CODEt^\u00a3": "W271C086",
+    "SB_ITEMt^\u00a3": "S236K124"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K124",
+    "SB_ITEMt^\u00a3": "C048Z202"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048Z202",
+    "SB_ITEMt^\u00a3": "S236K124"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K123",
+    "SB_ITEMt^\u00a3": "T246N185"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246N185",
+    "SB_ITEMt^\u00a3": "S236K123"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K123",
+    "SB_ITEMt^\u00a3": "W271C085"
+  },
+  {
+    "IT_CODEt^\u00a3": "W271C085",
+    "SB_ITEMt^\u00a3": "S236K123"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236K123",
+    "SB_ITEMt^\u00a3": "C048Z189"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048Z189",
+    "SB_ITEMt^\u00a3": "S236K123"
+  },
+  {
+    "IT_CODEt^\u00a3": "W271A000",
+    "SB_ITEMt^\u00a3": "T246A010"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A010",
+    "SB_ITEMt^\u00a3": "W271A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "W271A000",
+    "SB_ITEMt^\u00a3": "L141C014"
+  },
+  {
+    "IT_CODEt^\u00a3": "L141C014",
+    "SB_ITEMt^\u00a3": "W271A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "S222Z050"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222Z050",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "I112A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "I112A001",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "M163A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A000",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "K131A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "K131A000",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "T246A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A001",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "T243A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T243A001",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "P194B003"
+  },
+  {
+    "IT_CODEt^\u00a3": "P194B003",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "G093G035"
+  },
+  {
+    "IT_CODEt^\u00a3": "G093G035",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "A008N057"
+  },
+  {
+    "IT_CODEt^\u00a3": "A008N057",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T333A008",
+    "SB_ITEMt^\u00a3": "B035W064"
+  },
+  {
+    "IT_CODEt^\u00a3": "B035W064",
+    "SB_ITEMt^\u00a3": "T333A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "C056A024"
+  },
+  {
+    "IT_CODEt^\u00a3": "C056A024",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "K131A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "K131A001",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "T246A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A001",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "A008N057"
+  },
+  {
+    "IT_CODEt^\u00a3": "A008N057",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "B035W064"
+  },
+  {
+    "IT_CODEt^\u00a3": "B035W064",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A001",
+    "SB_ITEMt^\u00a3": "S222Z050"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222Z050",
+    "SB_ITEMt^\u00a3": "M163A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T219",
+    "SB_ITEMt^\u00a3": "C048L214"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L214",
+    "SB_ITEMt^\u00a3": "T246T219"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T219",
+    "SB_ITEMt^\u00a3": "U255L046"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255L046",
+    "SB_ITEMt^\u00a3": "T246T219"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T219",
+    "SB_ITEMt^\u00a3": "I116L133"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116L133",
+    "SB_ITEMt^\u00a3": "T246T219"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T220",
+    "SB_ITEMt^\u00a3": "C048L215"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L215",
+    "SB_ITEMt^\u00a3": "T246T220"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T220",
+    "SB_ITEMt^\u00a3": "U255L048"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255L048",
+    "SB_ITEMt^\u00a3": "T246T220"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T220",
+    "SB_ITEMt^\u00a3": "I116L132"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116L132",
+    "SB_ITEMt^\u00a3": "T246T220"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246S221",
+    "SB_ITEMt^\u00a3": "U255S047"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255S047",
+    "SB_ITEMt^\u00a3": "T246S221"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246S221",
+    "SB_ITEMt^\u00a3": "S224S035"
+  },
+  {
+    "IT_CODEt^\u00a3": "S224S035",
+    "SB_ITEMt^\u00a3": "T246S221"
+  },
+  {
+    "IT_CODEt^\u00a3": "S224S035",
+    "SB_ITEMt^\u00a3": "U255S047"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255S047",
+    "SB_ITEMt^\u00a3": "S224S035"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246L215",
+    "SB_ITEMt^\u00a3": "C058L203"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058L203",
+    "SB_ITEMt^\u00a3": "T246L215"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A172",
+    "SB_ITEMt^\u00a3": "B047Z052"
+  },
+  {
+    "IT_CODEt^\u00a3": "B047Z052",
+    "SB_ITEMt^\u00a3": "C058A172"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A172",
+    "SB_ITEMt^\u00a3": "B047Z053"
+  },
+  {
+    "IT_CODEt^\u00a3": "B047Z053",
+    "SB_ITEMt^\u00a3": "C058A172"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A172",
+    "SB_ITEMt^\u00a3": "S216R045"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216R045",
+    "SB_ITEMt^\u00a3": "C058A172"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A172",
+    "SB_ITEMt^\u00a3": "C048C044"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048C044",
+    "SB_ITEMt^\u00a3": "C058A172"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A172",
+    "SB_ITEMt^\u00a3": "F081O101"
+  },
+  {
+    "IT_CODEt^\u00a3": "F081O101",
+    "SB_ITEMt^\u00a3": "C058A172"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A001",
+    "SB_ITEMt^\u00a3": "B047Z052"
+  },
+  {
+    "IT_CODEt^\u00a3": "B047Z052",
+    "SB_ITEMt^\u00a3": "C058A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A001",
+    "SB_ITEMt^\u00a3": "S216R045"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216R045",
+    "SB_ITEMt^\u00a3": "C058A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A001",
+    "SB_ITEMt^\u00a3": "C048C044"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048C044",
+    "SB_ITEMt^\u00a3": "C058A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A173",
+    "SB_ITEMt^\u00a3": "B047Z053"
+  },
+  {
+    "IT_CODEt^\u00a3": "B047Z053",
+    "SB_ITEMt^\u00a3": "C058A173"
+  },
+  {
+    "IT_CODEt^\u00a3": "G091A101",
+    "SB_ITEMt^\u00a3": "C048T149"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048T149",
+    "SB_ITEMt^\u00a3": "G091A101"
+  },
+  {
+    "IT_CODEt^\u00a3": "G091A101",
+    "SB_ITEMt^\u00a3": "K133T060"
+  },
+  {
+    "IT_CODEt^\u00a3": "K133T060",
+    "SB_ITEMt^\u00a3": "G091A101"
+  },
+  {
+    "IT_CODEt^\u00a3": "G091A101",
+    "SB_ITEMt^\u00a3": "U255D041"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255D041",
+    "SB_ITEMt^\u00a3": "G091A101"
+  },
+  {
+    "IT_CODEt^\u00a3": "A005A007",
+    "SB_ITEMt^\u00a3": "T241A023"
+  },
+  {
+    "IT_CODEt^\u00a3": "T241A023",
+    "SB_ITEMt^\u00a3": "A005A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "F087A053",
+    "SB_ITEMt^\u00a3": "C048L091"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L091",
+    "SB_ITEMt^\u00a3": "F087A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "G093C022"
+  },
+  {
+    "IT_CODEt^\u00a3": "G093C022",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S223A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "S223A000",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "T246Z180"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246Z180",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "U258C006"
+  },
+  {
+    "IT_CODEt^\u00a3": "U258C006",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "G094C020"
+  },
+  {
+    "IT_CODEt^\u00a3": "G094C020",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "M158C014"
+  },
+  {
+    "IT_CODEt^\u00a3": "M158C014",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S233C000"
+  },
+  {
+    "IT_CODEt^\u00a3": "S233C000",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "W265C003"
+  },
+  {
+    "IT_CODEt^\u00a3": "W265C003",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S236C019"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236C019",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "A008C032"
+  },
+  {
+    "IT_CODEt^\u00a3": "A008C032",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "U260C021"
+  },
+  {
+    "IT_CODEt^\u00a3": "U260C021",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "M163H068"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163H068",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "B046A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "B046A000",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "J122A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "J122A000",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "J119J034"
+  },
+  {
+    "IT_CODEt^\u00a3": "J119J034",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S215A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S215A013",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S215A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S215A014",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "C061A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "C061A002",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "C054C040"
+  },
+  {
+    "IT_CODEt^\u00a3": "C054C040",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "L141C043"
+  },
+  {
+    "IT_CODEt^\u00a3": "L141C043",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "B035E028"
+  },
+  {
+    "IT_CODEt^\u00a3": "B035E028",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "G096F010"
+  },
+  {
+    "IT_CODEt^\u00a3": "G096F010",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "C062H036"
+  },
+  {
+    "IT_CODEt^\u00a3": "C062H036",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "J275H016"
+  },
+  {
+    "IT_CODEt^\u00a3": "J275H016",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "B024I026"
+  },
+  {
+    "IT_CODEt^\u00a3": "B024I026",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "M155O020"
+  },
+  {
+    "IT_CODEt^\u00a3": "M155O020",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "P188P021"
+  },
+  {
+    "IT_CODEt^\u00a3": "P188P021",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "P188P022"
+  },
+  {
+    "IT_CODEt^\u00a3": "P188P022",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "R201R040"
+  },
+  {
+    "IT_CODEt^\u00a3": "R201R040",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S238S037"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238S037",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "S238S052"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238S052",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "H101S030"
+  },
+  {
+    "IT_CODEt^\u00a3": "H101S030",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "G092T004"
+  },
+  {
+    "IT_CODEt^\u00a3": "G092T004",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "I112T068"
+  },
+  {
+    "IT_CODEt^\u00a3": "I112T068",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "M152X052"
+  },
+  {
+    "IT_CODEt^\u00a3": "M152X052",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "U255Z034"
+  },
+  {
+    "IT_CODEt^\u00a3": "U255Z034",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A007",
+    "SB_ITEMt^\u00a3": "U254Z014"
+  },
+  {
+    "IT_CODEt^\u00a3": "U254Z014",
+    "SB_ITEMt^\u00a3": "C058A007"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A044",
+    "SB_ITEMt^\u00a3": "C058A190"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A190",
+    "SB_ITEMt^\u00a3": "M144A044"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A044",
+    "SB_ITEMt^\u00a3": "B031A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031A003",
+    "SB_ITEMt^\u00a3": "M144A044"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A044",
+    "SB_ITEMt^\u00a3": "P185A011"
+  },
+  {
+    "IT_CODEt^\u00a3": "P185A011",
+    "SB_ITEMt^\u00a3": "M144A044"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A044",
+    "SB_ITEMt^\u00a3": "G092O002"
+  },
+  {
+    "IT_CODEt^\u00a3": "G092O002",
+    "SB_ITEMt^\u00a3": "M144A044"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A190",
+    "SB_ITEMt^\u00a3": "B031A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031A003",
+    "SB_ITEMt^\u00a3": "C058A190"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A190",
+    "SB_ITEMt^\u00a3": "G092O002"
+  },
+  {
+    "IT_CODEt^\u00a3": "G092O002",
+    "SB_ITEMt^\u00a3": "C058A190"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A202",
+    "SB_ITEMt^\u00a3": "A001C003"
+  },
+  {
+    "IT_CODEt^\u00a3": "A001C003",
+    "SB_ITEMt^\u00a3": "C058A202"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A005",
+    "SB_ITEMt^\u00a3": "E078L017"
+  },
+  {
+    "IT_CODEt^\u00a3": "E078L017",
+    "SB_ITEMt^\u00a3": "S238A005"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A005",
+    "SB_ITEMt^\u00a3": "M286H000"
+  },
+  {
+    "IT_CODEt^\u00a3": "M286H000",
+    "SB_ITEMt^\u00a3": "S238A005"
+  },
+  {
+    "IT_CODEt^\u00a3": "R198A002",
+    "SB_ITEMt^\u00a3": "S216N024"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216N024",
+    "SB_ITEMt^\u00a3": "R198A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "A015A001",
+    "SB_ITEMt^\u00a3": "T239U048"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239U048",
+    "SB_ITEMt^\u00a3": "A015A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "A015A001",
+    "SB_ITEMt^\u00a3": "T239U039"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239U039",
+    "SB_ITEMt^\u00a3": "A015A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T241A001",
+    "SB_ITEMt^\u00a3": "C061A031"
+  },
+  {
+    "IT_CODEt^\u00a3": "C061A031",
+    "SB_ITEMt^\u00a3": "T241A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "T241A001",
+    "SB_ITEMt^\u00a3": "W271A069"
+  },
+  {
+    "IT_CODEt^\u00a3": "W271A069",
+    "SB_ITEMt^\u00a3": "T241A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A001",
+    "SB_ITEMt^\u00a3": "C058N204"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058N204",
+    "SB_ITEMt^\u00a3": "S222A001"
+  },
+  {
+    "IT_CODEt^\u00a3": "S222A002",
+    "SB_ITEMt^\u00a3": "C058N205"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058N205",
+    "SB_ITEMt^\u00a3": "S222A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "C278B004",
+    "SB_ITEMt^\u00a3": "B031P068"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031P068",
+    "SB_ITEMt^\u00a3": "C278B004"
+  },
+  {
+    "IT_CODEt^\u00a3": "C278B004",
+    "SB_ITEMt^\u00a3": "H101C004"
+  },
+  {
+    "IT_CODEt^\u00a3": "H101C004",
+    "SB_ITEMt^\u00a3": "C278B004"
+  },
+  {
+    "IT_CODEt^\u00a3": "K131E022",
+    "SB_ITEMt^\u00a3": "D063L072"
+  },
+  {
+    "IT_CODEt^\u00a3": "D063L072",
+    "SB_ITEMt^\u00a3": "K131E022"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368B005",
+    "SB_ITEMt^\u00a3": "F086G006"
+  },
+  {
+    "IT_CODEt^\u00a3": "F086G006",
+    "SB_ITEMt^\u00a3": "G368B005"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368B005",
+    "SB_ITEMt^\u00a3": "U251G026"
+  },
+  {
+    "IT_CODEt^\u00a3": "U251G026",
+    "SB_ITEMt^\u00a3": "G368B005"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368B005",
+    "SB_ITEMt^\u00a3": "M163D038"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163D038",
+    "SB_ITEMt^\u00a3": "G368B005"
+  },
+  {
+    "IT_CODEt^\u00a3": "R198A116",
+    "SB_ITEMt^\u00a3": "H104A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "H104A056",
+    "SB_ITEMt^\u00a3": "R198A116"
+  },
+  {
+    "IT_CODEt^\u00a3": "R198A115",
+    "SB_ITEMt^\u00a3": "H104A055"
+  },
+  {
+    "IT_CODEt^\u00a3": "H104A055",
+    "SB_ITEMt^\u00a3": "R198A115"
+  },
+  {
+    "IT_CODEt^\u00a3": "A017A078",
+    "SB_ITEMt^\u00a3": "A012M034"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012M034",
+    "SB_ITEMt^\u00a3": "A017A078"
+  },
+  {
+    "IT_CODEt^\u00a3": "A017A079",
+    "SB_ITEMt^\u00a3": "A012M048"
+  },
+  {
+    "IT_CODEt^\u00a3": "A012M048",
+    "SB_ITEMt^\u00a3": "A017A079"
+  },
+  {
+    "IT_CODEt^\u00a3": "R206B009",
+    "SB_ITEMt^\u00a3": "A000B007"
+  },
+  {
+    "IT_CODEt^\u00a3": "A000B007",
+    "SB_ITEMt^\u00a3": "R206B009"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190M035",
+    "SB_ITEMt^\u00a3": "S236P069"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236P069",
+    "SB_ITEMt^\u00a3": "P190M035"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190M035",
+    "SB_ITEMt^\u00a3": "S236P070"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236P070",
+    "SB_ITEMt^\u00a3": "P190M035"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190M035",
+    "SB_ITEMt^\u00a3": "P190P050"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190P050",
+    "SB_ITEMt^\u00a3": "P190M035"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O117",
+    "SB_ITEMt^\u00a3": "G094T073"
+  },
+  {
+    "IT_CODEt^\u00a3": "G094T073",
+    "SB_ITEMt^\u00a3": "C048O117"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O117",
+    "SB_ITEMt^\u00a3": "T246T193"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T193",
+    "SB_ITEMt^\u00a3": "C048O117"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O117",
+    "SB_ITEMt^\u00a3": "I116T112"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116T112",
+    "SB_ITEMt^\u00a3": "C048O117"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O117",
+    "SB_ITEMt^\u00a3": "U259T038"
+  },
+  {
+    "IT_CODEt^\u00a3": "U259T038",
+    "SB_ITEMt^\u00a3": "C048O117"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O118",
+    "SB_ITEMt^\u00a3": "G094T074"
+  },
+  {
+    "IT_CODEt^\u00a3": "G094T074",
+    "SB_ITEMt^\u00a3": "C048O118"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O118",
+    "SB_ITEMt^\u00a3": "T246T192"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246T192",
+    "SB_ITEMt^\u00a3": "C048O118"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O118",
+    "SB_ITEMt^\u00a3": "I116T113"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116T113",
+    "SB_ITEMt^\u00a3": "C048O118"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048O118",
+    "SB_ITEMt^\u00a3": "U259T037"
+  },
+  {
+    "IT_CODEt^\u00a3": "U259T037",
+    "SB_ITEMt^\u00a3": "C048O118"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "C048A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048A003",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "T246A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A008",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "A007A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "A007A003",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "P190A056"
+  },
+  {
+    "IT_CODEt^\u00a3": "P190A056",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "M163A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A002",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "L142A006"
+  },
+  {
+    "IT_CODEt^\u00a3": "U251U088",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "C058A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A008",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "G368A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368A008",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "S236A006"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A006",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A053",
+    "SB_ITEMt^\u00a3": "M144A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A000",
+    "SB_ITEMt^\u00a3": "S238A053"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "T246A190"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246A190",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "A007A004"
+  },
+  {
+    "IT_CODEt^\u00a3": "A007A004",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "M163A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163A003",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "C058A009"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A009",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "G368A006"
+  },
+  {
+    "IT_CODEt^\u00a3": "G368A006",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "S236A117"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A117",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "S208A062"
+  },
+  {
+    "IT_CODEt^\u00a3": "S208A062",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S238A002",
+    "SB_ITEMt^\u00a3": "M144A038"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A038",
+    "SB_ITEMt^\u00a3": "S238A002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "S224L014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S224L014",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "S216L067"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216L067",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "S233L037"
+  },
+  {
+    "IT_CODEt^\u00a3": "S233L037",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "I116L117"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116L117",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "C048L178"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L178",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "M158L057"
+  },
+  {
+    "IT_CODEt^\u00a3": "M158L057",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "L141L157"
+  },
+  {
+    "IT_CODEt^\u00a3": "L141L157",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A013",
+    "SB_ITEMt^\u00a3": "T244R037"
+  },
+  {
+    "IT_CODEt^\u00a3": "T244R037",
+    "SB_ITEMt^\u00a3": "S236A013"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "S224L015"
+  },
+  {
+    "IT_CODEt^\u00a3": "S224L015",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "S233L038"
+  },
+  {
+    "IT_CODEt^\u00a3": "S233L038",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "I116L118"
+  },
+  {
+    "IT_CODEt^\u00a3": "I116L118",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "C048L175"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L175",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "C048L182"
+  },
+  {
+    "IT_CODEt^\u00a3": "C048L182",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "M158L055"
+  },
+  {
+    "IT_CODEt^\u00a3": "M158L055",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "T246L092"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246L092",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "M155L016"
+  },
+  {
+    "IT_CODEt^\u00a3": "M155L016",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "L141L138"
+  },
+  {
+    "IT_CODEt^\u00a3": "L141L138",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "T244R038"
+  },
+  {
+    "IT_CODEt^\u00a3": "T244R038",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "S236A014",
+    "SB_ITEMt^\u00a3": "S216L017"
+  },
+  {
+    "IT_CODEt^\u00a3": "S216L017",
+    "SB_ITEMt^\u00a3": "S236A014"
+  },
+  {
+    "IT_CODEt^\u00a3": "I115G035",
+    "SB_ITEMt^\u00a3": "I113C031"
+  },
+  {
+    "IT_CODEt^\u00a3": "I113C031",
+    "SB_ITEMt^\u00a3": "I115G035"
+  },
+  {
+    "IT_CODEt^\u00a3": "B047Z055",
+    "SB_ITEMt^\u00a3": "L140L011"
+  },
+  {
+    "IT_CODEt^\u00a3": "L140L011",
+    "SB_ITEMt^\u00a3": "B047Z055"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345R005",
+    "SB_ITEMt^\u00a3": "F087I050"
+  },
+  {
+    "IT_CODEt^\u00a3": "F087I050",
+    "SB_ITEMt^\u00a3": "P345R005"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345R005",
+    "SB_ITEMt^\u00a3": "P345I003"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345I003",
+    "SB_ITEMt^\u00a3": "P345R005"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345R002",
+    "SB_ITEMt^\u00a3": "F087I050"
+  },
+  {
+    "IT_CODEt^\u00a3": "F087I050",
+    "SB_ITEMt^\u00a3": "P345R002"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345R002",
+    "SB_ITEMt^\u00a3": "P345I003"
+  },
+  {
+    "IT_CODEt^\u00a3": "P345I003",
+    "SB_ITEMt^\u00a3": "P345R002"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C159",
+    "SB_ITEMt^\u00a3": "T239O055"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O055",
+    "SB_ITEMt^\u00a3": "C058C159"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C159",
+    "SB_ITEMt^\u00a3": "T239O022"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O022",
+    "SB_ITEMt^\u00a3": "C058C159"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C159",
+    "SB_ITEMt^\u00a3": "T239O053"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O053",
+    "SB_ITEMt^\u00a3": "C058C159"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C162",
+    "SB_ITEMt^\u00a3": "D063K061"
+  },
+  {
+    "IT_CODEt^\u00a3": "D063K061",
+    "SB_ITEMt^\u00a3": "C058C162"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C162",
+    "SB_ITEMt^\u00a3": "T239O042"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O042",
+    "SB_ITEMt^\u00a3": "C058C162"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C161",
+    "SB_ITEMt^\u00a3": "D063K060"
+  },
+  {
+    "IT_CODEt^\u00a3": "D063K060",
+    "SB_ITEMt^\u00a3": "C058C161"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C161",
+    "SB_ITEMt^\u00a3": "T239O047"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O047",
+    "SB_ITEMt^\u00a3": "C058C161"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C171",
+    "SB_ITEMt^\u00a3": "F087D047"
+  },
+  {
+    "IT_CODEt^\u00a3": "F087D047",
+    "SB_ITEMt^\u00a3": "C058C171"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058C171",
+    "SB_ITEMt^\u00a3": "T246P184"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246P184",
+    "SB_ITEMt^\u00a3": "C058C171"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031N049",
+    "SB_ITEMt^\u00a3": "D063Z055"
+  },
+  {
+    "IT_CODEt^\u00a3": "D063Z055",
+    "SB_ITEMt^\u00a3": "B031N049"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031N049",
+    "SB_ITEMt^\u00a3": "B033B037"
+  },
+  {
+    "IT_CODEt^\u00a3": "B033B037",
+    "SB_ITEMt^\u00a3": "B031N049"
+  },
+  {
+    "IT_CODEt^\u00a3": "B031N049",
+    "SB_ITEMt^\u00a3": "T239O052"
+  },
+  {
+    "IT_CODEt^\u00a3": "T239O052",
+    "SB_ITEMt^\u00a3": "B031N049"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163S192",
+    "SB_ITEMt^\u00a3": "S232S037"
+  },
+  {
+    "IT_CODEt^\u00a3": "S232S037",
+    "SB_ITEMt^\u00a3": "M163S192"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163S192",
+    "SB_ITEMt^\u00a3": "T244S089"
+  },
+  {
+    "IT_CODEt^\u00a3": "T244S089",
+    "SB_ITEMt^\u00a3": "M163S192"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163S192",
+    "SB_ITEMt^\u00a3": "C058S192"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058S192",
+    "SB_ITEMt^\u00a3": "M163S192"
+  },
+  {
+    "IT_CODEt^\u00a3": "T244S089",
+    "SB_ITEMt^\u00a3": "G0893371"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058O181",
+    "SB_ITEMt^\u00a3": "S233D047"
+  },
+  {
+    "IT_CODEt^\u00a3": "S233D047",
+    "SB_ITEMt^\u00a3": "C058O181"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058T153",
+    "SB_ITEMt^\u00a3": "M163C025"
+  },
+  {
+    "IT_CODEt^\u00a3": "M163C025",
+    "SB_ITEMt^\u00a3": "C058T153"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058T153",
+    "SB_ITEMt^\u00a3": "S217F005"
+  },
+  {
+    "IT_CODEt^\u00a3": "S217F005",
+    "SB_ITEMt^\u00a3": "C058T153"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058T153",
+    "SB_ITEMt^\u00a3": "T244T086"
+  },
+  {
+    "IT_CODEt^\u00a3": "T244T086",
+    "SB_ITEMt^\u00a3": "C058T153"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052T028",
+    "SB_ITEMt^\u00a3": "P194K032"
+  },
+  {
+    "IT_CODEt^\u00a3": "P194K032",
+    "SB_ITEMt^\u00a3": "C052T028"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052T028",
+    "SB_ITEMt^\u00a3": "B041F009"
+  },
+  {
+    "IT_CODEt^\u00a3": "B041F009",
+    "SB_ITEMt^\u00a3": "C052T028"
+  },
+  {
+    "IT_CODEt^\u00a3": "C052T028",
+    "SB_ITEMt^\u00a3": "T246R119"
+  },
+  {
+    "IT_CODEt^\u00a3": "T246R119",
+    "SB_ITEMt^\u00a3": "C052T028"
+  },
+  {
+    "IT_CODEt^\u00a3": "S220E071",
+    "SB_ITEMt^\u00a3": "D068D012"
+  },
+  {
+    "IT_CODEt^\u00a3": "D068D012",
+    "SB_ITEMt^\u00a3": "S220E071"
+  },
+  {
+    "IT_CODEt^\u00a3": "S220E071",
+    "SB_ITEMt^\u00a3": "E078S026"
+  },
+  {
+    "IT_CODEt^\u00a3": "E078S026",
+    "SB_ITEMt^\u00a3": "S220E071"
+  },
+  {
+    "IT_CODEt^\u00a3": "S220E071",
+    "SB_ITEMt^\u00a3": "F081E107"
+  },
+  {
+    "IT_CODEt^\u00a3": "F081E107",
+    "SB_ITEMt^\u00a3": "S220E071"
+  },
+  {
+    "IT_CODEt^\u00a3": "S220E071",
+    "SB_ITEMt^\u00a3": "K130R031"
+  },
+  {
+    "IT_CODEt^\u00a3": "K130R031",
+    "SB_ITEMt^\u00a3": "S220E071"
+  },
+  {
+    "IT_CODEt^\u00a3": "P185A022",
+    "SB_ITEMt^\u00a3": "A007A068"
+  },
+  {
+    "IT_CODEt^\u00a3": "A007A068",
+    "SB_ITEMt^\u00a3": "P185A022"
+  },
+  {
+    "IT_CODEt^\u00a3": "P185A022",
+    "SB_ITEMt^\u00a3": "T280A003"
+  },
+  {
+    "IT_CODEt^\u00a3": "T280A003",
+    "SB_ITEMt^\u00a3": "P185A022"
+  },
+  {
+    "IT_CODEt^\u00a3": "G0893382",
+    "SB_ITEMt^\u00a3": "G093A089"
+  },
+  {
+    "IT_CODEt^\u00a3": "N3653015",
+    "SB_ITEMt^\u00a3": "G093A089"
+  },
+  {
+    "IT_CODEt^\u00a3": "E465V002",
+    "SB_ITEMt^\u00a3": "T463C000"
+  },
+  {
+    "IT_CODEt^\u00a3": "T463C000",
+    "SB_ITEMt^\u00a3": "E465V002"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212O080",
+    "SB_ITEMt^\u00a3": "N173R099"
+  },
+  {
+    "IT_CODEt^\u00a3": "N173R099",
+    "SB_ITEMt^\u00a3": "S212O080"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212O080",
+    "SB_ITEMt^\u00a3": "U260F028"
+  },
+  {
+    "IT_CODEt^\u00a3": "U260F028",
+    "SB_ITEMt^\u00a3": "S212O080"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212O080",
+    "SB_ITEMt^\u00a3": "T463C000"
+  },
+  {
+    "IT_CODEt^\u00a3": "T463C000",
+    "SB_ITEMt^\u00a3": "S212O080"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212O080",
+    "SB_ITEMt^\u00a3": "T281C029"
+  },
+  {
+    "IT_CODEt^\u00a3": "T281C029",
+    "SB_ITEMt^\u00a3": "S212O080"
+  },
+  {
+    "IT_CODEt^\u00a3": "S212O080",
+    "SB_ITEMt^\u00a3": "E465V002"
+  },
+  {
+    "IT_CODEt^\u00a3": "E465V002",
+    "SB_ITEMt^\u00a3": "S212O080"
+  },
+  {
+    "IT_CODEt^\u00a3": "N173R099",
+    "SB_ITEMt^\u00a3": "U260F028"
+  },
+  {
+    "IT_CODEt^\u00a3": "U260F028",
+    "SB_ITEMt^\u00a3": "N173R099"
+  },
+  {
+    "IT_CODEt^\u00a3": "N173R099",
+    "SB_ITEMt^\u00a3": "T463C000"
+  },
+  {
+    "IT_CODEt^\u00a3": "T463C000",
+    "SB_ITEMt^\u00a3": "N173R099"
+  },
+  {
+    "IT_CODEt^\u00a3": "N173R099",
+    "SB_ITEMt^\u00a3": "T281C029"
+  },
+  {
+    "IT_CODEt^\u00a3": "T281C029",
+    "SB_ITEMt^\u00a3": "N173R099"
+  },
+  {
+    "IT_CODEt^\u00a3": "B021A048",
+    "SB_ITEMt^\u00a3": "L137H045"
+  },
+  {
+    "IT_CODEt^\u00a3": "L137H045",
+    "SB_ITEMt^\u00a3": "B021A048"
+  },
+  {
+    "IT_CODEt^\u00a3": "J121A000",
+    "SB_ITEMt^\u00a3": "A014A008"
+  },
+  {
+    "IT_CODEt^\u00a3": "A014A008",
+    "SB_ITEMt^\u00a3": "J121A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "J121A000",
+    "SB_ITEMt^\u00a3": "L137D008"
+  },
+  {
+    "IT_CODEt^\u00a3": "L137D008",
+    "SB_ITEMt^\u00a3": "J121A000"
+  },
+  {
+    "IT_CODEt^\u00a3": "M144A044",
+    "SB_ITEMt^\u00a3": "O401A011"
+  },
+  {
+    "IT_CODEt^\u00a3": "O401A011",
+    "SB_ITEMt^\u00a3": "M144A044"
+  },
+  {
+    "IT_CODEt^\u00a3": "C058A190",
+    "SB_ITEMt^\u00a3": "O401A011"
+  },
+  {
+    "IT_CODEt^\u00a3": "O401A011",
+    "SB_ITEMt^\u00a3": "C058A190"
+  }
+]
