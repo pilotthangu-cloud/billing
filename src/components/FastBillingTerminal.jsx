@@ -30,7 +30,8 @@ export default function FastBillingTerminal({
   onCompleteBill,
   onHoldBill,
   onRestoreHeldBill,
-  onOpenNewMedModal
+  onOpenNewMedModal,
+  onReprintLastBill
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -739,7 +740,22 @@ export default function FastBillingTerminal({
           )}
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          {/* F7: Recall / Reprint Last Completed Bill */}
+          <button
+            type="button"
+            onClick={onReprintLastBill}
+            className={`px-3 py-1.5 rounded font-mono font-bold text-xs uppercase border transition flex items-center space-x-1.5 ${
+              theme === 'dark'
+                ? 'border-sky-700 bg-sky-950/60 text-sky-300 hover:bg-sky-900'
+                : 'border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100 shadow-xs'
+            }`}
+            title="Recall and Reprint Last Completed Bill if customer or printer tore the receipt (F7)"
+          >
+            <Printer className="w-3.5 h-3.5 text-sky-600" />
+            <span>Reprint Bill (F7)</span>
+          </button>
+
           <button
             onClick={onHoldBill}
             disabled={items.length === 0}
@@ -799,6 +815,11 @@ export default function FastBillingTerminal({
           <span className="flex items-center space-x-1">
             <kbd className="bg-white dark:bg-zinc-800 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">Del</kbd>
             <span>Remove Row</span>
+          </span>
+          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className="flex items-center space-x-1">
+            <kbd className="bg-white dark:bg-zinc-800 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F7</kbd>
+            <span>Reprint (Torn Bill)</span>
           </span>
           <span className="text-slate-400 dark:text-zinc-600">|</span>
           <span className="flex items-center space-x-1">

@@ -14,6 +14,7 @@ import DotMatrixReceiptModal from './components/DotMatrixReceiptModal';
 import NewMedicineModal from './components/NewMedicineModal';
 import PasswordAuthModal from './components/PasswordAuthModal';
 import AdminDashboardApp from './components/AdminDashboardApp';
+import BatchEnquiryPage from './components/BatchEnquiryPage';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -67,9 +68,27 @@ export default function App() {
   const [items, setItems] = useState([]);
   const [heldBills, setHeldBills] = useState([]);
 
-  // Dot Matrix Print Modal
+  // Dot Matrix Print Modal & F7 Recall/Reprint System
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [completedBillData, setCompletedBillData] = useState(null);
+  const [isReprintMode, setIsReprintMode] = useState(false);
+  const [recentBills, setRecentBills] = useState([
+    {
+      billNo: '025315',
+      date: '16/10/2026',
+      time: '20:15:22',
+      patientName: 'K. RAGHAVAN',
+      doctorName: 'DR. SUKUMARAN MBBS',
+      paymentMode: 'cash',
+      items: [
+        { code: 'M10001', name: 'AUGMENTIN 625MG TAB', batch: 'AUG9901', exp: '04/28', qty: 10, mrp: 22.34, totalValue: 223.40, gstPercent: 12 },
+        { code: 'M10002', name: 'PAN 40MG TAB', batch: 'PAN2041', exp: '11/27', qty: 15, mrp: 15.50, totalValue: 232.50, gstPercent: 12 }
+      ],
+      grossTotal: 455.90,
+      netPayable: 456,
+      store: 'Beta Pharmacy (Thalassery)'
+    }
+  ]);
 
   // Sync theme with HTML class for tailwind darkMode: 'class'
   useEffect(() => {
@@ -181,12 +200,28 @@ export default function App() {
     alert('Security session locked. Returning to Sale Billing.');
   };
 
+  // F7 Recall & Reprint Most Recent Completed Bill (e.g. paper tear / jam reprint)
+  const handleReprintLastBill = () => {
+    if (recentBills.length === 0) {
+      alert('No recently completed bills available in recall memory to reprint.');
+      return;
+    }
+    setCompletedBillData(recentBills[0]);
+    setIsReprintMode(true);
+    setIsReceiptOpen(true);
+  };
+
   // Global Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Escape returns to billing from any page
       if (e.key === 'Escape' && activePage !== 'billing') {
         setActivePage('billing');
+      }
+      // F7 triggers reprint of last completed bill (torn bill / reprint recall)
+      if (e.key === 'F7') {
+        e.preventDefault();
+        handleReprintLastBill();
       }
       // F12 holds bill if on billing page
       if (e.key === 'F12' && activePage === 'billing') {
@@ -200,7 +235,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activePage, items, heldBills]);
+  }, [activePage, items, heldBills, recentBills]);
 
   // Add new medicine to master catalog
   const handleAddNewMedicine = (newMed) => {
@@ -290,6 +325,8 @@ export default function App() {
     };
 
     setCompletedBillData(billPayload);
+    setRecentBills(prev => [billPayload, ...prev.slice(0, 19)]);
+    setIsReprintMode(false);
     // Background async sync to Supabase (does not block counter or dot-matrix printing!)
     pushSalesBillToSupabase(billPayload);
 
@@ -347,6 +384,7 @@ export default function App() {
           onHoldBill={handleHoldBill}
           onRestoreHeldBill={handleRestoreHeldBill}
           onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
+          onReprintLastBill={handleReprintLastBill}
         />
       )}
 
@@ -426,6 +464,14 @@ export default function App() {
         />
       )}
 
+      {activePage === 'batch-enquiry' && (
+        <BatchEnquiryPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
       {activePage === 'admin' && (
         <AdminDashboardApp
           theme={theme}
@@ -458,9 +504,15 @@ export default function App() {
       {/* Dot Matrix Tractor-Feed Receipt Preview Modal */}
       <DotMatrixReceiptModal
         isOpen={isReceiptOpen}
-        onClose={() => setIsReceiptOpen(false)}
+        onClose={() => {
+          setIsReceiptOpen(false);
+          setIsReprintMode(false);
+        }}
         billData={completedBillData}
         onNewBill={handleNewBill}
+        isReprint={isReprintMode}
+        recentBills={recentBills}
+        onSelectBill={(selected) => setCompletedBillData(selected)}
       />
     </div>
   );

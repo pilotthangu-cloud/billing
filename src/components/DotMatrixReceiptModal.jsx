@@ -1,32 +1,38 @@
 import React, { useRef, useEffect } from 'react';
-import { Printer, X, FileText, ArrowLeft, Check } from 'lucide-react';
+import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw } from 'lucide-react';
 
 export default function DotMatrixReceiptModal({ 
   isOpen, 
   onClose, 
   billData,
-  onNewBill
+  onNewBill,
+  isReprint = false,
+  recentBills = [],
+  onSelectBill
 }) {
   const receiptRef = useRef(null);
 
-  // Unified Print & Complete Action
-  const handlePrintAndComplete = () => {
+  // Unified Print Action
+  const handlePrint = () => {
     // 1. Trigger dot-matrix printer
     window.print();
-    // 2. Complete and advance to next bill
-    onNewBill();
+
+    // 2. If this was a brand new checkout, advance bill counter
+    if (!isReprint && onNewBill) {
+      onNewBill();
+    }
     // 3. Close preview
     onClose();
   };
 
-  // Keyboard navigation inside modal (Enter = Print & Next Bill, Esc = Back to Editing)
+  // Keyboard navigation inside modal (Enter = Print, Esc = Back)
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handlePrintAndComplete();
+        handlePrint();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
@@ -35,7 +41,7 @@ export default function DotMatrixReceiptModal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, billData]);
+  }, [isOpen, billData, isReprint]);
 
   if (!isOpen || !billData) return null;
 
@@ -46,9 +52,9 @@ export default function DotMatrixReceiptModal({
     patientName,
     doctorName,
     paymentMode,
-    items,
-    grossTotal,
-    netPayable
+    items = [],
+    grossTotal = 0,
+    netPayable = 0
   } = billData;
 
   const getModeLabel = (mode) => {
@@ -62,32 +68,62 @@ export default function DotMatrixReceiptModal({
       <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col my-auto">
         {/* Modal Top Bar */}
         <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between no-print">
-          <div className="flex items-center space-x-2">
-            <FileText className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-bold text-slate-100">
-              Dot-Matrix Continuous Tractor-Feed Print Preview
+          <div className="flex items-center space-x-2.5">
+            <FileText className={`w-4 h-4 ${isReprint ? 'text-amber-400' : 'text-emerald-400'}`} />
+            <h3 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
+              <span>{isReprint ? 'Reprint / Recall Duplicate Invoice' : 'Dot-Matrix Tractor-Feed Print Preview'}</span>
+              {isReprint && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-black font-black">
+                  F7 RECALL
+                </span>
+              )}
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
               ESC/P 80-Col Ready
             </span>
           </div>
 
           <div className="flex items-center space-x-2.5">
-            {/* Single Unified Primary Action: Print & Next Bill */}
+            {/* Quick Bill Selector if multiple recent bills exist */}
+            {recentBills && recentBills.length > 1 && onSelectBill && (
+              <div className="flex items-center space-x-1 font-mono text-xs">
+                <span className="text-[10px] text-slate-400 uppercase font-bold">Recall:</span>
+                <select
+                  value={billNo}
+                  onChange={(e) => {
+                    const found = recentBills.find(b => b.billNo === e.target.value);
+                    if (found) onSelectBill(found);
+                  }}
+                  className="bg-slate-800 text-amber-300 border border-slate-700 py-1 px-2 rounded text-xs font-bold"
+                >
+                  {recentBills.map((b, idx) => (
+                    <option key={idx} value={b.billNo}>
+                      #{b.billNo} - {b.patientName || 'PATIENT'} (₹{b.netPayable})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Print Action */}
             <button
-              onClick={handlePrintAndComplete}
-              className="py-1.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center space-x-1.5 transition shadow cursor-pointer"
-              title="Print to Dot-Matrix and open next blank bill (Enter)"
+              onClick={handlePrint}
+              className={`py-1.5 px-4 rounded-lg text-xs font-black flex items-center space-x-1.5 transition shadow cursor-pointer ${
+                isReprint
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              }`}
+              title={isReprint ? "Reprint duplicate copy (Enter)" : "Print to Dot-Matrix and open next blank bill (Enter)"}
             >
               <Printer className="w-4 h-4" />
-              <span>Print & Next Bill (Enter)</span>
+              <span>{isReprint ? 'Print Duplicate Copy (Enter)' : 'Print & Next Bill (Enter)'}</span>
             </button>
 
-            {/* Cancel/Close Button: Preserves current bill items! */}
+            {/* Cancel/Close Button */}
             <button
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-              title="Back to Editing (Esc)"
+              title="Close (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
@@ -121,9 +157,17 @@ export default function DotMatrixReceiptModal({
               <div className="text-center font-black text-sm tracking-wide mb-0.5">
                 BETA PHARMACY
               </div>
-              <div className="text-center font-bold text-xs uppercase text-slate-700 mb-1">
+              <div className="text-center font-bold text-xs uppercase text-slate-700 mb-0.5">
                 Retail {getModeLabel(paymentMode)}
               </div>
+
+              {/* Duplicate Watermark Banner if Reprinting */}
+              {isReprint && (
+                <div className="text-center font-black text-[10px] uppercase text-amber-900 bg-amber-100 border border-dashed border-amber-400 py-0.5 my-1 tracking-wider">
+                  *** DUPLICATE TAX INVOICE (RE-PRINT / TORN BILL RECALL) ***
+                </div>
+              )}
+
               <div className="flex justify-between text-[10px] border-b border-dashed border-slate-400 pb-1">
                 <span>Sadanada Pai Road, Chirakkara, Thalassery</span>
                 <span>Tel - 0490-2325049</span>
@@ -163,24 +207,33 @@ export default function DotMatrixReceiptModal({
 
               {/* Items List */}
               <div className="min-h-[140px] space-y-1 py-1">
-                {items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-12 text-[10px] items-center">
-                    <span className="col-span-1">{idx + 1}</span>
-                    <span className="col-span-4 font-semibold truncate uppercase">
-                      {it.medicine.name}
-                    </span>
-                    <span className="col-span-1 truncate font-bold text-amber-700">R-{it.medicine.rack}</span>
-                    <span className="col-span-2 truncate">{it.batch.batch_no}</span>
-                    <span className="col-span-1">{it.batch.exp_date}</span>
-                    <span className="col-span-1 text-right font-mono">
-                      {(it.batch.mrp / (it.batch.per || 10)).toFixed(1)}
-                    </span>
-                    <span className="col-span-1 text-center font-bold">{it.qty}</span>
-                    <span className="col-span-1 text-right font-bold font-mono">
-                      {it.totalValue.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                {items.map((it, idx) => {
+                  const medName = it.medicine ? it.medicine.name : (it.name || 'MEDICINE');
+                  const medRack = it.medicine ? it.medicine.rack : (it.rack || 'A1');
+                  const batchNo = it.batch ? it.batch.batch_no : (it.batchNo || it.batch || 'BN001');
+                  const expDate = it.batch ? it.batch.exp_date : (it.expDate || it.exp || '12/28');
+                  const unitMrp = it.batch ? (it.batch.mrp / (it.batch.per || 10)) : ((it.mrp || 30) / (it.per || 10));
+                  const lineTotal = typeof it.totalValue === 'number' ? it.totalValue : ((it.rate || it.mrp || 10) * it.qty);
+
+                  return (
+                    <div key={idx} className="grid grid-cols-12 text-[10px] items-center">
+                      <span className="col-span-1">{idx + 1}</span>
+                      <span className="col-span-4 font-semibold truncate uppercase">
+                        {medName}
+                      </span>
+                      <span className="col-span-1 truncate font-bold text-amber-700">R-{medRack}</span>
+                      <span className="col-span-2 truncate">{batchNo}</span>
+                      <span className="col-span-1">{expDate}</span>
+                      <span className="col-span-1 text-right font-mono">
+                        {unitMrp.toFixed(1)}
+                      </span>
+                      <span className="col-span-1 text-center font-bold">{it.qty}</span>
+                      <span className="col-span-1 text-right font-bold font-mono">
+                        {lineTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Monospace Separator */}
@@ -214,7 +267,9 @@ export default function DotMatrixReceiptModal({
         {/* Modal Bottom Action Bar */}
         <div className="bg-slate-950 px-4 py-2.5 border-t border-slate-800 flex items-center justify-between text-xs no-print">
           <span className="text-slate-400 font-mono">
-            Press <strong>Enter</strong> to Print & Complete, or <strong>Esc</strong> to cancel.
+            {isReprint 
+              ? 'Press Enter to Print Duplicate copy, or Esc to close.' 
+              : 'Press Enter to Print & Complete, or Esc to cancel.'}
           </span>
           <div className="flex items-center space-x-2">
             <button
@@ -222,14 +277,18 @@ export default function DotMatrixReceiptModal({
               className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Editing (Esc)</span>
+              <span>Back (Esc)</span>
             </button>
             <button
-              onClick={handlePrintAndComplete}
-              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black transition shadow flex items-center space-x-1.5"
+              onClick={handlePrint}
+              className={`px-4 py-1.5 rounded-lg text-xs font-black transition shadow flex items-center space-x-1.5 ${
+                isReprint
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+              }`}
             >
               <Printer className="w-4 h-4" />
-              <span>Print & Next Bill (Enter)</span>
+              <span>{isReprint ? 'Print Duplicate (Enter)' : 'Print & Next Bill (Enter)'}</span>
             </button>
           </div>
         </div>
