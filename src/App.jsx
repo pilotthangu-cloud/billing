@@ -15,6 +15,9 @@ import NewMedicineModal from './components/NewMedicineModal';
 import PasswordAuthModal from './components/PasswordAuthModal';
 import AdminDashboardApp from './components/AdminDashboardApp';
 import BatchEnquiryPage from './components/BatchEnquiryPage';
+import TaxMasterPage from './components/TaxMasterPage';
+import CompanyMasterPage from './components/CompanyMasterPage';
+import DoctorMasterPage from './components/DoctorMasterPage';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -400,6 +403,29 @@ export default function App() {
 
       {activePage === 'supplier-master' && (
         <SupplierMasterPage
+          theme={theme}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'company-master' && (
+        <CompanyMasterPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'tax-master' && (
+        <TaxMasterPage
+          theme={theme}
+          medicines={medicines}
+          onBackToBilling={() => setActivePage('billing')}
+        />
+      )}
+
+      {activePage === 'doctor-master' && (
+        <DoctorMasterPage
           theme={theme}
           onBackToBilling={() => setActivePage('billing')}
         />

@@ -1,0 +1,8309 @@
+[
+  {
+    "NAME": "A F D",
+    "RACK": "42",
+    "CODE": "A000",
+    "PRODUCTS": "64",
+    "FIRST": "S231",
+    "SECOND": "T011",
+    "THIRD": "T012"
+  },
+  {
+    "NAME": "ABBOT",
+    "RACK": "49",
+    "CODE": "A001",
+    "PRODUCTS": "140",
+    "FIRST": "F195",
+    "SECOND": "G307",
+    "THIRD": "S076"
+  },
+  {
+    "NAME": "ADONIS",
+    "RACK": "",
+    "CODE": "A002",
+    "PRODUCTS": "25",
+    "FIRST": "D190",
+    "SECOND": "L314",
+    "THIRD": "F195"
+  },
+  {
+    "NAME": "AJANTA PHARMA",
+    "RACK": "58",
+    "CODE": "A003",
+    "PRODUCTS": "195",
+    "FIRST": "G141",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALARSIN",
+    "RACK": "",
+    "CODE": "A004",
+    "PRODUCTS": "22",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALBERT-DAVID",
+    "RACK": "",
+    "CODE": "A005",
+    "PRODUCTS": "84",
+    "FIRST": "F121",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALEMBIC",
+    "RACK": "11",
+    "CODE": "A006",
+    "PRODUCTS": "258",
+    "FIRST": "F140",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUN",
+    "RACK": "48",
+    "CODE": "A007",
+    "PRODUCTS": "207",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALKEM",
+    "RACK": "18",
+    "CODE": "A008",
+    "PRODUCTS": "271",
+    "FIRST": "S231",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMBUJA",
+    "RACK": "",
+    "CODE": "A011",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMERICAN REMEDIES",
+    "RACK": "44",
+    "CODE": "A012",
+    "PRODUCTS": "80",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ANDRE LAB",
+    "RACK": "",
+    "CODE": "A014",
+    "PRODUCTS": "24",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARISTO",
+    "RACK": "27",
+    "CODE": "A017",
+    "PRODUCTS": "268",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARVIND",
+    "RACK": "35",
+    "CODE": "A018",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTRA IDL",
+    "RACK": "2",
+    "CODE": "A019",
+    "PRODUCTS": "136",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "B/E",
+    "RACK": "",
+    "CODE": "B021",
+    "PRODUCTS": "69",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BARODA",
+    "RACK": "56",
+    "CODE": "B023",
+    "PRODUCTS": "75",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAYERS",
+    "RACK": "28",
+    "CODE": "B024",
+    "PRODUCTS": "49",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BDH",
+    "RACK": "",
+    "CODE": "B025",
+    "PRODUCTS": "42",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BESCOAT PHARMA",
+    "RACK": "",
+    "CODE": "B027",
+    "PRODUCTS": "30",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BEVIT",
+    "RACK": "",
+    "CODE": "B028",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BHARAT SALTS &CHEMI",
+    "RACK": "",
+    "CODE": "B029",
+    "PRODUCTS": "67",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLAXO",
+    "RACK": "10",
+    "CODE": "B031",
+    "PRODUCTS": "327",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIO ETHICALS",
+    "RACK": "57",
+    "CODE": "B032",
+    "PRODUCTS": "46",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOCHEM",
+    "RACK": "58",
+    "CODE": "B033",
+    "PRODUCTS": "143",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIPHA",
+    "RACK": "",
+    "CODE": "B034",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BLUE CROSS",
+    "RACK": "17",
+    "CODE": "B035",
+    "PRODUCTS": "230",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAC",
+    "RACK": "",
+    "CODE": "B036",
+    "PRODUCTS": "35",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BOMBAY TABLETS",
+    "RACK": "",
+    "CODE": "B038",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BOOTS PHARMA",
+    "RACK": "49",
+    "CODE": "B042",
+    "PRODUCTS": "124",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BORACHEM",
+    "RACK": "",
+    "CODE": "B043",
+    "PRODUCTS": "50",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BPL",
+    "RACK": "",
+    "CODE": "B044",
+    "PRODUCTS": "21",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BRITISH BIO LOGICAL",
+    "RACK": "",
+    "CODE": "B045",
+    "PRODUCTS": "47",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CADILA",
+    "RACK": "3",
+    "CODE": "C048",
+    "PRODUCTS": "635",
+    "FIRST": "G307",
+    "SECOND": "M228",
+    "THIRD": "M206"
+  },
+  {
+    "NAME": "CAMERIN",
+    "RACK": "",
+    "CODE": "C049",
+    "PRODUCTS": "26",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CAMLIN",
+    "RACK": "",
+    "CODE": "C050",
+    "PRODUCTS": "79",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CENTAUR",
+    "RACK": "30",
+    "CODE": "C053",
+    "PRODUCTS": "66",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CFL",
+    "RACK": "55",
+    "CODE": "C054",
+    "PRODUCTS": "156",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHEMO",
+    "RACK": "",
+    "CODE": "C055",
+    "PRODUCTS": "21",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHETANA",
+    "RACK": "54",
+    "CODE": "C056",
+    "PRODUCTS": "103",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CIPLA PROTEC",
+    "RACK": "50",
+    "CODE": "C058",
+    "PRODUCTS": "839",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VERITAZ",
+    "RACK": "19",
+    "CODE": "C059",
+    "PRODUCTS": "78",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CONCEPT",
+    "RACK": "56",
+    "CODE": "C060",
+    "PRODUCTS": "97",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CORE",
+    "RACK": "",
+    "CODE": "C061",
+    "PRODUCTS": "48",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DAFFODIL",
+    "RACK": "",
+    "CODE": "D064",
+    "PRODUCTS": "19",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DALMIA DIARY",
+    "RACK": "",
+    "CODE": "D065",
+    "PRODUCTS": "20",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DEYS",
+    "RACK": "",
+    "CODE": "D066",
+    "PRODUCTS": "98",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DOLLAR CO",
+    "RACK": "",
+    "CODE": "D067",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DOLPHIN",
+    "RACK": "",
+    "CODE": "D068",
+    "PRODUCTS": "47",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DUPHAR INTERFRAN",
+    "RACK": "32",
+    "CODE": "D071",
+    "PRODUCTS": "75",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "E MERCK",
+    "RACK": "26",
+    "CODE": "E072",
+    "PRODUCTS": "165",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EAST INDIA",
+    "RACK": "",
+    "CODE": "E073",
+    "PRODUCTS": "38",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CURO CARE",
+    "RACK": "56",
+    "CODE": "E074",
+    "PRODUCTS": "53",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELDER PHARMA",
+    "RACK": "23",
+    "CODE": "E076",
+    "PRODUCTS": "140",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JOHNSON&JOHNSON",
+    "RACK": "21",
+    "CODE": "E080",
+    "PRODUCTS": "201",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FALMA",
+    "RACK": "",
+    "CODE": "F082",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FARMITALIA",
+    "RACK": "",
+    "CODE": "F083",
+    "PRODUCTS": "27",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "F D C",
+    "RACK": "37",
+    "CODE": "F081",
+    "PRODUCTS": "149",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FLEMING INDIA",
+    "RACK": "",
+    "CODE": "F084",
+    "PRODUCTS": "21",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FOURTS INDIA",
+    "RACK": "36",
+    "CODE": "F085",
+    "PRODUCTS": "166",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FRANCO INDIAN",
+    "RACK": "25",
+    "CODE": "F086",
+    "PRODUCTS": "102",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FYTOKEM",
+    "RACK": "",
+    "CODE": "F088",
+    "PRODUCTS": "26",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENO",
+    "RACK": "23",
+    "CODE": "G090",
+    "PRODUCTS": "56",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GERMAN REMEDIES",
+    "RACK": "3",
+    "CODE": "G091",
+    "PRODUCTS": "249",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLENMARK",
+    "RACK": "25",
+    "CODE": "G094",
+    "PRODUCTS": "288",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GOA ANTIBIOTICS",
+    "RACK": "",
+    "CODE": "G095",
+    "PRODUCTS": "27",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GROUP",
+    "RACK": "",
+    "CODE": "G096",
+    "PRODUCTS": "117",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "H & H",
+    "RACK": "",
+    "CODE": "H098",
+    "PRODUCTS": "103",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HAL",
+    "RACK": "28",
+    "CODE": "H099",
+    "PRODUCTS": "54",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HELLIOS",
+    "RACK": "29",
+    "CODE": "H101",
+    "PRODUCTS": "67",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HYGIENIC RESEARCH",
+    "RACK": "",
+    "CODE": "H106",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HIMALAYA",
+    "RACK": "",
+    "CODE": "H102",
+    "PRODUCTS": "99",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HOCH REMEDIES",
+    "RACK": "",
+    "CODE": "H103",
+    "PRODUCTS": "24",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AVENTIS PHARMA",
+    "RACK": "36",
+    "CODE": "H104",
+    "PRODUCTS": "190",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HOUSE HOLD",
+    "RACK": "",
+    "CODE": "H105",
+    "PRODUCTS": "49",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ICI",
+    "RACK": "",
+    "CODE": "I107",
+    "PRODUCTS": "35",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ICPA HEALTH PRODUCTS",
+    "RACK": "58",
+    "CODE": "I108",
+    "PRODUCTS": "55",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IDPL",
+    "RACK": "",
+    "CODE": "I109",
+    "PRODUCTS": "61",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDICA",
+    "RACK": "",
+    "CODE": "I110",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDO FRENCH",
+    "RACK": "",
+    "CODE": "I111",
+    "PRODUCTS": "28",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDOCO",
+    "RACK": "15",
+    "CODE": "I112",
+    "PRODUCTS": "211",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INFAR",
+    "RACK": "57",
+    "CODE": "I114",
+    "PRODUCTS": "88",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INGA",
+    "RACK": "16",
+    "CODE": "I115",
+    "PRODUCTS": "61",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INTAS",
+    "RACK": "47",
+    "CODE": "I116",
+    "PRODUCTS": "562",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J B CHEMICALS",
+    "RACK": "21",
+    "CODE": "J119",
+    "PRODUCTS": "146",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JAGSON PAL",
+    "RACK": "56",
+    "CODE": "J120",
+    "PRODUCTS": "74",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JAWA",
+    "RACK": "",
+    "CODE": "J121",
+    "PRODUCTS": "51",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JOHN WYETH",
+    "RACK": "30",
+    "CODE": "J123",
+    "PRODUCTS": "116",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JUGGAT PHARMA",
+    "RACK": "",
+    "CODE": "J126",
+    "PRODUCTS": "51",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "K C LAB",
+    "RACK": "28",
+    "CODE": "K127",
+    "PRODUCTS": "27",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KAMNA PHARMA",
+    "RACK": "",
+    "CODE": "K128",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KARNATAKA ANTI BIOTICS",
+    "RACK": "57",
+    "CODE": "K129",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KEE PHARMA",
+    "RACK": "30",
+    "CODE": "K130",
+    "PRODUCTS": "59",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KHANDELWAAL",
+    "RACK": "42",
+    "CODE": "K131",
+    "PRODUCTS": "112",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LA PHARMA",
+    "RACK": "56",
+    "CODE": "L134",
+    "PRODUCTS": "74",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LABINDUS",
+    "RACK": "",
+    "CODE": "L135",
+    "PRODUCTS": "35",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LARK",
+    "RACK": "",
+    "CODE": "L136",
+    "PRODUCTS": "51",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEDERLE",
+    "RACK": "30",
+    "CODE": "L137",
+    "PRODUCTS": "53",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LENWELLS",
+    "RACK": "",
+    "CODE": "L138",
+    "PRODUCTS": "41",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LUPIN",
+    "RACK": "45",
+    "CODE": "L141",
+    "PRODUCTS": "600",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LYKA",
+    "RACK": "33",
+    "CODE": "L142",
+    "PRODUCTS": "192",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAHENDRA",
+    "RACK": "",
+    "CODE": "M145",
+    "PRODUCTS": "23",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAKERS",
+    "RACK": "29",
+    "CODE": "M146",
+    "PRODUCTS": "46",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MALLADI",
+    "RACK": "",
+    "CODE": "M147",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARTIN HARIS",
+    "RACK": "",
+    "CODE": "M150",
+    "PRODUCTS": "27",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAYO HEALTH",
+    "RACK": "",
+    "CODE": "M153",
+    "PRODUCTS": "25",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDLEY",
+    "RACK": "",
+    "CODE": "M155",
+    "PRODUCTS": "53",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDO PHARMA",
+    "RACK": "34",
+    "CODE": "M156",
+    "PRODUCTS": "128",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDOZ",
+    "RACK": "18",
+    "CODE": "M157",
+    "PRODUCTS": "58",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEGA",
+    "RACK": "11",
+    "CODE": "M158",
+    "PRODUCTS": "84",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MERIDIAN",
+    "RACK": "",
+    "CODE": "M160",
+    "PRODUCTS": "25",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MICRO",
+    "RACK": "9",
+    "CODE": "M163",
+    "PRODUCTS": "821",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MITSHU",
+    "RACK": "",
+    "CODE": "M165",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MOUNT METTUR",
+    "RACK": "",
+    "CODE": "M167",
+    "PRODUCTS": "54",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MPI",
+    "RACK": "",
+    "CODE": "M168",
+    "PRODUCTS": "29",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NATURA",
+    "RACK": "",
+    "CODE": "N170",
+    "PRODUCTS": "12",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NICHOLAS",
+    "RACK": "39",
+    "CODE": "N173",
+    "PRODUCTS": "467",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOEL",
+    "RACK": "32",
+    "CODE": "N174",
+    "PRODUCTS": "39",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NUETEK",
+    "RACK": "",
+    "CODE": "N176",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "P & B",
+    "RACK": "",
+    "CODE": "P180",
+    "PRODUCTS": "48",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "P C I",
+    "RACK": "",
+    "CODE": "P181",
+    "PRODUCTS": "76",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "P D P L",
+    "RACK": "",
+    "CODE": "P182",
+    "PRODUCTS": "31",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PAC LABORATORIES",
+    "RACK": "",
+    "CODE": "P183",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PACIFIC PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "P184",
+    "PRODUCTS": "28",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PAVLOLA",
+    "RACK": "",
+    "CODE": "P187",
+    "PRODUCTS": "19",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PERCH LABS",
+    "RACK": "",
+    "CODE": "P188",
+    "PRODUCTS": "42",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PFIMEX",
+    "RACK": "",
+    "CODE": "P189",
+    "PRODUCTS": "34",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARM PRODUCTS",
+    "RACK": "",
+    "CODE": "P191",
+    "PRODUCTS": "47",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PFIZER",
+    "RACK": "33",
+    "CODE": "P190",
+    "PRODUCTS": "114",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PROSPO",
+    "RACK": "",
+    "CODE": "P193",
+    "PRODUCTS": "30",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PURE HEALTH",
+    "RACK": "",
+    "CODE": "P195",
+    "PRODUCTS": "38",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RADIENT",
+    "RACK": "",
+    "CODE": "R196",
+    "PRODUCTS": "22",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RANBAXY",
+    "RACK": "22",
+    "CODE": "R198",
+    "PRODUCTS": "651",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RAPTAKOS BRETT & CO.",
+    "RACK": "",
+    "CODE": "R199",
+    "PRODUCTS": "75",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RELIANCE",
+    "RACK": "19",
+    "CODE": "R202",
+    "PRODUCTS": "92",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REMEDIA SANTE",
+    "RACK": "",
+    "CODE": "R203",
+    "PRODUCTS": "47",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RETORT",
+    "RACK": "",
+    "CODE": "R204",
+    "PRODUCTS": "28",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HOECHST MARION ROUSSEL",
+    "RACK": "",
+    "CODE": "R207",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SARABHAI PIRAMAL",
+    "RACK": "39",
+    "CODE": "S208",
+    "PRODUCTS": "100",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAILS INDIA",
+    "RACK": "",
+    "CODE": "S209",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAN ETHICALS",
+    "RACK": "",
+    "CODE": "S210",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOVARTIS",
+    "RACK": "26",
+    "CODE": "S211",
+    "PRODUCTS": "176",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SARABHAI CHEMICALS",
+    "RACK": "39",
+    "CODE": "S212",
+    "PRODUCTS": "114",
+    "FIRST": "J144",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SARVODAYA",
+    "RACK": "",
+    "CODE": "S213",
+    "PRODUCTS": "16",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RPG L SI LTD",
+    "RACK": "42",
+    "CODE": "S216",
+    "PRODUCTS": "140",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SERDIA PHARMA",
+    "RACK": "58",
+    "CODE": "S217",
+    "PRODUCTS": "41",
+    "FIRST": "M228",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SIGMA LABORATORIES",
+    "RACK": "57",
+    "CODE": "S220",
+    "PRODUCTS": "128",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SIRIS",
+    "RACK": "",
+    "CODE": "S221",
+    "PRODUCTS": "22",
+    "FIRST": "N248",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SMITHKLINE BEECHAM",
+    "RACK": "",
+    "CODE": "S222",
+    "PRODUCTS": "91",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOL",
+    "RACK": "56",
+    "CODE": "S223",
+    "PRODUCTS": "63",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOMATICO LABORATORIES",
+    "RACK": "",
+    "CODE": "S225",
+    "PRODUCTS": "48",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPECTROMED",
+    "RACK": "19",
+    "CODE": "S226",
+    "PRODUCTS": "23",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPENCER",
+    "RACK": "12",
+    "CODE": "S227",
+    "PRODUCTS": "34",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPIC",
+    "RACK": "",
+    "CODE": "S228",
+    "PRODUCTS": "23",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SREEKRISHNA",
+    "RACK": "",
+    "CODE": "S229",
+    "PRODUCTS": "26",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SRESAN PHARMA",
+    "RACK": "",
+    "CODE": "S230",
+    "PRODUCTS": "36",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUN PHARMA",
+    "RACK": "48",
+    "CODE": "S236",
+    "PRODUCTS": "999",
+    "FIRST": "G041",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUNWAYS",
+    "RACK": "",
+    "CODE": "S237",
+    "PRODUCTS": "109",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYSTOPIC",
+    "RACK": "40",
+    "CODE": "S238",
+    "PRODUCTS": "237",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "T T K PHARMA",
+    "RACK": "20",
+    "CODE": "T240",
+    "PRODUCTS": "95",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TABLETS INDIA",
+    "RACK": "",
+    "CODE": "T241",
+    "PRODUCTS": "61",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TATA PHARMA",
+    "RACK": "",
+    "CODE": "T243",
+    "PRODUCTS": "49",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "THEMIS CHEMICALS",
+    "RACK": "",
+    "CODE": "T244",
+    "PRODUCTS": "104",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "THEMIS PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "T245",
+    "PRODUCTS": "51",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TORRENT",
+    "RACK": "7",
+    "CODE": "T246",
+    "PRODUCTS": "671",
+    "FIRST": "G307",
+    "SECOND": "S231",
+    "THIRD": "S076"
+  },
+  {
+    "NAME": "TOYO PHARMACEUTICALS",
+    "RACK": "24",
+    "CODE": "T248",
+    "PRODUCTS": "28",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRINITY",
+    "RACK": "57",
+    "CODE": "T250",
+    "PRODUCTS": "27",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "U S V",
+    "RACK": "31",
+    "CODE": "U251",
+    "PRODUCTS": "307",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNICHEM",
+    "RACK": "41",
+    "CODE": "U255",
+    "PRODUCTS": "286",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNISANKYO",
+    "RACK": "",
+    "CODE": "U258",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VARIETY",
+    "RACK": "",
+    "CODE": "V261",
+    "PRODUCTS": "74",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VIJAYA PHARMA (GHARBINOL)",
+    "RACK": "",
+    "CODE": "V263",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VYSALI",
+    "RACK": "18",
+    "CODE": "V264",
+    "PRODUCTS": "50",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WALLACE PHARMACEUTICALS",
+    "RACK": "4",
+    "CODE": "W265",
+    "PRODUCTS": "220",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WANDER",
+    "RACK": "37",
+    "CODE": "W266",
+    "PRODUCTS": "75",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PARKE-DAVIS",
+    "RACK": "33",
+    "CODE": "W267",
+    "PRODUCTS": "73",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WARREN PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "W268",
+    "PRODUCTS": "65",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WIN MEDICARE",
+    "RACK": "24",
+    "CODE": "W269",
+    "PRODUCTS": "81",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WOCKHARDT",
+    "RACK": "35",
+    "CODE": "W271",
+    "PRODUCTS": "251",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZADOK",
+    "RACK": "",
+    "CODE": "Z272",
+    "PRODUCTS": "24",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DEV",
+    "RACK": "",
+    "CODE": "G089",
+    "PRODUCTS": "721",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OLCARE LABS",
+    "RACK": "",
+    "CODE": "O178",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUMAGAS PHARMA",
+    "RACK": "",
+    "CODE": "S235",
+    "PRODUCTS": "21",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNICORN PHARMA",
+    "RACK": "57",
+    "CODE": "U256",
+    "PRODUCTS": "10",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEW AMBADI",
+    "RACK": "",
+    "CODE": "N172",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "APEX",
+    "RACK": "35",
+    "CODE": "A015",
+    "PRODUCTS": "117",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RECKITT PIRAMAL",
+    "RACK": "",
+    "CODE": "R200",
+    "PRODUCTS": "49",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRIGLOB PHARM",
+    "RACK": "",
+    "CODE": "T249",
+    "PRODUCTS": "20",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VECO PHARMA",
+    "RACK": "",
+    "CODE": "V262",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHIVANI",
+    "RACK": "",
+    "CODE": "S219",
+    "PRODUCTS": "6",
+    "FIRST": "K148",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MACLEODS PHARMACEUTICALS",
+    "RACK": "1",
+    "CODE": "M144",
+    "PRODUCTS": "411",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MENARINI RAUNAQ PHARMA",
+    "RACK": "",
+    "CODE": "M159",
+    "PRODUCTS": "22",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNISAN PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "U257",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KILITCH DRUGS",
+    "RACK": "",
+    "CODE": "K132",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TARGOF",
+    "RACK": "",
+    "CODE": "T242",
+    "PRODUCTS": "16",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DRL",
+    "RACK": "",
+    "CODE": "D070",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMBROSA",
+    "RACK": "",
+    "CODE": "A010",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BELL PHARMA",
+    "RACK": "",
+    "CODE": "B026",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STEDMAN",
+    "RACK": "",
+    "CODE": "S234",
+    "PRODUCTS": "52",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARS",
+    "RACK": "",
+    "CODE": "M149",
+    "PRODUCTS": "41",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JENBURKT",
+    "RACK": "",
+    "CODE": "J122",
+    "PRODUCTS": "31",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MANO",
+    "RACK": "28",
+    "CODE": "M148",
+    "PRODUCTS": "200",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SCHOLL PIRAMAL",
+    "RACK": "",
+    "CODE": "S214",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MODI MUNDI",
+    "RACK": "58",
+    "CODE": "M166",
+    "PRODUCTS": "50",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SEAGULL",
+    "RACK": "",
+    "CODE": "S215",
+    "PRODUCTS": "45",
+    "FIRST": "S224",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OZONE",
+    "RACK": "16",
+    "CODE": "O179",
+    "PRODUCTS": "74",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNI SANKYO LTD",
+    "RACK": "",
+    "CODE": "U253",
+    "PRODUCTS": "22",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAX HAL",
+    "RACK": "",
+    "CODE": "M151",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BANGALORE ANTIBITOTICS",
+    "RACK": "35",
+    "CODE": "B022",
+    "PRODUCTS": "79",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDON",
+    "RACK": "",
+    "CODE": "I113",
+    "PRODUCTS": "50",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DOMINION",
+    "RACK": "",
+    "CODE": "D069",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EMCURE PHARMACEUTICALS",
+    "RACK": "55",
+    "CODE": "E078",
+    "PRODUCTS": "162",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEON LABS",
+    "RACK": "",
+    "CODE": "N171",
+    "PRODUCTS": "17",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LIQUICARE LAB",
+    "RACK": "",
+    "CODE": "L139",
+    "PRODUCTS": "25",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEYER ORGANICS",
+    "RACK": "",
+    "CODE": "M162",
+    "PRODUCTS": "67",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELI LILLY",
+    "RACK": "",
+    "CODE": "E077",
+    "PRODUCTS": "63",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMTEK LAB",
+    "RACK": "",
+    "CODE": "A013",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OCHOA",
+    "RACK": "",
+    "CODE": "O177",
+    "PRODUCTS": "74",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LLOYDS LABS",
+    "RACK": "",
+    "CODE": "L140",
+    "PRODUCTS": "19",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SRESTA LAB",
+    "RACK": "",
+    "CODE": "S231",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MECH PHMCLS",
+    "RACK": "",
+    "CODE": "M154",
+    "PRODUCTS": "10",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLAT",
+    "RACK": "",
+    "CODE": "G092",
+    "PRODUCTS": "10",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZEAL PHARMA",
+    "RACK": "",
+    "CODE": "Z273",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WINSTON HEALTHCARE",
+    "RACK": "",
+    "CODE": "W270",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JK PHARMA",
+    "RACK": "",
+    "CODE": "J275",
+    "PRODUCTS": "32",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TROIKA",
+    "RACK": "56",
+    "CODE": "T281",
+    "PRODUCTS": "86",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NECTAR",
+    "RACK": "",
+    "CODE": "N283",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MESCO",
+    "RACK": "",
+    "CODE": "M286",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALLERGAN",
+    "RACK": "",
+    "CODE": "A287",
+    "PRODUCTS": "59",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHARAK PHARMA",
+    "RACK": "20",
+    "CODE": "C289",
+    "PRODUCTS": "46",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MJ PHARMA",
+    "RACK": "",
+    "CODE": "M290",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDSWIFT",
+    "RACK": "58",
+    "CODE": "I292",
+    "PRODUCTS": "25",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLAND",
+    "RACK": "",
+    "CODE": "G293",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REMADIES INDIA",
+    "RACK": "",
+    "CODE": "R294",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHEMOX",
+    "RACK": "",
+    "CODE": "C295",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ENTOD PHARMA",
+    "RACK": "",
+    "CODE": "E296",
+    "PRODUCTS": "39",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VANGUARD",
+    "RACK": "",
+    "CODE": "V297",
+    "PRODUCTS": "15",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STERKEM",
+    "RACK": "",
+    "CODE": "S298",
+    "PRODUCTS": "18",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WALTER BUSHNELL",
+    "RACK": "",
+    "CODE": "W299",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "M M LAB",
+    "RACK": "",
+    "CODE": "M300",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "YASH PHARMA",
+    "RACK": "",
+    "CODE": "Y301",
+    "PRODUCTS": "29",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DERMOCARE LAB",
+    "RACK": "",
+    "CODE": "D302",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARCON REMEDIES",
+    "RACK": "",
+    "CODE": "P303",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OSAKI",
+    "RACK": "",
+    "CODE": "O304",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PACE",
+    "RACK": "",
+    "CODE": "P305",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "QUALITY",
+    "RACK": "",
+    "CODE": "Q306",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYNO LABS",
+    "RACK": "",
+    "CODE": "S307",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEUMED LAB",
+    "RACK": "",
+    "CODE": "N308",
+    "PRODUCTS": "18",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RELISH PHARMA",
+    "RACK": "",
+    "CODE": "R309",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEGHDOOT CHEMICALS",
+    "RACK": "",
+    "CODE": "M311",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZYMA HEALTH CARE",
+    "RACK": "",
+    "CODE": "Z312",
+    "PRODUCTS": "24",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HINDUSTAN LEVER",
+    "RACK": "",
+    "CODE": "H313",
+    "PRODUCTS": "14",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MIDAS",
+    "RACK": "",
+    "CODE": "M315",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASHOK PHARMA",
+    "RACK": "",
+    "CODE": "A317",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KODICIL",
+    "RACK": "",
+    "CODE": "K318",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MASTER",
+    "RACK": "",
+    "CODE": "M320",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDIFLOW PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "M321",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDICARE",
+    "RACK": "",
+    "CODE": "M322",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COMED CHEMICALS",
+    "RACK": "32",
+    "CODE": "C323",
+    "PRODUCTS": "72",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TALENT INDIA",
+    "RACK": "12",
+    "CODE": "T324",
+    "PRODUCTS": "64",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OSHO",
+    "RACK": "",
+    "CODE": "O325",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARCHER REMEDIES",
+    "RACK": "",
+    "CODE": "A326",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALLONS",
+    "RACK": "",
+    "CODE": "A327",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JAYVIN",
+    "RACK": "",
+    "CODE": "J328",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CRIPS",
+    "RACK": "",
+    "CODE": "C330",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARK",
+    "RACK": "",
+    "CODE": "M331",
+    "PRODUCTS": "15",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRENDZ",
+    "RACK": "",
+    "CODE": "T332",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TIDAL",
+    "RACK": "56",
+    "CODE": "T333",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J V",
+    "RACK": "",
+    "CODE": "J334",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HUXLEYS",
+    "RACK": "",
+    "CODE": "H335",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VELVETTE",
+    "RACK": "",
+    "CODE": "V336",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VERA PHARMA",
+    "RACK": "",
+    "CODE": "V337",
+    "PRODUCTS": "17",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MASTER PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "M339",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WIPRO",
+    "RACK": "",
+    "CODE": "W340",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LINCOLN",
+    "RACK": "",
+    "CODE": "L342",
+    "PRODUCTS": "33",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CARYL",
+    "RACK": "",
+    "CODE": "C343",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J R S",
+    "RACK": "",
+    "CODE": "J344",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PIRAMAL HEALTH CARE",
+    "RACK": "",
+    "CODE": "P345",
+    "PRODUCTS": "19",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BLISS CHEMICALS",
+    "RACK": "",
+    "CODE": "B346",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALFREDBERG",
+    "RACK": "",
+    "CODE": "A347",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZANDU PHARMA",
+    "RACK": "",
+    "CODE": "Z348",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOPHARM DRUGS",
+    "RACK": "",
+    "CODE": "B349",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KERALA AYU PHARMACY",
+    "RACK": "",
+    "CODE": "K352",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CROWN PHARMA.",
+    "RACK": "",
+    "CODE": "C354",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TANMED",
+    "RACK": "",
+    "CODE": "T355",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALPHA PHARMA.",
+    "RACK": "",
+    "CODE": "A356",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VASU PHARMA",
+    "RACK": "",
+    "CODE": "V357",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MONOKEM.LAB.",
+    "RACK": "",
+    "CODE": "M359",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "B D F",
+    "RACK": "",
+    "CODE": "B361",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHANTHA BIOTECH",
+    "RACK": "",
+    "CODE": "S362",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMRUT PHARMA",
+    "RACK": "",
+    "CODE": "A366",
+    "PRODUCTS": "13",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALMACARE.",
+    "RACK": "",
+    "CODE": "A367",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASIAN DRUGS",
+    "RACK": "",
+    "CODE": "A369",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARCO",
+    "RACK": "",
+    "CODE": "M370",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TYRO",
+    "RACK": "",
+    "CODE": "T372",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHANKARPHARMACY.",
+    "RACK": "",
+    "CODE": "S373",
+    "PRODUCTS": "1",
+    "FIRST": "K233",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KERALA SOAPS",
+    "RACK": "",
+    "CODE": "K374",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDI PHARMA.",
+    "RACK": "24",
+    "CODE": "I375",
+    "PRODUCTS": "44",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CYBELE",
+    "RACK": "",
+    "CODE": "C376",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PARAS PHARMA.",
+    "RACK": "",
+    "CODE": "P377",
+    "PRODUCTS": "15",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TSAR PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "T379",
+    "PRODUCTS": "0",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMASYNTH",
+    "RACK": "",
+    "CODE": "P380",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MMC LAB PVT LTD",
+    "RACK": "",
+    "CODE": "M381",
+    "PRODUCTS": "15",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HERBINDUS.",
+    "RACK": "",
+    "CODE": "H382",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OMNICURE",
+    "RACK": "",
+    "CODE": "O383",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAXIN.",
+    "RACK": "",
+    "CODE": "M384",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELUSIYM PHARMA",
+    "RACK": "",
+    "CODE": "E386",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAN LABS",
+    "RACK": "",
+    "CODE": "B387",
+    "PRODUCTS": "10",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEGEND .",
+    "RACK": "",
+    "CODE": "L388",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHERYL.",
+    "RACK": "",
+    "CODE": "C389",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KETONBLUE.",
+    "RACK": "",
+    "CODE": "K390",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LITAKA PHARMA.",
+    "RACK": "",
+    "CODE": "L392",
+    "PRODUCTS": "17",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NIRMAN PHARMA.",
+    "RACK": "",
+    "CODE": "N396",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAMIR REMEDIES",
+    "RACK": "",
+    "CODE": "S397",
+    "PRODUCTS": "7",
+    "FIRST": "S074",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PADHMAM HERBAL CARE",
+    "RACK": "",
+    "CODE": "P398",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BURGEON PHARMA",
+    "RACK": "18",
+    "CODE": "B399",
+    "PRODUCTS": "29",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPENCHEM",
+    "RACK": "11",
+    "CODE": "S400",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORCHID",
+    "RACK": "",
+    "CODE": "O401",
+    "PRODUCTS": "20",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDU DRUGS",
+    "RACK": "",
+    "CODE": "I402",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMCO PHARMA(G)",
+    "RACK": "",
+    "CODE": "A404",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AYULABS(G)",
+    "RACK": "",
+    "CODE": "A405",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARYA VAIDYA(G)",
+    "RACK": "",
+    "CODE": "A406",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REO",
+    "RACK": "",
+    "CODE": "R426",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALFEREZ.",
+    "RACK": "",
+    "CODE": "A428",
+    "PRODUCTS": "13",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INJECTO CAPTA",
+    "RACK": "",
+    "CODE": "I430",
+    "PRODUCTS": "29",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYNCOM",
+    "RACK": "",
+    "CODE": "S431",
+    "PRODUCTS": "5",
+    "FIRST": "J186",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REXFORD PHAR",
+    "RACK": "",
+    "CODE": "R432",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JUPITER.",
+    "RACK": "",
+    "CODE": "J433",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NESTLE.",
+    "RACK": "",
+    "CODE": "N439",
+    "PRODUCTS": "46",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FERRING",
+    "RACK": "",
+    "CODE": "F443",
+    "PRODUCTS": "12",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDISTAT",
+    "RACK": "",
+    "CODE": "M445",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SECURE PHARMA.",
+    "RACK": "",
+    "CODE": "S447",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SREE GANESH",
+    "RACK": "",
+    "CODE": "S448",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PARRY",
+    "RACK": "",
+    "CODE": "P449",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FIZIKEM",
+    "RACK": "",
+    "CODE": "F450",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEALTH CARE",
+    "RACK": "",
+    "CODE": "H452",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DECCAN HEALTH",
+    "RACK": "",
+    "CODE": "D454",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUNOVA",
+    "RACK": "",
+    "CODE": "S456",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "G T. PHARMA.",
+    "RACK": "",
+    "CODE": "G458",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARKO PHARMA",
+    "RACK": "",
+    "CODE": "A460",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MERCURY LABS",
+    "RACK": "",
+    "CODE": "M461",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "THEO PHARMA.",
+    "RACK": "",
+    "CODE": "T462",
+    "PRODUCTS": "54",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OCULUS PHARMA",
+    "RACK": "",
+    "CODE": "O466",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PLACID.",
+    "RACK": "",
+    "CODE": "P467",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEINZ INDIA LTD",
+    "RACK": "",
+    "CODE": "H469",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SALI HEALTH CARE",
+    "RACK": "",
+    "CODE": "S470",
+    "PRODUCTS": "1",
+    "FIRST": "S076",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALICON.",
+    "RACK": "",
+    "CODE": "A471",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZEE",
+    "RACK": "",
+    "CODE": "Z473",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RESILIENT",
+    "RACK": "",
+    "CODE": "R474",
+    "PRODUCTS": "23",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COMMONWEALTH",
+    "RACK": "57",
+    "CODE": "C476",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ANTHUS PHARMA",
+    "RACK": "12",
+    "CODE": "A480",
+    "PRODUCTS": "85",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOIND REMEDIES",
+    "RACK": "",
+    "CODE": "B483",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOVEL.",
+    "RACK": "",
+    "CODE": "N484",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GRACEWELL",
+    "RACK": "25",
+    "CODE": "G489",
+    "PRODUCTS": "127",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RADICURA PHARM",
+    "RACK": "",
+    "CODE": "R490",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SERUM.",
+    "RACK": "28",
+    "CODE": "S500",
+    "PRODUCTS": "60",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TWILIGHT",
+    "RACK": "",
+    "CODE": "T501",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UPJON",
+    "RACK": "33",
+    "CODE": "U503",
+    "PRODUCTS": "16",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TISHCON.",
+    "RACK": "19",
+    "CODE": "T504",
+    "PRODUCTS": "31",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FULFORD.",
+    "RACK": "32",
+    "CODE": "F505",
+    "PRODUCTS": "52",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SARTECH.",
+    "RACK": "",
+    "CODE": "S506",
+    "PRODUCTS": "1",
+    "FIRST": "S075",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANACEA.",
+    "RACK": "49",
+    "CODE": "P507",
+    "PRODUCTS": "76",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NIPHA",
+    "RACK": "",
+    "CODE": "N508",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OBSURGE.",
+    "RACK": "",
+    "CODE": "O509",
+    "PRODUCTS": "16",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AREX",
+    "RACK": "",
+    "CODE": "A510",
+    "PRODUCTS": "12",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LIFE MEDICARE.",
+    "RACK": "",
+    "CODE": "L511",
+    "PRODUCTS": "38",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DYNA",
+    "RACK": "",
+    "CODE": "D512",
+    "PRODUCTS": "94",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MATHA PHARMA",
+    "RACK": "",
+    "CODE": "M513",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHEMECH.",
+    "RACK": "",
+    "CODE": "C514",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMACON.",
+    "RACK": "",
+    "CODE": "P515",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CAPS",
+    "RACK": "",
+    "CODE": "C516",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OMEGA",
+    "RACK": "",
+    "CODE": "O517",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHEERANS.",
+    "RACK": "",
+    "CODE": "C518",
+    "PRODUCTS": "8",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NATURAL.",
+    "RACK": "",
+    "CODE": "N519",
+    "PRODUCTS": "32",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NA",
+    "RACK": "",
+    "CODE": "N520",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALVED",
+    "RACK": "",
+    "CODE": "A521",
+    "PRODUCTS": "6",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FRESENIUS",
+    "RACK": "",
+    "CODE": "F522",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VASOFIX",
+    "RACK": "",
+    "CODE": "V523",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REMEDY PHARMA.",
+    "RACK": "",
+    "CODE": "R524",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TP LAB.",
+    "RACK": "",
+    "CODE": "T525",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LAXLEA LAB.",
+    "RACK": "",
+    "CODE": "L526",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JTOTHI.",
+    "RACK": "",
+    "CODE": "J527",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "V C LAB",
+    "RACK": "",
+    "CODE": "V528",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MILLI.",
+    "RACK": "",
+    "CODE": "M529",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HINDUSTAN ANTIBI",
+    "RACK": "28",
+    "CODE": "H531",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IN BIO.",
+    "RACK": "",
+    "CODE": "I532",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORTHOFIX",
+    "RACK": "",
+    "CODE": "O534",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CARE AGRO-VETL",
+    "RACK": "",
+    "CODE": "C535",
+    "PRODUCTS": "5",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYNTHO P",
+    "RACK": "",
+    "CODE": "S536",
+    "PRODUCTS": "12",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORDAIN.",
+    "RACK": "58",
+    "CODE": "O537",
+    "PRODUCTS": "45",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARVEL LAB.",
+    "RACK": "",
+    "CODE": "M538",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DABUR HEALTH",
+    "RACK": "",
+    "CODE": "D539",
+    "PRODUCTS": "45",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RAKESH PHAR.",
+    "RACK": "",
+    "CODE": "R541",
+    "PRODUCTS": "9",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "V.C.PHAR",
+    "RACK": "",
+    "CODE": "V542",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUMAC",
+    "RACK": "38",
+    "CODE": "S543",
+    "PRODUCTS": "66",
+    "FIRST": "N230",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J & J DE.",
+    "RACK": "",
+    "CODE": "J544",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAXTER",
+    "RACK": "",
+    "CODE": "B545",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KOKAD",
+    "RACK": "",
+    "CODE": "K547",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOVO NOEDISK.",
+    "RACK": "",
+    "CODE": "N548",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JEEVANS",
+    "RACK": "",
+    "CODE": "J549",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GALEN PHA.",
+    "RACK": "",
+    "CODE": "G550",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WILSON",
+    "RACK": "",
+    "CODE": "W551",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TOP",
+    "RACK": "",
+    "CODE": "T553",
+    "PRODUCTS": "7",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARICO",
+    "RACK": "",
+    "CODE": "M554",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAMARTH",
+    "RACK": "",
+    "CODE": "S556",
+    "PRODUCTS": "8",
+    "FIRST": "S223",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AGLOWMED LTD.",
+    "RACK": "",
+    "CODE": "A558",
+    "PRODUCTS": "23",
+    "FIRST": "D237",
+    "SECOND": "F140",
+    "THIRD": "S074"
+  },
+  {
+    "NAME": "HINDUSTAN LATE",
+    "RACK": "",
+    "CODE": "H561",
+    "PRODUCTS": "19",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DTRIDES",
+    "RACK": "",
+    "CODE": "D562",
+    "PRODUCTS": "0",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STRIDES",
+    "RACK": "",
+    "CODE": "S563",
+    "PRODUCTS": "3",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRANS",
+    "RACK": "",
+    "CODE": "T564",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ETHICON",
+    "RACK": "",
+    "CODE": "E565",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARVEL",
+    "RACK": "",
+    "CODE": "M567",
+    "PRODUCTS": "4",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARGUS",
+    "RACK": "19",
+    "CODE": "A569",
+    "PRODUCTS": "30",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KNOLL PHARMA",
+    "RACK": "",
+    "CODE": "K570",
+    "PRODUCTS": "11",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AUROBIND",
+    "RACK": "",
+    "CODE": "A571",
+    "PRODUCTS": "2",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALIVE",
+    "RACK": "",
+    "CODE": "A574",
+    "PRODUCTS": "18",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EMBIOTIC",
+    "RACK": "",
+    "CODE": "E575",
+    "PRODUCTS": "10",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LI TAKA PHARMA",
+    "RACK": "57",
+    "CODE": "L576",
+    "PRODUCTS": "13",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDIWING",
+    "RACK": "",
+    "CODE": "M577",
+    "PRODUCTS": "12",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BRIHANS PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "B579",
+    "PRODUCTS": "1",
+    "FIRST": "G307",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COLINZ",
+    "RACK": "",
+    "CODE": "C581",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOLAB",
+    "RACK": "",
+    "CODE": "B582",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRITON",
+    "RACK": "56",
+    "CODE": "T584",
+    "PRODUCTS": "42",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NUTRAIDS",
+    "RACK": "",
+    "CODE": "N585",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VICCO",
+    "RACK": "62",
+    "CODE": "V586",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WINGS",
+    "RACK": "",
+    "CODE": "W587",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MOREPEN",
+    "RACK": "",
+    "CODE": "M588",
+    "PRODUCTS": "12",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PEGAS",
+    "RACK": "",
+    "CODE": "P590",
+    "PRODUCTS": "20",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REDDY'S",
+    "RACK": "13",
+    "CODE": "R591",
+    "PRODUCTS": "201",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOTECH",
+    "RACK": "",
+    "CODE": "B592",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNITED BIO TECH",
+    "RACK": "",
+    "CODE": "U593",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEALTHEON",
+    "RACK": "25",
+    "CODE": "H594",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNITED PHARMA REMEDIES",
+    "RACK": "",
+    "CODE": "U595",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IPSA",
+    "RACK": "",
+    "CODE": "I596",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DIVINE",
+    "RACK": "",
+    "CODE": "D597",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "M V J FOOD",
+    "RACK": "",
+    "CODE": "M599",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAFE LINE",
+    "RACK": "",
+    "CODE": "S601",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "QUALIS",
+    "RACK": "",
+    "CODE": "Q603",
+    "PRODUCTS": "18",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "V H P",
+    "RACK": "",
+    "CODE": "V604",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J K",
+    "RACK": "",
+    "CODE": "J606",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STIEFEL",
+    "RACK": "",
+    "CODE": "S607",
+    "PRODUCTS": "26",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SIMPSON",
+    "RACK": "54",
+    "CODE": "S608",
+    "PRODUCTS": "17",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GALDERMA",
+    "RACK": "",
+    "CODE": "G609",
+    "PRODUCTS": "30",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHOL'S",
+    "RACK": "",
+    "CODE": "S612",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALBATROSS",
+    "RACK": "",
+    "CODE": "A613",
+    "PRODUCTS": "28",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEEL NAYAN PHAM",
+    "RACK": "",
+    "CODE": "N614",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOVAMED",
+    "RACK": "",
+    "CODE": "N615",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHEMWELL",
+    "RACK": "56",
+    "CODE": "C616",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "XL LAB",
+    "RACK": "",
+    "CODE": "X617",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BERGEN HEALTHCARE",
+    "RACK": "",
+    "CODE": "B618",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDICAL PRODUCT",
+    "RACK": "",
+    "CODE": "M619",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAHA",
+    "RACK": "",
+    "CODE": "M620",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NAGARJUNA",
+    "RACK": "",
+    "CODE": "N621",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TIMETECH",
+    "RACK": "12",
+    "CODE": "T622",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHALAKS",
+    "RACK": "",
+    "CODE": "S624",
+    "PRODUCTS": "26",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HAMDARD",
+    "RACK": "",
+    "CODE": "H625",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZEE LABORATORIES",
+    "RACK": "",
+    "CODE": "Z626",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORPHIC PHARM",
+    "RACK": "",
+    "CODE": "O627",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OKASA PHARMA",
+    "RACK": "",
+    "CODE": "O628",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHEILD PHARMA",
+    "RACK": "",
+    "CODE": "S632",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FASCIMED PHAM",
+    "RACK": "",
+    "CODE": "F633",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BURROUHS WELLCOME",
+    "RACK": "",
+    "CODE": "B636",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMED MEDICARE",
+    "RACK": "",
+    "CODE": "P638",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SRI AGPA",
+    "RACK": "",
+    "CODE": "S639",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COSME HEALTH",
+    "RACK": "",
+    "CODE": "C640",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GRANDIX",
+    "RACK": "55",
+    "CODE": "G641",
+    "PRODUCTS": "56",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENERIC",
+    "RACK": "",
+    "CODE": "G644",
+    "PRODUCTS": "999",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENIX",
+    "RACK": "",
+    "CODE": "G645",
+    "PRODUCTS": "20",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNIVERSAL",
+    "RACK": "3",
+    "CODE": "U646",
+    "PRODUCTS": "31",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RONSON",
+    "RACK": "",
+    "CODE": "R647",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARIHANT",
+    "RACK": "",
+    "CODE": "A649",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MENA",
+    "RACK": "",
+    "CODE": "M650",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IPCA 3",
+    "RACK": "29",
+    "CODE": "I651",
+    "PRODUCTS": "319",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELUSIUM PHARMACEUTICALS",
+    "RACK": "19",
+    "CODE": "E652",
+    "PRODUCTS": "12",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SERTEC",
+    "RACK": "",
+    "CODE": "S653",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EAST WEST PHARMA",
+    "RACK": "",
+    "CODE": "E654",
+    "PRODUCTS": "46",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VARUN PHARMA",
+    "RACK": "16",
+    "CODE": "V656",
+    "PRODUCTS": "24",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VELON PHARMA",
+    "RACK": "",
+    "CODE": "V657",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYSMED",
+    "RACK": "",
+    "CODE": "S658",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZIN LAB",
+    "RACK": "",
+    "CODE": "Z659",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GCN LABS",
+    "RACK": "",
+    "CODE": "G660",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "S.G PHARMA",
+    "RACK": "",
+    "CODE": "S662",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "S.P PHARMA",
+    "RACK": "",
+    "CODE": "S665",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOVA MPI",
+    "RACK": "",
+    "CODE": "N667",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MILO MED",
+    "RACK": "",
+    "CODE": "M668",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OTSIRA GENETICS",
+    "RACK": "27",
+    "CODE": "O672",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLADERMA",
+    "RACK": "",
+    "CODE": "G673",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WARRIER'S HOSPITAL",
+    "RACK": "",
+    "CODE": "W674",
+    "PRODUCTS": "24",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANKYO",
+    "RACK": "",
+    "CODE": "S675",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GEN BIOTIC",
+    "RACK": "58",
+    "CODE": "G676",
+    "PRODUCTS": "32",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INNOVATIVE",
+    "RACK": "",
+    "CODE": "I677",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MED MANOR",
+    "RACK": "58",
+    "CODE": "M679",
+    "PRODUCTS": "81",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PULSE",
+    "RACK": "V",
+    "CODE": "P680",
+    "PRODUCTS": "33",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHREYA",
+    "RACK": "",
+    "CODE": "S681",
+    "PRODUCTS": "35",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZENITH",
+    "RACK": "",
+    "CODE": "Z682",
+    "PRODUCTS": "26",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZUVENTUS",
+    "RACK": "",
+    "CODE": "Z683",
+    "PRODUCTS": "50",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BERGEON",
+    "RACK": "17",
+    "CODE": "B684",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEBULA",
+    "RACK": "",
+    "CODE": "N685",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ACRON",
+    "RACK": "",
+    "CODE": "A686",
+    "PRODUCTS": "21",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LAVEN PHARMA",
+    "RACK": "",
+    "CODE": "L688",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LANBERT",
+    "RACK": "",
+    "CODE": "L689",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ILLIBAN",
+    "RACK": "",
+    "CODE": "I690",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDAMED PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "I691",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EVANS",
+    "RACK": "57",
+    "CODE": "E692",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KANDAM KULATHI",
+    "RACK": "",
+    "CODE": "K693",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELMA",
+    "RACK": "",
+    "CODE": "E694",
+    "PRODUCTS": "17",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CERAS",
+    "RACK": "",
+    "CODE": "C697",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CRESENT",
+    "RACK": "57",
+    "CODE": "C698",
+    "PRODUCTS": "45",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEW BHARATH",
+    "RACK": "",
+    "CODE": "N699",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARETAS",
+    "RACK": "22",
+    "CODE": "A700",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RADIX BIOTECH",
+    "RACK": "",
+    "CODE": "R701",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OPTH",
+    "RACK": "",
+    "CODE": "O702",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEW WAVE",
+    "RACK": "",
+    "CODE": "N703",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INTRA LAB",
+    "RACK": "",
+    "CODE": "I704",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JOY",
+    "RACK": "",
+    "CODE": "J705",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CASSEL RESEARCH",
+    "RACK": "",
+    "CODE": "C707",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ROSSMED",
+    "RACK": "",
+    "CODE": "R708",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOCON",
+    "RACK": "24",
+    "CODE": "B709",
+    "PRODUCTS": "48",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VANQUISH",
+    "RACK": "",
+    "CODE": "V710",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CE-CHEM PHARMA",
+    "RACK": "",
+    "CODE": "C711",
+    "PRODUCTS": "21",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOMIRRA",
+    "RACK": "15",
+    "CODE": "A712",
+    "PRODUCTS": "23",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOMILCRON",
+    "RACK": "28",
+    "CODE": "B713",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LG LIFE",
+    "RACK": "",
+    "CODE": "L714",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INFRA",
+    "RACK": "",
+    "CODE": "I715",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CURE WELL PHARMA",
+    "RACK": "",
+    "CODE": "C716",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CEZAN PHARMA",
+    "RACK": "",
+    "CODE": "C717",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VIVID PHARMA",
+    "RACK": "22",
+    "CODE": "D718",
+    "PRODUCTS": "22",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SELENA",
+    "RACK": "",
+    "CODE": "S719",
+    "PRODUCTS": "15",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRIGENESIS",
+    "RACK": "",
+    "CODE": "T720",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VHB LIFE",
+    "RACK": "",
+    "CODE": "V721",
+    "PRODUCTS": "16",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDILINA",
+    "RACK": "",
+    "CODE": "I722",
+    "PRODUCTS": "12",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PARNAX LAB",
+    "RACK": "",
+    "CODE": "P723",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAI MIRRA",
+    "RACK": "56",
+    "CODE": "S724",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INTAMED",
+    "RACK": "",
+    "CODE": "I725",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALOPA",
+    "RACK": "",
+    "CODE": "A726",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MDC",
+    "RACK": "",
+    "CODE": "M727",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J'S LABORATARY",
+    "RACK": "",
+    "CODE": "J728",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CURATIO",
+    "RACK": "",
+    "CODE": "C730",
+    "PRODUCTS": "54",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEONIDAZ",
+    "RACK": "",
+    "CODE": "L731",
+    "PRODUCTS": "32",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KOMAN",
+    "RACK": "",
+    "CODE": "K732",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MALAR",
+    "RACK": "",
+    "CODE": "M733",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "P&G",
+    "RACK": "",
+    "CODE": "P734",
+    "PRODUCTS": "81",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMRUTHA HEALTH CARE",
+    "RACK": "",
+    "CODE": "A735",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SAGA LAB",
+    "RACK": "",
+    "CODE": "S736",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANGROSE LAB",
+    "RACK": "",
+    "CODE": "S737",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MONICHEM",
+    "RACK": "",
+    "CODE": "M738",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANGEA",
+    "RACK": "",
+    "CODE": "P739",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "E W F",
+    "RACK": "",
+    "CODE": "E740",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TRIO PHARMA",
+    "RACK": "",
+    "CODE": "T741",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MANKIND",
+    "RACK": "35",
+    "CODE": "M742",
+    "PRODUCTS": "273",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORGANON",
+    "RACK": "57",
+    "CODE": "O743",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEURON PHARMA",
+    "RACK": "",
+    "CODE": "N744",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZOTA PHARMA",
+    "RACK": "",
+    "CODE": "Z745",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COSMAS PHARMA",
+    "RACK": "",
+    "CODE": "C746",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CYBELE PHARMA",
+    "RACK": "",
+    "CODE": "C747",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CANDOR BIOTECH",
+    "RACK": "",
+    "CODE": "C748",
+    "PRODUCTS": "13",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ABS REMADIES",
+    "RACK": "",
+    "CODE": "A749",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KALINDI PHARMA",
+    "RACK": "",
+    "CODE": "K750",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CAD",
+    "RACK": "16",
+    "CODE": "S751",
+    "PRODUCTS": "29",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZENDIC [INDIA]",
+    "RACK": "",
+    "CODE": "Z752",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOTUS PHARMACEUT",
+    "RACK": "",
+    "CODE": "N753",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEGASYS BIOTEK",
+    "RACK": "",
+    "CODE": "M754",
+    "PRODUCTS": "17",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FORM",
+    "RACK": "",
+    "CODE": "F755",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANCHO PHARMA",
+    "RACK": "",
+    "CODE": "S756",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CNIDUS PHARMA",
+    "RACK": "56",
+    "CODE": "C757",
+    "PRODUCTS": "12",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VETAS",
+    "RACK": "",
+    "CODE": "V758",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FLOREAT",
+    "RACK": "",
+    "CODE": "F759",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FEM CARE PHARMA",
+    "RACK": "",
+    "CODE": "F760",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTECH PHARMA",
+    "RACK": "12",
+    "CODE": "A761",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMA FABRICON",
+    "RACK": "",
+    "CODE": "P762",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDEX PHARMA",
+    "RACK": "57",
+    "CODE": "I764",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CAVENDISH BIO PHARMA",
+    "RACK": "",
+    "CODE": "C766",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZEDNA REMADIES",
+    "RACK": "",
+    "CODE": "Z767",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MARK REMEDIES",
+    "RACK": "",
+    "CODE": "M769",
+    "PRODUCTS": "13",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MACBAY PHARMA",
+    "RACK": "",
+    "CODE": "M770",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RHINE BIOGENICS",
+    "RACK": "",
+    "CODE": "R772",
+    "PRODUCTS": "48",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LANARK",
+    "RACK": "",
+    "CODE": "L773",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HAB PHARMA",
+    "RACK": "",
+    "CODE": "H774",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHIRON PANECEA",
+    "RACK": "",
+    "CODE": "F775",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KATG",
+    "RACK": "58",
+    "CODE": "K776",
+    "PRODUCTS": "24",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AIN MEDICARE",
+    "RACK": "",
+    "CODE": "A777",
+    "PRODUCTS": "15",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMACOPIUS  SUNANDA",
+    "RACK": "56",
+    "CODE": "P778",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SEGNUS  APSARA",
+    "RACK": "",
+    "CODE": "S779",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LAENNEC CENTRAL",
+    "RACK": "",
+    "CODE": "L780",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KRONIE",
+    "RACK": "",
+    "CODE": "K781",
+    "PRODUCTS": "20",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DIAL PHARMA",
+    "RACK": "",
+    "CODE": "D782",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VENTURA",
+    "RACK": "",
+    "CODE": "V783",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMATECH",
+    "RACK": "",
+    "CODE": "P784",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELDOMED",
+    "RACK": "",
+    "CODE": "E785",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAX MEDICO",
+    "RACK": "",
+    "CODE": "M786",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DYOTA NUMANDIS",
+    "RACK": "",
+    "CODE": "D787",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RAGHAM PHARMA",
+    "RACK": "",
+    "CODE": "R788",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAC INC MEYON MEDI",
+    "RACK": "",
+    "CODE": "M789",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OSCAR",
+    "RACK": "",
+    "CODE": "O790",
+    "PRODUCTS": "123",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MOLEKULE",
+    "RACK": "",
+    "CODE": "M791",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CONCE",
+    "RACK": "",
+    "CODE": "C792",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "H F A",
+    "RACK": "",
+    "CODE": "H793",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RITZS",
+    "RACK": "",
+    "CODE": "R794",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KOSH",
+    "RACK": "",
+    "CODE": "K795",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AYUR",
+    "RACK": "",
+    "CODE": "A797",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZIVO",
+    "RACK": "",
+    "CODE": "Z798",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "COGN",
+    "RACK": "",
+    "CODE": "C799",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BEET",
+    "RACK": "",
+    "CODE": "B800",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANKAGA KASTHU",
+    "RACK": "",
+    "CODE": "P801",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZENOW",
+    "RACK": "",
+    "CODE": "Z802",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALDENT",
+    "RACK": "",
+    "CODE": "A803",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZYDUS",
+    "RACK": "5",
+    "CODE": "Z804",
+    "PRODUCTS": "26",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORTU",
+    "RACK": "",
+    "CODE": "O805",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MANEESH",
+    "RACK": "56",
+    "CODE": "M806",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BICHO",
+    "RACK": "",
+    "CODE": "B807",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TUNIC",
+    "RACK": "37",
+    "CODE": "T808",
+    "PRODUCTS": "17",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BALU",
+    "RACK": "",
+    "CODE": "B809",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "H S",
+    "RACK": "",
+    "CODE": "H810",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PDPL",
+    "RACK": "",
+    "CODE": "P811",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CTL",
+    "RACK": "",
+    "CODE": "C812",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOLUM",
+    "RACK": "",
+    "CODE": "S813",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAL PHARMA",
+    "RACK": "9",
+    "CODE": "B814",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MVM AYVD",
+    "RACK": "",
+    "CODE": "M816",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHPL",
+    "RACK": "",
+    "CODE": "S817",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "1MED",
+    "RACK": "56",
+    "CODE": "I818",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHIEL",
+    "RACK": "",
+    "CODE": "S819",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MM LAB",
+    "RACK": "",
+    "CODE": "M820",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DERMADEX",
+    "RACK": "",
+    "CODE": "D821",
+    "PRODUCTS": "20",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IND",
+    "RACK": "",
+    "CODE": "I822",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALTIS",
+    "RACK": "",
+    "CODE": "A823",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "R.C",
+    "RACK": "",
+    "CODE": "R824",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BMP",
+    "RACK": "",
+    "CODE": "B825",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOLUS",
+    "RACK": "",
+    "CODE": "S826",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ANIKEM LAB",
+    "RACK": "13",
+    "CODE": "A828",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HIND",
+    "RACK": "",
+    "CODE": "H829",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NUPAL",
+    "RACK": "",
+    "CODE": "N830",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIOCARE",
+    "RACK": "",
+    "CODE": "B831",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KUNN",
+    "RACK": "",
+    "CODE": "K832",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NP IL",
+    "RACK": "",
+    "CODE": "N833",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIO",
+    "RACK": "19",
+    "CODE": "B834",
+    "PRODUCTS": "33",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MED",
+    "RACK": "49",
+    "CODE": "M835",
+    "PRODUCTS": "18",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLN",
+    "RACK": "",
+    "CODE": "G836",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GER",
+    "RACK": "",
+    "CODE": "G837",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANDAVA",
+    "RACK": "",
+    "CODE": "P838",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DUTCH PHARMA",
+    "RACK": "",
+    "CODE": "D839",
+    "PRODUCTS": "17",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDIPRINA",
+    "RACK": "",
+    "CODE": "M840",
+    "PRODUCTS": "15",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CI CL",
+    "RACK": "",
+    "CODE": "C841",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KALAN",
+    "RACK": "",
+    "CODE": "K842",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GWSP",
+    "RACK": "",
+    "CODE": "G843",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "S D",
+    "RACK": "",
+    "CODE": "S844",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ROYAL",
+    "RACK": "23",
+    "CODE": "R845",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GEM",
+    "RACK": "",
+    "CODE": "G846",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNILA",
+    "RACK": "",
+    "CODE": "U847",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LIN",
+    "RACK": "",
+    "CODE": "L848",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ERIS",
+    "RACK": "54",
+    "CODE": "E849",
+    "PRODUCTS": "97",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GSK",
+    "RACK": "",
+    "CODE": "G850",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPAI",
+    "RACK": "15",
+    "CODE": "S851",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPER",
+    "RACK": "",
+    "CODE": "S852",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MICRO PHAR",
+    "RACK": "13",
+    "CODE": "M853",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MERCK",
+    "RACK": "26",
+    "CODE": "M854",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ROCHE",
+    "RACK": "39",
+    "CODE": "R855",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "R K G PHARMA",
+    "RACK": "",
+    "CODE": "R856",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTAM",
+    "RACK": "",
+    "CODE": "A857",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FORZ",
+    "RACK": "",
+    "CODE": "F858",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GB",
+    "RACK": "",
+    "CODE": "G859",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ESPIN AT TAB",
+    "RACK": "",
+    "CODE": "E860",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INTA",
+    "RACK": "",
+    "CODE": "I861",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VELTAM F TAB",
+    "RACK": "",
+    "CODE": "V862",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RAN",
+    "RACK": "",
+    "CODE": "R863",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VELTAM PLUS TAB",
+    "RACK": "",
+    "CODE": "V864",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VELTAM PLUE TAB",
+    "RACK": "",
+    "CODE": "V865",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FLUCOLD TABS",
+    "RACK": "",
+    "CODE": "F866",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WALL",
+    "RACK": "",
+    "CODE": "W867",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DEFZA 6 MG TAB",
+    "RACK": "",
+    "CODE": "D868",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NYOX 8 MG TAB",
+    "RACK": "",
+    "CODE": "N869",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANKAJ KASTHOORI",
+    "RACK": "",
+    "CODE": "P870",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RANB",
+    "RACK": "",
+    "CODE": "R871",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOORA",
+    "RACK": "H",
+    "CODE": "S872",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ORIET",
+    "RACK": "I",
+    "CODE": "O873",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASH",
+    "RACK": "F",
+    "CODE": "A874",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SD",
+    "RACK": "D",
+    "CODE": "S875",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALKE",
+    "RACK": "D",
+    "CODE": "A876",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LABI",
+    "RACK": "U",
+    "CODE": "L877",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WALLA",
+    "RACK": "5",
+    "CODE": "W878",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EXCE",
+    "RACK": "",
+    "CODE": "E879",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WYET",
+    "RACK": "",
+    "CODE": "W880",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "USCO",
+    "RACK": "",
+    "CODE": "U881",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MSL",
+    "RACK": "",
+    "CODE": "M882",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELFIN",
+    "RACK": "",
+    "CODE": "E883",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CROSSLAND",
+    "RACK": "",
+    "CODE": "C884",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MSD",
+    "RACK": "",
+    "CODE": "M885",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLOBAL",
+    "RACK": "12",
+    "CODE": "G886",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ICON",
+    "RACK": "",
+    "CODE": "I887",
+    "PRODUCTS": "44",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EASI",
+    "RACK": "11",
+    "CODE": "E888",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOMATICO",
+    "RACK": "",
+    "CODE": "S889",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OPTHO",
+    "RACK": "",
+    "CODE": "O890",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KATTAKAYAM",
+    "RACK": "X",
+    "CODE": "K891",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDILOIDS",
+    "RACK": "",
+    "CODE": "M892",
+    "PRODUCTS": "19",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DHATHRI",
+    "RACK": "",
+    "CODE": "D893",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WANBURY",
+    "RACK": "",
+    "CODE": "W894",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MINOVA",
+    "RACK": "",
+    "CODE": "M895",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GOOD BIRTH",
+    "RACK": "",
+    "CODE": "G896",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LIVIDUS PHARMACEUTICALS",
+    "RACK": "",
+    "CODE": "L897",
+    "PRODUCTS": "95",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TIVIM",
+    "RACK": "",
+    "CODE": "T898",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZAFODO",
+    "RACK": "16",
+    "CODE": "Z899",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JYOTHY LAB",
+    "RACK": "",
+    "CODE": "J900",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AKESISS",
+    "RACK": "16",
+    "CODE": "A901",
+    "PRODUCTS": "39",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARDOR DRUGS",
+    "RACK": "",
+    "CODE": "A902",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MED.TRYNA",
+    "RACK": "",
+    "CODE": "M903",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUNIJ",
+    "RACK": "16",
+    "CODE": "S904",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AYU:CARE",
+    "RACK": "",
+    "CODE": "A905",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DHARMANI'S",
+    "RACK": "",
+    "CODE": "D906",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENOME",
+    "RACK": "",
+    "CODE": "G907",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NITTA GELATIN",
+    "RACK": "",
+    "CODE": "N908",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "R.H.LABORATORIES",
+    "RACK": "",
+    "CODE": "R909",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GILLETE",
+    "RACK": "",
+    "CODE": "G910",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EPITOME",
+    "RACK": "",
+    "CODE": "E911",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HIMANI",
+    "RACK": "",
+    "CODE": "H912",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "J AND J",
+    "RACK": "1",
+    "CODE": "J913",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLOWDERMA",
+    "RACK": "1",
+    "CODE": "G914",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GRACE",
+    "RACK": "1",
+    "CODE": "G915",
+    "PRODUCTS": "15",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALCON",
+    "RACK": "1",
+    "CODE": "A916",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELTIS",
+    "RACK": "",
+    "CODE": "E917",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OXFORD",
+    "RACK": "",
+    "CODE": "O918",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUJI ENTERPRISES",
+    "RACK": "",
+    "CODE": "S919",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHIRR",
+    "RACK": "1",
+    "CODE": "S920",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AVOCADO",
+    "RACK": "",
+    "CODE": "A921",
+    "PRODUCTS": "13",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PENTA",
+    "RACK": "",
+    "CODE": "P922",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMIA",
+    "RACK": "",
+    "CODE": "P923",
+    "PRODUCTS": "21",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANECIEA",
+    "RACK": "",
+    "CODE": "P924",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHARMACARE",
+    "RACK": "T",
+    "CODE": "P925",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AYURWEDAM",
+    "RACK": "F",
+    "CODE": "A926",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AVIN HELTH CARE",
+    "RACK": "18",
+    "CODE": "A927",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LLOYD",
+    "RACK": "12",
+    "CODE": "L928",
+    "PRODUCTS": "22",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNITED BIOTECH",
+    "RACK": "",
+    "CODE": "U929",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JUBILAND",
+    "RACK": "43",
+    "CODE": "J930",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PANKAJAKASTHURI",
+    "RACK": "T",
+    "CODE": "P931",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SIGNOR",
+    "RACK": "12",
+    "CODE": "S932",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FENESTRA",
+    "RACK": "45",
+    "CODE": "F933",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AJZIL",
+    "RACK": "",
+    "CODE": "A934",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GOOD LIFE",
+    "RACK": "1",
+    "CODE": "G935",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ISIS",
+    "RACK": "18",
+    "CODE": "I936",
+    "PRODUCTS": "54",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMAL",
+    "RACK": "20",
+    "CODE": "A937",
+    "PRODUCTS": "18",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CURE & CARE",
+    "RACK": "E",
+    "CODE": "938",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CANIXA",
+    "RACK": "",
+    "CODE": "C939",
+    "PRODUCTS": "16",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LUZERNE",
+    "RACK": "",
+    "CODE": "L940",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZZAIFFR",
+    "RACK": "C",
+    "CODE": "Z941",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INCUS",
+    "RACK": "",
+    "CODE": "I942",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BOEHRINGER",
+    "RACK": "",
+    "CODE": "B943",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CRESTMED",
+    "RACK": "",
+    "CODE": "C944",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTERON",
+    "RACK": "",
+    "CODE": "A945",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FLARING",
+    "RACK": "0",
+    "CODE": "F946",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MRHM",
+    "RACK": "",
+    "CODE": "M947",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IKON",
+    "RACK": "",
+    "CODE": "I948",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENOZED",
+    "RACK": "1",
+    "CODE": "G949",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EURO",
+    "RACK": "",
+    "CODE": "E950",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NUTRILIFE",
+    "RACK": "",
+    "CODE": "N951",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STRIDES",
+    "RACK": "",
+    "CODE": "S952",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLADS",
+    "RACK": "",
+    "CODE": "G953",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDICO",
+    "RACK": "",
+    "CODE": "M954",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LAL",
+    "RACK": "",
+    "CODE": "L955",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CEL",
+    "RACK": "",
+    "CODE": "C956",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LA RENON",
+    "RACK": "",
+    "CODE": "L957",
+    "PRODUCTS": "23",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HARS",
+    "RACK": "",
+    "CODE": "H958",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EXMO",
+    "RACK": "",
+    "CODE": "E959",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WAKSMED",
+    "RACK": "",
+    "CODE": "W960",
+    "PRODUCTS": "8",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IBIZ",
+    "RACK": "2",
+    "CODE": "I961",
+    "PRODUCTS": "23",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BSN",
+    "RACK": "",
+    "CODE": "B962",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CURE CARE",
+    "RACK": "",
+    "CODE": "C963",
+    "PRODUCTS": "7",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "IBIZ",
+    "RACK": "1",
+    "CODE": "I964",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BIO CENT",
+    "RACK": "1",
+    "CODE": "B965",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LA RENON",
+    "RACK": "2",
+    "CODE": "L966",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CORONA",
+    "RACK": "T1",
+    "CODE": "C967",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEE MORTEN",
+    "RACK": "1",
+    "CODE": "L968",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUCCOR",
+    "RACK": "",
+    "CODE": "S969",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARNINA",
+    "RACK": "",
+    "CODE": "A970",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALLEGRO",
+    "RACK": "",
+    "CODE": "A971",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KOYE",
+    "RACK": "",
+    "CODE": "K972",
+    "PRODUCTS": "12",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEEMORTEN",
+    "RACK": "1",
+    "CODE": "L973",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEAL",
+    "RACK": "",
+    "CODE": "H974",
+    "PRODUCTS": "13",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZYCARDIS",
+    "RACK": "",
+    "CODE": "Z975",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SIDHA",
+    "RACK": "",
+    "CODE": "S976",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CRESTOMED",
+    "RACK": "",
+    "CODE": "C977",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CXOOL",
+    "RACK": "",
+    "CODE": "C978",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FINE",
+    "RACK": "",
+    "CODE": "F979",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SOIGNER",
+    "RACK": "",
+    "CODE": "S980",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AAP",
+    "RACK": "",
+    "CODE": "A981",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEOL",
+    "RACK": "",
+    "CODE": "N982",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KIO",
+    "RACK": "",
+    "CODE": "K983",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALFA",
+    "RACK": "",
+    "CODE": "A984",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SHAR",
+    "RACK": "",
+    "CODE": "S985",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CANXIA",
+    "RACK": "",
+    "CODE": "C986",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANT CARE",
+    "RACK": "",
+    "CODE": "S987",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASSO",
+    "RACK": "",
+    "CODE": "A988",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INTERGRON",
+    "RACK": "",
+    "CODE": "I989",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GENERIC 2",
+    "RACK": "",
+    "CODE": "G990",
+    "PRODUCTS": "41",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FDC",
+    "RACK": "",
+    "CODE": "F991",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PILO",
+    "RACK": "",
+    "CODE": "P992",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "APSON",
+    "RACK": "",
+    "CODE": "A993",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "JB",
+    "RACK": "",
+    "CODE": "J994",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTREA",
+    "RACK": "",
+    "CODE": "A995",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHANDRIKA",
+    "RACK": "",
+    "CODE": "C996",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ACME",
+    "RACK": "",
+    "CODE": "A997",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HBP",
+    "RACK": "",
+    "CODE": "H998",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CEE BEE",
+    "RACK": "",
+    "CODE": "C999",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KAR",
+    "RACK": "",
+    "CODE": "1000",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AKUMENTIS",
+    "RACK": "",
+    "CODE": "1001",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RENAUX",
+    "RACK": "",
+    "CODE": "1002",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLADSTRON",
+    "RACK": "",
+    "CODE": "1003",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FOTIS",
+    "RACK": "",
+    "CODE": "1004",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SYMB",
+    "RACK": "",
+    "CODE": "1005",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARTE",
+    "RACK": "",
+    "CODE": "1006",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ABOTT",
+    "RACK": "",
+    "CODE": "1007",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PERS",
+    "RACK": "",
+    "CODE": "1008",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEVITAS",
+    "RACK": "",
+    "CODE": "1009",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHRAMIA",
+    "RACK": "",
+    "CODE": "1010",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BSA",
+    "RACK": "",
+    "CODE": "1011",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CRU",
+    "RACK": "",
+    "CODE": "1012",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LITM",
+    "RACK": "",
+    "CODE": "1013",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NESH",
+    "RACK": "",
+    "CODE": "1014",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PRISM",
+    "RACK": "",
+    "CODE": "1015",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "STEAD",
+    "RACK": "",
+    "CODE": "1016",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AQUA",
+    "RACK": "",
+    "CODE": "1017",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NULIFE",
+    "RACK": "",
+    "CODE": "1018",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RED",
+    "RACK": "",
+    "CODE": "1019",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PEARL",
+    "RACK": "",
+    "CODE": "1020",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LENIMEN",
+    "RACK": "",
+    "CODE": "1021",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DISPO",
+    "RACK": "",
+    "CODE": "1022",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SUN PHARMAC",
+    "RACK": "",
+    "CODE": "1023",
+    "PRODUCTS": "13",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LACMED",
+    "RACK": "",
+    "CODE": "1024",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "REUSSIE",
+    "RACK": "",
+    "CODE": "1025",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALTO",
+    "RACK": "",
+    "CODE": "1026",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HETERO",
+    "RACK": "",
+    "CODE": "1027",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALOBIOTIC",
+    "RACK": "",
+    "CODE": "1028",
+    "PRODUCTS": "3",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NORET",
+    "RACK": "",
+    "CODE": "1029",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEILENT",
+    "RACK": "",
+    "CODE": "1030",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEX",
+    "RACK": "",
+    "CODE": "1031",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "FLING",
+    "RACK": "",
+    "CODE": "1032",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TYNOR",
+    "RACK": "",
+    "CODE": "1033",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZYNOR",
+    "RACK": "",
+    "CODE": "1034",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAYARD",
+    "RACK": "",
+    "CODE": "1035",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MIKKU",
+    "RACK": "",
+    "CODE": "1036",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ESS",
+    "RACK": "",
+    "CODE": "1037",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AUNSU",
+    "RACK": "",
+    "CODE": "1038",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHETHANA",
+    "RACK": "",
+    "CODE": "1039",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ANUP",
+    "RACK": "",
+    "CODE": "1040",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HIT",
+    "RACK": "",
+    "CODE": "1041",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BRISTO",
+    "RACK": "",
+    "CODE": "1042",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CHE",
+    "RACK": "",
+    "CODE": "1043",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDIPAK",
+    "RACK": "",
+    "CODE": "1044",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARAFA",
+    "RACK": "",
+    "CODE": "1045",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEMUS",
+    "RACK": "",
+    "CODE": "1046",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MICHELIN",
+    "RACK": "",
+    "CODE": "1047",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PLETHICO",
+    "RACK": "",
+    "CODE": "1048",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ROWEZ",
+    "RACK": "",
+    "CODE": "1049",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LANCER",
+    "RACK": "",
+    "CODE": "1050",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NOBEL",
+    "RACK": "",
+    "CODE": "1051",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANJEEVANI",
+    "RACK": "M3",
+    "CODE": "1052",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ARUX PHARMA",
+    "RACK": "P1",
+    "CODE": "1053",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VIBOCARE",
+    "RACK": "T",
+    "CODE": "1054",
+    "PRODUCTS": "114",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MAK PHARMA",
+    "RACK": "O2",
+    "CODE": "1055",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ATLANTA BIO",
+    "RACK": "O2",
+    "CODE": "1056",
+    "PRODUCTS": "9",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ELIKEM",
+    "RACK": "O2",
+    "CODE": "1057",
+    "PRODUCTS": "25",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ANGLO",
+    "RACK": "O2",
+    "CODE": "1058",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OSVEL",
+    "RACK": "O2",
+    "CODE": "1059",
+    "PRODUCTS": "77",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GALPHA LAB",
+    "RACK": "O4",
+    "CODE": "1060",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BRINTON PHARMA",
+    "RACK": "B4",
+    "CODE": "1061",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NESH PHARMA",
+    "RACK": "T",
+    "CODE": "1062",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AARUX PHARMA",
+    "RACK": "A1",
+    "CODE": "1063",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLITZ",
+    "RACK": "A1",
+    "CODE": "1064",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PHYZER LIMITED",
+    "RACK": "C3",
+    "CODE": "1065",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BSN MEDICAL",
+    "RACK": "D1",
+    "CODE": "1066",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BECTON DICKISON",
+    "RACK": "D1",
+    "CODE": "1067",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALLIDE CHEMICALS",
+    "RACK": "D1",
+    "CODE": "1068",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KMS",
+    "RACK": "D1",
+    "CODE": "1069",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "YOURS MEDICARE",
+    "RACK": "D2",
+    "CODE": "1070",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OSCODERMA",
+    "RACK": "D2",
+    "CODE": "1071",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KODI HEALTH",
+    "RACK": "D4",
+    "CODE": "1072",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DERMA REMEDIES",
+    "RACK": "I3",
+    "CODE": "1073",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SATIAGO SKIN CARE",
+    "RACK": "I4",
+    "CODE": "1074",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ETHINEXT PHARMA",
+    "RACK": "G3",
+    "CODE": "1075",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VINTOJEM",
+    "RACK": "T",
+    "CODE": "1076",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GLESMITH",
+    "RACK": "T",
+    "CODE": "1077",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANTIAGO",
+    "RACK": "T",
+    "CODE": "1078",
+    "PRODUCTS": "5",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AEROF",
+    "RACK": "",
+    "CODE": "1079",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALDAY",
+    "RACK": "",
+    "CODE": "1080",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASHTAVAIDYA",
+    "RACK": "",
+    "CODE": "1081",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "INDIAN MARKET",
+    "RACK": "",
+    "CODE": "1082",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "S M TISSUES PTD",
+    "RACK": "",
+    "CODE": "1083",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HONGKONG YIFAR",
+    "RACK": "",
+    "CODE": "1084",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "PII PHARMA",
+    "RACK": "",
+    "CODE": "1085",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OMRON HEALTH",
+    "RACK": "",
+    "CODE": "1086",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMKAY",
+    "RACK": "",
+    "CODE": "1087",
+    "PRODUCTS": "11",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ROSSMAX",
+    "RACK": "",
+    "CODE": "1088",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KIYOSH",
+    "RACK": "",
+    "CODE": "1089",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANOFI",
+    "RACK": "",
+    "CODE": "1090",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "NEELKANTH",
+    "RACK": "",
+    "CODE": "1091",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "OAKNET",
+    "RACK": "",
+    "CODE": "1092",
+    "PRODUCTS": "",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTEL",
+    "RACK": "",
+    "CODE": "1093",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MEDDOX",
+    "RACK": "",
+    "CODE": "1094",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALTASREE",
+    "RACK": "",
+    "CODE": "1095",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "CANBRO",
+    "RACK": "I",
+    "CODE": "1096",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "MYPHARMA",
+    "RACK": "D4",
+    "CODE": "1097",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "EYSYS",
+    "RACK": "M4",
+    "CODE": "1098",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASTRA ZENECA",
+    "RACK": "B",
+    "CODE": "1099",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "KLM",
+    "RACK": "H4",
+    "CODE": "1100",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "LEAFY",
+    "RACK": "A4",
+    "CODE": "1101",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AZT",
+    "RACK": "1",
+    "CODE": "1102",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ZYBAX",
+    "RACK": "O1",
+    "CODE": "1103",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "RAYAN",
+    "RACK": "I2",
+    "CODE": "1104",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "GRAND VF",
+    "RACK": "",
+    "CODE": "1105",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TESLA",
+    "RACK": "O1",
+    "CODE": "1106",
+    "PRODUCTS": "14",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TLP",
+    "RACK": "P5",
+    "CODE": "1107",
+    "PRODUCTS": "6",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SANORA",
+    "RACK": "",
+    "CODE": "1108",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "TOPAZ",
+    "RACK": "0",
+    "CODE": "1109",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SEARL",
+    "RACK": "1",
+    "CODE": "1110",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "AMAR",
+    "RACK": "1",
+    "CODE": "1111",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "WELLANCIA",
+    "RACK": "1",
+    "CODE": "1112",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BAYLOR",
+    "RACK": "B3",
+    "CODE": "1113",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "HEINGRID",
+    "RACK": "1",
+    "CODE": "1114",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SPL",
+    "RACK": "",
+    "CODE": "1115",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "VIGN",
+    "RACK": "1",
+    "CODE": "1116",
+    "PRODUCTS": "10",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "SABARI",
+    "RACK": "",
+    "CODE": "1117",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "DRS",
+    "RACK": "",
+    "CODE": "1118",
+    "PRODUCTS": "4",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ALL",
+    "RACK": "",
+    "CODE": "1119",
+    "PRODUCTS": "2",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "UNSUR",
+    "RACK": "",
+    "CODE": "1120",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "ASITI",
+    "RACK": "",
+    "CODE": "1121",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  },
+  {
+    "NAME": "BARY",
+    "RACK": "",
+    "CODE": "1122",
+    "PRODUCTS": "1",
+    "FIRST": "",
+    "SECOND": "",
+    "THIRD": ""
+  }
+]

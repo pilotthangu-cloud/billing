@@ -1,0 +1,133 @@
+{
+  "gstSlabs": [
+    {
+      "code": "GST00",
+      "name": "NIL / EXEMPT (0%)",
+      "rate": 0,
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "category": "Exempt / Non-Taxable",
+      "description": "Contraceptives, human blood & components, oral rehydration salts, select life-saving drugs",
+      "activeItemsCount": 420
+    },
+    {
+      "code": "GST05",
+      "name": "CONCESSIONAL GST (5%)",
+      "rate": 5,
+      "cgst": 2.5,
+      "sgst": 2.5,
+      "igst": 5,
+      "category": "Life Saving & Critical",
+      "description": "Insulin formulations, artificial limbs, diagnostic test kits, select pediatric vaccines, dialysis fluids",
+      "activeItemsCount": 1840
+    },
+    {
+      "code": "GST12",
+      "name": "STANDARD PHARMA GST (12%)",
+      "rate": 12,
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "category": "General Medicaments (85% Retail)",
+      "description": "All standard allopathic formulations, antibiotics, analgesics, cardiovascular, anti-diabetics, gastro",
+      "activeItemsCount": 20850
+    },
+    {
+      "code": "GST18",
+      "name": "GENERAL MERCHANDISE GST (18%)",
+      "rate": 18,
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 18,
+      "category": "Nutraceuticals & Disinfectants",
+      "description": "Medicated soaps, hospital disinfectants, medicated shampoos, dietary protein supplements, skin creams",
+      "activeItemsCount": 1420
+    },
+    {
+      "code": "GST28",
+      "name": "LUXURY / COSMETIC GST (28%)",
+      "rate": 28,
+      "cgst": 14,
+      "sgst": 14,
+      "igst": 28,
+      "category": "High-End Cosmetics",
+      "description": "Non-medicinal cosmetic perfumery, luxury consumer personal care",
+      "activeItemsCount": 133
+    }
+  ],
+  "hsnChapters": [
+    {
+      "hsn": "3004",
+      "description": "Medicaments consisting of mixed or unmixed products for therapeutic or prophylactic uses",
+      "gstRate": 12,
+      "schedule": "Schedule II",
+      "exampleDrugs": "Augmentin, Pan 40, Dolo 650, Telma 40, Azithral"
+    },
+    {
+      "hsn": "3002",
+      "description": "Human blood, animal blood for therapeutic uses, antisera, vaccines, toxins, cultures of micro-organisms",
+      "gstRate": 5,
+      "schedule": "Schedule I",
+      "exampleDrugs": "Tetanus Toxoid, Rabies Vaccine, Human Albumin, Insulin"
+    },
+    {
+      "hsn": "3005",
+      "description": "Wadding, gauze, bandages and similar articles (dressings, adhesive plasters, poultices) for medical use",
+      "gstRate": 12,
+      "schedule": "Schedule II",
+      "exampleDrugs": "Band-Aid, Cotton Roll, Surgical Gauze, Micropore Tape"
+    },
+    {
+      "hsn": "3006",
+      "description": "Pharmaceutical goods: sterile surgical catgut, suture materials, dental cements, first-aid boxes",
+      "gstRate": 12,
+      "schedule": "Schedule II",
+      "exampleDrugs": "Surgical Sutures, Dental Cements, Colostomy Bags"
+    },
+    {
+      "hsn": "2106",
+      "description": "Food preparations and dietary nutritional supplements not elsewhere specified",
+      "gstRate": 18,
+      "schedule": "Schedule III",
+      "exampleDrugs": "Protinex, Ensure Powder, Revital H Capsules, Vitamin Gummies"
+    },
+    {
+      "hsn": "3808",
+      "description": "Insecticides, rodenticides, fungicides, herbicides, disinfectants and similar products",
+      "gstRate": 18,
+      "schedule": "Schedule III",
+      "exampleDrugs": "Dettol Liquid, Savlon Antiseptic, Hand Sanitizers, Povidone Scrub"
+    },
+    {
+      "hsn": "3304",
+      "description": "Beauty, make-up or skin-care preparations (other than medicaments), sunscreens, sun tan",
+      "gstRate": 18,
+      "schedule": "Schedule III",
+      "exampleDrugs": "Moisturizing Lotions, Medicated Sunscreen SPF 50, Anti-Acne Wash"
+    },
+    {
+      "hsn": "9018",
+      "description": "Instruments and appliances used in medical, surgical, dental or veterinary sciences",
+      "gstRate": 12,
+      "schedule": "Schedule II",
+      "exampleDrugs": "Disposable Syringes, Digital Thermometers, BP Monitors, Nebulizers"
+    }
+  ],
+  "legacyKvatsCodes": [
+    {
+      "code": "1",
+      "name": "KVAT 4.00% / 5.20%",
+      "ourRate": 4.0,
+      "theirRate": 5.2,
+      "status": "Superseded by GST 12% in July 2017"
+    },
+    {
+      "code": "2",
+      "name": "KVAT 0.00%",
+      "ourRate": 0.0,
+      "theirRate": 0.0,
+      "status": "Superseded by GST 0% Nil in July 2017"
+    }
+  ]
+}

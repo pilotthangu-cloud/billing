@@ -73,7 +73,7 @@ export default function TopNavigationMenu({
               <button
                 onClick={() => toggleDropdown('masters')}
                 className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['product-master', 'supplier-master'].includes(activePage) || openDropdown === 'masters'
+                  ['product-master', 'supplier-master', 'company-master', 'tax-master', 'doctor-master'].includes(activePage) || openDropdown === 'masters'
                     ? (isDark ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
                     : (isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-200')
                 }`}
@@ -83,14 +83,14 @@ export default function TopNavigationMenu({
               </button>
 
               {openDropdown === 'masters' && (
-                <div className={`absolute left-0 top-full mt-1 w-52 rounded-md shadow-xl border z-50 py-1 font-sans ${
-                  theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
+                <div className={`absolute left-0 top-full mt-1 w-60 rounded-md shadow-xl border z-50 py-1 font-sans ${
+                  isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
                 }`}>
                   <button 
                     onClick={() => navigateTo('product-master')} 
                     className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold"
                   >
-                    <span>Product Master Catalog</span>
+                    <span>Product Master [MAS001]</span>
                     <span className="text-[10px] font-mono opacity-70">24k</span>
                   </button>
                   <button 
@@ -107,14 +107,36 @@ export default function TopNavigationMenu({
                     onClick={() => navigateTo('supplier-master')} 
                     className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
                   >
-                    <span>Supplier / Distributors</span>
-                    <span className="text-[10px] font-mono opacity-70">370</span>
+                    <span>Supplier / Distributors [MAS002]</span>
+                    <span className="text-[10px] font-mono opacity-70">382</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('company-master')} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold text-purple-600 dark:text-purple-400"
+                  >
+                    <span>Company / Pharma Master [MAS003]</span>
+                    <span className="text-[10px] font-mono opacity-70">923</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('tax-master')} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400"
+                  >
+                    <span>Tax & GST Master [MAS010]</span>
+                    <span className="text-[10px] font-mono px-1 rounded bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">GST/HSN</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('doctor-master')} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
+                  >
+                    <span>Doctor & Hospital Master [MAS007]</span>
+                    <span className="text-[10px] font-mono opacity-70">1.3k</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('shortages')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white"
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
                   >
-                    <span>Shelf Rack Locations</span>
+                    <span>Shelf Rack Locations & Shortages</span>
+                    <span className="text-[10px] font-mono opacity-70">MAS009</span>
                   </button>
                 </div>
               )}
