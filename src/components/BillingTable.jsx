@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, AlertTriangle, Plus, Sparkles, Layers } from 'lucide-react';
+import { Trash2, AlertTriangle, Plus, Layers } from 'lucide-react';
 
 export default function BillingTable({ 
   items, 

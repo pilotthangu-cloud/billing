@@ -9,7 +9,7 @@ import {
   PlusCircle,
   PauseCircle,
   CheckCircle2,
-  Sparkles
+  Repeat
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
@@ -495,7 +495,7 @@ export default function FastBillingTerminal({
                             }`}
                             title="Find active salt & generic substitutes (F3)"
                           >
-                            <Sparkles className="w-3 h-3 text-amber-200" />
+                            <Repeat className="w-3 h-3 text-amber-200" />
                             <span>{isOut ? 'Find In-Stock Subs (F3)' : 'Subs'}</span>
                           </button>
 

@@ -36,7 +36,9 @@ export default function TopNavigationMenu({
   onOpenPasswordModal,
   onLogoutRole,
   activeShift,
-  onOpenShiftModal
+  onOpenShiftModal,
+  staffList = [],
+  onSelectActiveStaff
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -314,23 +316,42 @@ export default function TopNavigationMenu({
         {/* Right: Cashier Shift Handover, Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
         <div className="flex items-center space-x-2 font-mono text-[11px]">
           {/* Active Cashier Shift & Handover Button */}
-          <button
-            onClick={onOpenShiftModal}
-            className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 transition font-bold ${
+          <div className="flex items-center space-x-1">
+            <div className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-bold ${
               isDark
-                ? 'bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700'
-                : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50 shadow-xs'
-            }`}
-            title="Click to perform blind cash drawer audit and shift handover"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Cashier: <strong className={isDark ? 'text-white' : 'text-slate-950 font-black'}>{activeShift?.staffName || 'Rahul C'}</strong></span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${
-              isDark ? 'bg-sky-950 text-sky-300 border-sky-800' : 'bg-sky-100 text-sky-900 border-sky-300'
+                ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
+                : 'bg-white border-slate-300 text-slate-800 shadow-xs'
             }`}>
-              Shift Handover
-            </span>
-          </button>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-slate-500 text-[10px]">CASHIER:</span>
+              <select
+                value={activeShift?.staffName || (staffList[0] || 'Rahul C')}
+                onChange={(e) => onSelectActiveStaff && onSelectActiveStaff(e.target.value)}
+                className={`font-black bg-transparent border-0 cursor-pointer focus:outline-none text-[11px] ${
+                  isDark ? 'text-white' : 'text-slate-950 font-black'
+                }`}
+                title="Select cashier on counter"
+              >
+                {staffList.map((s, idx) => (
+                  <option key={idx} value={s} className={isDark ? 'bg-zinc-900 text-white' : 'bg-white text-slate-950'}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={onOpenShiftModal}
+              className={`px-2 py-1 rounded border text-[10px] font-black uppercase transition shadow-xs cursor-pointer ${
+                isDark 
+                  ? 'bg-sky-950 text-sky-300 border-sky-800 hover:bg-sky-900' 
+                  : 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200'
+              }`}
+              title="Click to perform cash drawer audit and shift handover"
+            >
+              Handover
+            </button>
+          </div>
 
           {/* Owner Admin HQ Portal Quick Access */}
           <button

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Keyboard, Layers, Search, Sparkles, Printer, PauseCircle, Trash2 } from 'lucide-react';
+import { Keyboard, Layers, Search, Printer, PauseCircle, Trash2 } from 'lucide-react';
 
 export default function KeyboardShortcutsBar({ 
   heldBillsCount, 

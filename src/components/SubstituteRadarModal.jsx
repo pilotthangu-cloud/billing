@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Search, Sparkles, Check, ArrowRight, Layers, AlertCircle, ShoppingCart } from 'lucide-react';
+import { X, Search, Repeat, Check, ArrowRight, Layers, AlertCircle, ShoppingCart } from 'lucide-react';
 import { findSubstitutes, extractMoleculeSignature } from '../utils/substituteFinder';
 
 export default function SubstituteRadarModal({
@@ -58,7 +58,7 @@ export default function SubstituteRadarModal({
         }`}>
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold">
-              <Sparkles className="w-4 h-4" />
+              <Repeat className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center space-x-2">

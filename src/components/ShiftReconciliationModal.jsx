@@ -1,19 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   X, 
   Coins, 
   DollarSign, 
-  ShieldCheck, 
   Check, 
   AlertTriangle, 
   Printer, 
   UserCheck, 
-  Lock, 
-  Unlock, 
   ArrowRight,
   TrendingDown,
   TrendingUp,
-  Receipt
+  Receipt,
+  UserPlus,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function ShiftReconciliationModal({
@@ -22,19 +22,45 @@ export default function ShiftReconciliationModal({
   activeShift,
   onSaveShiftHandover,
   recentBills = [],
-  theme
+  theme,
+  staffList = ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'],
+  onAddStaff
 }) {
   const isDark = theme === 'dark';
 
-  // Step 1: 'cashier_count' (blind physical count), Step 2: 'manager_auth' (PIN 1536), Step 3: 'audit_slip' (variance breakdown)
+  // Step 1: 'cashier_count' (blind physical count & staff handover selection)
+  // Step 2: 'audit_slip' (finalized handover slip with exact variance breakdown)
   const [step, setStep] = useState('cashier_count');
-  const [managerPin, setManagerPin] = useState('');
-  const [pinError, setPinError] = useState(false);
-  const [managerNotes, setManagerNotes] = useState('');
-  const [nextStaffName, setNextStaffName] = useState('Suresh Kumar');
-  const [nextOpeningFloat, setNextOpeningFloat] = useState(2000);
 
-  // Cashier blind physical denominations count
+  // Staff Handover Selection
+  const [outgoingStaff, setOutgoingStaff] = useState(() => activeShift?.staffName || staffList[0] || 'Rahul C');
+  const [incomingStaff, setIncomingStaff] = useState(() => {
+    const current = activeShift?.staffName || staffList[0] || 'Rahul C';
+    return staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar';
+  });
+
+  // Inline Quick Add Staff Sub-State
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
+  const [newStaffInput, setNewStaffInput] = useState('');
+
+  // Handover Parameters
+  const [handoverNotes, setHandoverNotes] = useState('');
+  const [nextOpeningFloat, setNextOpeningFloat] = useState(2000);
+  const [completedRecord, setCompletedRecord] = useState(null);
+
+  // Sync with activeShift when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setStep('cashier_count');
+      const current = activeShift?.staffName || staffList[0] || 'Rahul C';
+      setOutgoingStaff(current);
+      setIncomingStaff(staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar');
+      setCompletedRecord(null);
+      setHandoverNotes('');
+    }
+  }, [isOpen, activeShift, staffList]);
+
+  // Cashier physical denominations count
   const [denominations, setDenominations] = useState({
     500: 0,
     200: 0,
@@ -60,8 +86,7 @@ export default function ShiftReconciliationModal({
 
   // Calculate actual shift sales from bills
   const shiftSales = useMemo(() => {
-    const shiftStart = activeShift?.startTimestamp || 0;
-    // Bills during this shift session
+    // Filter bills for current shift session
     const bills = recentBills.filter(b => !b.shiftId || b.shiftId === activeShift?.shiftId);
     
     let cash = 0;
@@ -91,7 +116,7 @@ export default function ShiftReconciliationModal({
       variance,
       isShortage: variance < 0,
       isOverage: variance > 0,
-      isBalanced: variance === 0
+      isBalanced: Math.abs(variance) < 0.01
     };
   }, [recentBills, activeShift, totalPhysicalCash]);
 
@@ -111,32 +136,40 @@ export default function ShiftReconciliationModal({
     }));
   };
 
-  const handleProceedToManagerAuth = (e) => {
-    e.preventDefault();
+  const handleSaveNewStaff = (e) => {
+    if (e) e.preventDefault();
+    const clean = newStaffInput.trim();
+    if (!clean) return;
+    if (onAddStaff) {
+      onAddStaff(clean);
+    }
+    setIncomingStaff(clean);
+    setNewStaffInput('');
+    setIsAddingStaff(false);
+  };
+
+  // Direct Peer-to-Peer Cashier Handover (No blocking manager PIN!)
+  const handleExecuteHandover = (e) => {
+    if (e) e.preventDefault();
+
+    if (!outgoingStaff) {
+      alert('Please select the outgoing cashier name.');
+      return;
+    }
+    if (!incomingStaff) {
+      alert('Please select the incoming cashier name.');
+      return;
+    }
+
     if (totalPhysicalCash <= 0) {
       if (!window.confirm('You have entered ₹0.00 physical cash. Are you sure your cash drawer is empty?')) {
         return;
       }
     }
-    setStep('manager_auth');
-  };
 
-  const handleVerifyManagerPin = (e) => {
-    e.preventDefault();
-    const cleanPin = managerPin.trim();
-    // Default admin pin is 1536
-    if (cleanPin === '1536' || cleanPin === 'CC' || cleanPin === 'admin') {
-      setPinError(false);
-      setStep('audit_slip');
-    } else {
-      setPinError(true);
-    }
-  };
-
-  const handleCompleteHandover = () => {
-    const completedShiftRecord = {
+    const record = {
       shiftId: activeShift?.shiftId || `SHIFT-${Date.now().toString().slice(-6)}`,
-      staffName: activeShift?.staffName || 'Counter Staff 1',
+      staffName: outgoingStaff,
       counter: activeShift?.counter || 'Counter 01',
       startTime: activeShift?.startTime || '08:00 AM',
       endTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -152,24 +185,26 @@ export default function ShiftReconciliationModal({
       variance: shiftSales.variance,
       denominations: { ...denominations },
       managerApproved: true,
-      managerNotes: managerNotes || 'Handover verified and accepted.',
-      nextStaffName: nextStaffName.trim() || 'Incoming Staff',
+      handoverNotes: handoverNotes.trim() || 'Shift handover completed at counter.',
+      nextStaffName: incomingStaff,
       nextOpeningFloat: parseFloat(nextOpeningFloat) || 2000
     };
 
+    setCompletedRecord(record);
+
     if (onSaveShiftHandover) {
-      onSaveShiftHandover(completedShiftRecord);
+      onSaveShiftHandover(record);
     }
 
-    alert(`Shift successfully closed for ${completedShiftRecord.staffName}. New shift started for ${completedShiftRecord.nextStaffName}!`);
-    onClose();
+    // Immediately display the finalized audit slip without prompt barriers
+    setStep('audit_slip');
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 font-sans select-none">
-      <div className={`w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${
+      <div className={`w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[92vh] ${
         isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-950'
       }`}>
         {/* Modal Top Header */}
@@ -182,10 +217,10 @@ export default function ShiftReconciliationModal({
             </div>
             <div>
               <h3 className="font-black text-sm uppercase tracking-wide">
-                Staff Shift Handover & Blind Cash Reconciliation
+                Cash Counter Shift Handover & Reconciliation
               </h3>
               <p className={`text-[11px] font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                Counter 01 • Cashier On Duty: <strong>{activeShift?.staffName || 'Counter Staff 1'}</strong>
+                Counter 01 • Active Cashier: <strong>{activeShift?.staffName || outgoingStaff}</strong>
               </p>
             </div>
           </div>
@@ -198,27 +233,112 @@ export default function ShiftReconciliationModal({
           </button>
         </div>
 
-        {/* STEP 1: BLIND PHYSICAL CASH COUNT */}
+        {/* STEP 1: CASHIER COUNT & PEER-TO-PEER HANDOVER SETUP */}
         {step === 'cashier_count' && (
-          <form onSubmit={handleProceedToManagerAuth} className="p-5 space-y-4 overflow-y-auto">
-            <div className={`p-3 rounded-lg border text-xs font-mono flex items-center justify-between ${
+          <form onSubmit={handleExecuteHandover} className="p-5 space-y-4 overflow-y-auto">
+            {/* Staff Handover Roster Selection Bar */}
+            <div className={`p-3.5 rounded-xl border space-y-2.5 ${
               isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
             }`}>
-              <div>
-                <span className="font-bold block">Blind Cash Drawer Audit Protocol</span>
-                <span className={`text-[11px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Count all currency notes and coins physically present in the drawer right now.
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase font-mono text-sky-600 flex items-center space-x-1.5">
+                  <UserCheck className="w-4 h-4" />
+                  <span>Cashier Custody Handover</span>
                 </span>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddingStaff(!isAddingStaff)}
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded border transition flex items-center space-x-1 ${
+                    isDark 
+                      ? 'border-zinc-700 hover:bg-zinc-800 text-sky-400' 
+                      : 'border-slate-300 hover:bg-white text-sky-700'
+                  }`}
+                >
+                  <UserPlus className="w-3 h-3" />
+                  <span>{isAddingStaff ? 'Cancel' : '+ Add Staff Name'}</span>
+                </button>
               </div>
-              <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
-                BLIND AUDIT
-              </span>
+
+              {/* Inline Add Staff Row */}
+              {isAddingStaff && (
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="text"
+                    autoFocus
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    placeholder="Enter new employee / cashier name..."
+                    value={newStaffInput}
+                    onChange={(e) => setNewStaffInput(e.target.value)}
+                    className={`flex-1 px-3 py-1.5 rounded-lg border text-xs font-bold ${
+                      isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveNewStaff}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold"
+                  >
+                    Save Staff
+                  </button>
+                </div>
+              )}
+
+              {/* Two-Column Staff Selector */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className={`block text-[10px] font-mono font-bold uppercase mb-1 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    Outgoing Cashier (Handing Over) *
+                  </label>
+                  <select
+                    value={outgoingStaff}
+                    onChange={(e) => setOutgoingStaff(e.target.value)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-black ${
+                      isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
+                    }`}
+                  >
+                    {staffList.map((name, idx) => (
+                      <option key={idx} value={name}>
+                        {name} (Off Duty)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-mono font-bold uppercase mb-1 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    Incoming Cashier (Taking Over) *
+                  </label>
+                  <select
+                    value={incomingStaff}
+                    onChange={(e) => setIncomingStaff(e.target.value)}
+                    className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-black ${
+                      isDark ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-white border-slate-300 text-sky-900'
+                    }`}
+                  >
+                    {staffList.map((name, idx) => (
+                      <option key={idx} value={name}>
+                        {name} (Next Shift)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Currency Denominations Grid */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                Physical Currency Note Counts:
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 font-mono">
+                Physical Currency Note Counts in Cash Drawer:
               </label>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono font-bold">
@@ -230,6 +350,9 @@ export default function ShiftReconciliationModal({
                     <input
                       type="number"
                       min="0"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
                       value={denominations[denom] || ''}
                       onChange={(e) => handleDenomChange(denom, e.target.value)}
                       placeholder="0 notes"
@@ -252,6 +375,9 @@ export default function ShiftReconciliationModal({
                     type="number"
                     min="0"
                     step="0.5"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={denominations.coins || ''}
                     onChange={(e) => handleCoinsChange(e.target.value)}
                     placeholder="₹0.00"
@@ -271,16 +397,55 @@ export default function ShiftReconciliationModal({
               isDark ? 'bg-zinc-950 border-zinc-700' : 'bg-sky-50 border-sky-300'
             }`}>
               <div>
-                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">Total Cash Counted</span>
+                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">Total Physical Cash Counted</span>
                 <span className={`text-xl font-black font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   ₹{totalPhysicalCash.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <span className="text-xs font-mono font-bold text-slate-500">
-                Staff: <strong>{activeShift?.staffName || 'Counter Staff 1'}</strong>
-              </span>
+              <div className="text-right">
+                <span className="text-[10px] font-mono font-bold text-slate-500 block">Drawer Transfer</span>
+                <span className="text-xs font-mono font-black text-sky-600">
+                  {outgoingStaff} ➔ {incomingStaff}
+                </span>
+              </div>
             </div>
 
+            {/* Shift Handover Parameters: Float Left & Notes */}
+            <div className="grid grid-cols-2 gap-3 font-mono text-xs">
+              <div>
+                <label className="block text-xs font-bold mb-1">Float Left in Drawer for Next Shift (₹) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  value={nextOpeningFloat}
+                  onChange={(e) => setNextOpeningFloat(e.target.value)}
+                  className={`w-full px-3 py-1.5 rounded-lg border font-mono font-bold ${
+                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1">Handover Notes / Drawer Remarks</label>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  value={handoverNotes}
+                  onChange={(e) => setHandoverNotes(e.target.value)}
+                  placeholder="e.g. ₹2000 float left in drawer, cash bag sealed."
+                  className={`w-full px-3 py-1.5 rounded-lg border text-xs ${
+                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons: Direct Handover (No Admin Prompt Barrier!) */}
             <div className="pt-2 border-t flex items-center justify-end space-x-3">
               <button
                 type="button"
@@ -293,76 +458,16 @@ export default function ShiftReconciliationModal({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-black flex items-center space-x-1.5 shadow"
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black flex items-center space-x-2 shadow cursor-pointer"
               >
-                <span>Submit Cash Count & Manager Sign-Off</span>
+                <span>Complete Shift Handover & View Audit Slip</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
         )}
 
-        {/* STEP 2: MANAGER PIN AUTHENTICATION */}
-        {step === 'manager_auth' && (
-          <form onSubmit={handleVerifyManagerPin} className="p-6 space-y-4">
-            <div className="text-center space-y-1">
-              <div className="w-12 h-12 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center mx-auto mb-2">
-                <Lock className="w-6 h-6" />
-              </div>
-              <h4 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                Manager Authorization Required
-              </h4>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                Enter Manager PIN (1536) to reveal expected sales totals and approve shift handover.
-              </p>
-            </div>
-
-            <div className="max-w-xs mx-auto">
-              <label className="block text-xs font-bold text-center mb-1.5">Security PIN</label>
-              <input
-                type="password"
-                autoFocus
-                value={managerPin}
-                onChange={(e) => {
-                  setManagerPin(e.target.value);
-                  setPinError(false);
-                }}
-                placeholder="Enter 1536..."
-                className={`w-full text-center px-4 py-2.5 rounded-lg border text-base font-black font-mono tracking-widest ${
-                  pinError 
-                    ? 'border-red-500 ring-2 ring-red-500/20' 
-                    : (isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950')
-                }`}
-              />
-              {pinError && (
-                <p className="text-red-500 text-xs font-bold text-center mt-1">
-                  Incorrect PIN. Please re-enter Administrator PIN.
-                </p>
-              )}
-            </div>
-
-            <div className="pt-4 border-t flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setStep('cashier_count')}
-                className={`px-3 py-1.5 rounded text-xs font-bold ${
-                  isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                ← Back to Cash Count
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow flex items-center space-x-1"
-              >
-                <Unlock className="w-4 h-4" />
-                <span>Verify & View Audit Slip</span>
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* STEP 3: FULL RECONCILIATION AUDIT SLIP (VARIANCE BREAKDOWN) */}
+        {/* STEP 2: FINALIZED SHIFT AUDIT SLIP (RECONCILIATION SUMMARY) */}
         {step === 'audit_slip' && (
           <div className="p-5 space-y-4 overflow-y-auto">
             {/* Variance Alert Banner */}
@@ -392,10 +497,19 @@ export default function ShiftReconciliationModal({
                   </div>
                   <p className="text-[11px] font-mono mt-0.5 opacity-80">
                     {shiftSales.isShortage 
-                      ? 'Physical drawer cash is less than expected sales revenue.' 
+                      ? 'Physical drawer cash is less than computer expected cash.' 
                       : 'Physical cash matches all computer sales and opening float.'}
                   </p>
                 </div>
+              </div>
+
+              <div className="text-right font-mono text-[11px]">
+                <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold block text-[10px]">
+                  HANDOVER SAVED
+                </span>
+                <span className="opacity-70 mt-1 block">
+                  {completedRecord?.endTime || new Date().toLocaleTimeString()}
+                </span>
               </div>
             </div>
 
@@ -406,9 +520,9 @@ export default function ShiftReconciliationModal({
               <table className="w-full text-left border-collapse">
                 <tbody className={`divide-y ${isDark ? 'divide-zinc-800' : 'divide-slate-200'}`}>
                   <tr>
-                    <td className="py-2 px-3 text-slate-500 font-bold">Shift Session Staff</td>
+                    <td className="py-2 px-3 text-slate-500 font-bold">Shift Handover Custody</td>
                     <td className={`py-2 px-3 font-black text-right ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                      {activeShift?.staffName || 'Counter Staff 1'}
+                      {outgoingStaff} ➔ <strong className="text-sky-600">{incomingStaff}</strong>
                     </td>
                   </tr>
                   <tr>
@@ -457,83 +571,47 @@ export default function ShiftReconciliationModal({
                       {shiftSales.variance >= 0 ? '+' : ''}₹{shiftSales.variance.toFixed(2)}
                     </td>
                   </tr>
+                  <tr>
+                    <td className="py-2 px-3 text-slate-500 font-bold">Opening Float for {incomingStaff}</td>
+                    <td className="py-2 px-3 font-black text-right text-sky-600">
+                      ₹{parseFloat(nextOpeningFloat || 2000).toFixed(2)}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Handover & Next Shift Setup */}
-            <div className="grid grid-cols-2 gap-3 font-sans text-xs">
-              <div>
-                <label className="block text-xs font-bold mb-1">Incoming Staff Name *</label>
-                <input
-                  type="text"
-                  value={nextStaffName}
-                  onChange={(e) => setNextStaffName(e.target.value)}
-                  placeholder="e.g. Suresh Kumar"
-                  className={`w-full px-3 py-1.5 rounded-lg border font-bold ${
-                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
-                  }`}
-                />
+            {/* Handover Notes Display */}
+            {handoverNotes && (
+              <div className={`p-2.5 rounded-lg border text-xs font-mono ${
+                isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}>
+                <span className="font-bold text-slate-500 block uppercase text-[10px]">Handover Remarks:</span>
+                <span>{handoverNotes}</span>
               </div>
+            )}
 
-              <div>
-                <label className="block text-xs font-bold mb-1">Next Shift Opening Float (₹) *</label>
-                <input
-                  type="number"
-                  value={nextOpeningFloat}
-                  onChange={(e) => setNextOpeningFloat(e.target.value)}
-                  className={`w-full px-3 py-1.5 rounded-lg border font-mono font-bold ${
-                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
-                  }`}
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-xs font-bold mb-1">Manager Handover Audit Notes</label>
-                <input
-                  type="text"
-                  value={managerNotes}
-                  onChange={(e) => setManagerNotes(e.target.value)}
-                  placeholder="e.g. Verified with Rahul, shortage ₹50 settled from allowance."
-                  className={`w-full px-3 py-1.5 rounded-lg border ${
-                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
-                  }`}
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
+            {/* Actions: Print and Close */}
             <div className="pt-3 border-t flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => window.print()}
-                className={`px-3.5 py-2 rounded-lg border font-bold text-xs flex items-center space-x-1.5 ${
-                  isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-slate-300 bg-white text-slate-800'
+                className={`px-4 py-2 rounded-lg border font-bold text-xs flex items-center space-x-1.5 cursor-pointer ${
+                  isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100 shadow-sm'
                 }`}
               >
                 <Printer className="w-3.5 h-3.5 text-sky-600" />
                 <span>Print Shift Slip</span>
               </button>
 
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setStep('cashier_count')}
-                  className={`px-3 py-2 rounded text-xs font-bold ${
-                    isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Recount Cash
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCompleteHandover}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow flex items-center space-x-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Approve & Start Next Shift</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-black shadow flex items-center space-x-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Done & Start Billing as {incomingStaff}</span>
+              </button>
             </div>
           </div>
         )}

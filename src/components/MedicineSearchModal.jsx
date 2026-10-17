@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, AlertCircle, Sparkles, Building2, Layers, X, ArrowUpDown } from 'lucide-react';
+import { Search, MapPin, AlertCircle, Building2, Layers, X, ArrowUpDown } from 'lucide-react';
 
 export default function MedicineSearchModal({ 
   isOpen, 
@@ -146,7 +146,7 @@ export default function MedicineSearchModal({
                     </div>
                     {item.generic && (
                       <div className="text-[11px] text-sky-400/90 font-mono flex items-center space-x-1 mt-0.5">
-                        <Sparkles className="w-3 h-3 text-sky-400" />
+                        <span className="text-[10px] font-bold text-sky-500 uppercase">Salt:</span>
                         <span>{item.generic}</span>
                       </div>
                     )}

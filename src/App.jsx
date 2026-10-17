@@ -100,6 +100,18 @@ function getInitialBillNo() {
   return '025316';
 }
 
+// Persistent storage loader for staff roster
+function getInitialStaffList() {
+  try {
+    const saved = localStorage.getItem('beta_pharma_staff_list');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'];
+}
+
 // Persistent storage loader for active cashier shift session
 function getInitialActiveShift() {
   try {
@@ -124,8 +136,34 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState('');
 
   // Staff Shift Session & Reconciliation State
+  const [staffList, setStaffList] = useState(getInitialStaffList);
   const [activeShift, setActiveShift] = useState(getInitialActiveShift);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+
+  const handleAddStaff = (newStaffName) => {
+    const clean = (newStaffName || '').trim();
+    if (!clean) return;
+    if (staffList.includes(clean)) return;
+    const updated = [...staffList, clean];
+    setStaffList(updated);
+    try {
+      localStorage.setItem('beta_pharma_staff_list', JSON.stringify(updated));
+    } catch (e) {}
+  };
+
+  const handleSelectActiveStaff = (staffName) => {
+    if (!staffName) return;
+    setActiveShift(prev => {
+      const updated = {
+        ...prev,
+        staffName
+      };
+      try {
+        localStorage.setItem('beta_pharma_active_shift', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
   const [medicines, setMedicines] = useState(getInitialMedicines);
@@ -508,6 +546,8 @@ export default function App() {
           }}
           onLogoutRole={handleLogoutRole}
           activeShift={activeShift}
+          staffList={staffList}
+          onSelectActiveStaff={handleSelectActiveStaff}
           onOpenShiftModal={() => setIsShiftModalOpen(true)}
         />
       )}
@@ -695,6 +735,8 @@ export default function App() {
         onSaveShiftHandover={handleSaveShiftHandover}
         recentBills={recentBills}
         theme={theme}
+        staffList={staffList}
+        onAddStaff={handleAddStaff}
       />
     </div>
   );

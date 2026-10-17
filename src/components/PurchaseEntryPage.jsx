@@ -21,7 +21,7 @@ import {
   Edit3,
   AlertTriangle,
   X,
-  Sparkles,
+  Loader2,
   CheckCheck,
   Key,
   Settings,
@@ -153,8 +153,20 @@ export default function PurchaseEntryPage({
 }) {
   const isDark = theme === 'dark';
 
+  // All Suppliers (Loaded from suppliers.json + dynamic invoice detected distributors)
+  const [allSuppliers, setAllSuppliers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_custom_suppliers');
+      if (saved) {
+        const custom = JSON.parse(saved);
+        if (Array.isArray(custom)) return [...custom, ...supplierList];
+      }
+    } catch (e) {}
+    return supplierList;
+  });
+
   // Invoice Header States (PURCHASE.DBF schema)
-  const [supplierCode, setSupplierCode] = useState(supplierList[0]?.code || 'S076');
+  const [supplierCode, setSupplierCode] = useState(() => (allSuppliers[0]?.code || 'S076'));
   const [invoiceNo, setInvoiceNo] = useState(''); // Starts empty so pharmacist writes distributor bill no!
   const [billDate, setBillDate] = useState('16/10/2026'); // Editable date
   const [isCash, setIsCash] = useState(false); // Cash or Credit
@@ -218,7 +230,7 @@ export default function PurchaseEntryPage({
   ).slice(0, 20);
 
   // Selected supplier details
-  const currentSupplier = supplierList.find(s => s.code === supplierCode) || supplierList[0];
+  const currentSupplier = allSuppliers.find(s => s.code === supplierCode) || allSuppliers[0];
 
   // Handle supplier change: Clear invoice number so user enters the new distributor bill
   const handleSupplierChange = (newCode) => {
@@ -268,8 +280,8 @@ export default function PurchaseEntryPage({
             messages: [
               {
                 role: 'system',
-                content: `You are an expert Indian Pharmaceutical B2B Invoice & Inward Stock Parser.
-Examine the provided distributor tax invoice image and accurately extract header details and ALL medicine line items into valid JSON matching this schema:
+                content: `You are an expert Indian Pharmaceutical B2B Invoice & Inward Stock Parser specializing in Kerala/Indian wholesale distributor tax invoices (e.g., Kallatt Drug Lines, Sabari, Can Drug House).
+Examine the provided distributor tax invoice image with extreme optical precision and extract header details and ALL medicine line items into valid JSON matching this schema:
 {
   "supplierName": string,
   "invoiceNo": string,
@@ -291,19 +303,32 @@ Examine the provided distributor tax invoice image and accurately extract header
     }
   ]
 }
-Special Indian Pharma Rules:
-1. exp must be formatted MM/YY (e.g. 05/26, 04/26).
-2. freeQty is the free bonus scheme items (e.g., if scheme shows 10+3 or Free is 3, set wQty=10 and freeQty=3. If no bonus scheme, freeQty is 0).
-3. ptr is Rate / Purchase Price per pack before GST.
-4. mrp is Maximum Retail Price printed on invoice.
-5. batch must be the exact alphanumeric code (e.g. 2222419, ED2303).
-6. confidence is an integer between 90 and 100.`
+
+MANDATORY INDIAN PHARMA INVOICE RULES:
+1. CRITICAL COLUMN ORDER: In Indian pharma distributor invoices, the column sequence almost always puts MRP BEFORE Rate/PTR! 
+   Table columns are usually: [Product Name] [Pack] [Batch] [Exp] [Qty] [Free/Sch] [MRP] [Rate / PTR] [Disc%] [GST%] [Taxable / Net]
+   DO NOT CONFUSE MRP AND RATE:
+   - MRP is the Maximum Retail Price printed for the customer.
+   - PTR (Purchase To Retailer) is the Rate / Cost price per pack billed to the pharmacy.
+   - FUNDAMENTAL INVARIANT: MRP IS ALWAYS STRICTLY GREATER THAN PTR (MRP > PTR). The Rate/PTR is roughly 20% to 30% lower than MRP. Never assign a value higher than MRP to PTR!
+2. QUANTITY VS PACK SIZE:
+   - "wQty" is the BILLED QUANTITY (number of packs/strips/bottles ordered, e.g. 2, 5, 10, 30).
+   - "packSize" is the packing specification (e.g., if column says 10'S, 10T, 1x10, packSize is 10; if 100ml, packSize is 1).
+   - DO NOT copy the pack size (e.g., 10) into wQty! If the invoice says Qty=2, then wQty MUST be 2!
+3. FREE SCHEME QUANTITY:
+   - "freeQty" is the free bonus scheme items (e.g., under Sch / Free / F.Qty column). If scheme shows 10+2 or free column has 2, wQty=10 and freeQty=2. If no free quantity, freeQty is 0.
+4. EXPIRY FORMAT:
+   - "exp" must be formatted strictly as MM/YY (e.g. 05/26, 04/27, 11/25).
+5. BATCH NUMBER:
+   - "batch" must be the exact alphanumeric code (e.g. 2222419, ED2303, KL908).
+6. SUPPLIER NAME:
+   - "supplierName" must be the exact distributor header name printed at the top of the invoice (e.g. "KALLATT DRUG LINES", "SABARI ENTERPRISES", "THE CAN DRUG HOUSE").`
               },
               {
                 role: 'user',
                 content: [
-                  { type: 'text', text: 'Extract all medicine line items, batches, expiries, quantities, schemes, and prices from this distributor bill.' },
-                  { type: 'image_url', image_url: { url: imageDataUrl, detail: 'auto' } }
+                  { type: 'text', text: 'Extract all medicine line items, batches, expiries, quantities, schemes, and prices from this distributor bill. Pay special attention to column order: MRP is printed before Rate/PTR, and Qty is billed units.' },
+                  { type: 'image_url', image_url: { url: imageDataUrl, detail: 'high' } }
                 ]
               }
             ],
@@ -328,10 +353,10 @@ Special Indian Pharma Rules:
         const rawContent = data.choices?.[0]?.message?.content || '{}';
         const parsed = JSON.parse(rawContent);
 
-        // 5. Match Supplier with Local Database
+        // 5. Match Supplier with Local Database or Dynamically Register Scanned Distributor
         let detectedSupplier = null;
-        const extractedSupplier = (parsed.supplierName || '').toUpperCase();
-        for (const s of supplierList) {
+        const extractedSupplier = (parsed.supplierName || '').trim().toUpperCase();
+        for (const s of allSuppliers) {
           const key = s.name.toUpperCase().split(' ')[0];
           if (key.length >= 3 && extractedSupplier.includes(key)) {
             detectedSupplier = s;
@@ -339,24 +364,50 @@ Special Indian Pharma Rules:
           }
         }
         if (!detectedSupplier) {
-          if (extractedSupplier.includes('SABARI') || extractedSupplier.includes('THALASSERY')) {
-            detectedSupplier = supplierList.find(s => s.code === 'S077') || { code: 'S077', name: 'SABARI ENTERPRISES' };
-          } else if (extractedSupplier.includes('CAN')) {
-            detectedSupplier = supplierList.find(s => s.code === 'S076') || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
+          if (extractedSupplier) {
+            // Dynamically register the scanned distributor so the user doesn't get defaulted to the wrong vendor
+            const newCode = 'D' + Math.floor(100 + Math.random() * 900);
+            detectedSupplier = {
+              code: newCode,
+              name: extractedSupplier,
+              address: 'DISTRIBUTOR INVOICE',
+              creditDays: 21
+            };
+            setAllSuppliers(prev => {
+              const updated = [detectedSupplier, ...prev];
+              try {
+                const custom = JSON.parse(localStorage.getItem('beta_pharma_custom_suppliers') || '[]');
+                localStorage.setItem('beta_pharma_custom_suppliers', JSON.stringify([detectedSupplier, ...custom]));
+              } catch (e) {}
+              return updated;
+            });
           } else {
-            detectedSupplier = supplierList[0] || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
+            detectedSupplier = allSuppliers[0] || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
           }
         }
 
-        // 6. Clean and format line items
+        // 6. Clean and format line items with strict pharma sanity invariants
         const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
         const cleanedItems = rawItems.map(it => {
-          const wQty = parseInt(it.wQty) || 1;
+          let wQty = parseInt(it.wQty) || 1;
           const freeQty = parseInt(it.freeQty) || 0;
-          const packSize = parseInt(it.packSize) || 1;
-          const ptr = parseFloat(it.ptr) || 0;
-          const mrp = parseFloat(it.mrp) || (ptr > 0 ? +(ptr * 1.35).toFixed(2) : 0);
+          const packSize = parseInt(it.packSize) || 10;
+          let ptr = parseFloat(it.ptr) || 0;
+          let mrp = parseFloat(it.mrp) || 0;
           const taxPercent = parseInt(it.taxPercent) || 12;
+
+          // Sanity check 1: In Indian pharma retail, MRP MUST be strictly greater than PTR.
+          // If OCR swapped MRP and Rate due to column order, swap them back!
+          if (ptr > mrp && mrp > 0) {
+            const temp = ptr;
+            ptr = mrp;
+            mrp = temp;
+          }
+
+          // If MRP is missing or 0 but PTR exists, calculate typical retail MRP (+25%)
+          if ((!mrp || mrp === 0) && ptr > 0) {
+            mrp = +(ptr * 1.25).toFixed(2);
+          }
 
           return {
             name: (it.name || 'INWARD ITEM').toUpperCase(),
@@ -751,7 +802,7 @@ Special Indian Pharma Rules:
                   isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950 shadow-sm'
                 }`}
               >
-                {supplierList.map((s, idx) => (
+                {allSuppliers.map((s, idx) => (
                   <option key={idx} value={s.code}>
                     {s.code} - {s.name} ({s.address || 'KANNUR / THALASSERY'})
                   </option>
@@ -1359,7 +1410,7 @@ Special Indian Pharma Rules:
                       <Camera className="w-10 h-10 text-sky-500" />
                     </div>
                     <div className="absolute -bottom-2 -right-2 p-1.5 rounded-full bg-emerald-500 text-white shadow">
-                      <Sparkles className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     </div>
                   </div>
                   <h4 className={`text-base font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -1407,7 +1458,7 @@ Special Indian Pharma Rules:
                         value={extractedReviewData.supplierCode}
                         onChange={(e) => {
                           const code = e.target.value;
-                          const found = supplierList.find(s => s.code === code);
+                          const found = allSuppliers.find(s => s.code === code);
                           setExtractedReviewData(prev => ({
                             ...prev,
                             supplierCode: code,
@@ -1418,7 +1469,7 @@ Special Indian Pharma Rules:
                           isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950 shadow-sm'
                         }`}
                       >
-                        {supplierList.map((s, idx) => (
+                        {allSuppliers.map((s, idx) => (
                           <option key={idx} value={s.code}>
                             {s.code} - {s.name} ({s.address || 'KANNUR / THALASSERY'})
                           </option>
@@ -1845,8 +1896,16 @@ Special Indian Pharma Rules:
                   Enter 4-Digit Admin Password / PIN
                 </label>
                 <input
-                  type="password"
+                  type="text"
                   autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  inputMode="numeric"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  style={{ WebkitTextSecurity: 'disc' }}
                   placeholder="••••"
                   value={adminPasswordInput}
                   onChange={(e) => {

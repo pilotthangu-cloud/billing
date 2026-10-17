@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 
 export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitutes }) {
   const isDark = theme === 'dark';
@@ -125,7 +125,7 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
               }`}
               title="Find generic & therapeutic substitutes (F3)"
             >
-              <Sparkles className="w-3 h-3 text-amber-200" />
+              <Repeat className="w-3 h-3 text-amber-200" />
               <span>{isOut ? 'Subs (F3)' : 'Substitutes'}</span>
             </button>
           )}
