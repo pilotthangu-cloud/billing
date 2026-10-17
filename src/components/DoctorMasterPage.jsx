@@ -25,16 +25,29 @@ export default function DoctorMasterPage({ theme, onBackToBilling, onSelectDocto
   const [newClinic, setNewClinic] = useState('');
   const [newPhone, setNewPhone] = useState('');
 
+  const [customDoctors, setCustomDoctors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_custom_doctors');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const allDoctors = useMemo(() => {
+    return [...customDoctors, ...doctorList];
+  }, [customDoctors]);
+
   // Filter doctors
   const filteredDoctors = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return doctorList;
-    return doctorList.filter(d => 
-      d.name.toLowerCase().includes(q) || 
+    if (!q) return allDoctors;
+    return allDoctors.filter(d => 
+      (d.name && d.name.toLowerCase().includes(q)) || 
       (d.code && d.code.toLowerCase().includes(q)) ||
       (d.address && d.address.toLowerCase().includes(q))
     );
-  }, [searchQuery]);
+  }, [searchQuery, allDoctors]);
 
   return (
     <div className={`flex-1 flex flex-col overflow-hidden font-sans transition-colors ${
@@ -65,7 +78,7 @@ export default function DoctorMasterPage({ theme, onBackToBilling, onSelectDocto
                   ? 'bg-sky-950 text-sky-300 border-sky-800' 
                   : 'bg-sky-100 text-sky-950 border-sky-300'
               }`}>
-                {doctorList.length} Registered Prescribers
+                {allDoctors.length} Registered Prescribers
               </span>
             </div>
             <p className={`text-xs font-mono mt-0.5 font-semibold ${
@@ -221,10 +234,25 @@ export default function DoctorMasterPage({ theme, onBackToBilling, onSelectDocto
                     alert('Enter doctor name');
                     return;
                   }
-                  alert(`Doctor "${newDoctorName}" added to Master!`);
+                  const newDoc = {
+                    code: `DOC${String(allDoctors.length + 1).padStart(3, '0')}`,
+                    name: newDoctorName.trim(),
+                    address: newClinic.trim() || 'Thalassery / Kannur Region',
+                    phone: newPhone.trim() || '-'
+                  };
+                  const updated = [newDoc, ...customDoctors];
+                  setCustomDoctors(updated);
+                  try {
+                    localStorage.setItem('beta_pharma_custom_doctors', JSON.stringify(updated));
+                  } catch (e) {
+                    console.error('Failed to save doctor', e);
+                  }
+                  setNewDoctorName('');
+                  setNewClinic('');
+                  setNewPhone('');
                   setIsAddModalOpen(false);
                 }}
-                className="px-4 py-1.5 rounded bg-sky-600 text-white font-bold"
+                className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold"
               >
                 Save Doctor
               </button>

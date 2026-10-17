@@ -24,41 +24,80 @@ export default function DailySalesRegisterPage({
   theme, 
   onBackToBilling, 
   authenticatedRole,
-  onOpenPasswordModal
+  onOpenPasswordModal,
+  recentBills = [],
+  medicines = []
 }) {
   const [viewMode, setViewMode] = useState('daily'); // 'daily', 'monthly', or 'shifts'
-  const [selectedDate, setSelectedDate] = useState('16/10/2026');
-  const [selectedMonth, setSelectedMonth] = useState('10/2026'); // MM/YYYY
   const [selectedShiftForDetail, setSelectedShiftForDetail] = useState(null);
 
-  // Mock Sales Database across multiple days (matching COUNTER.DBF & SALES.DBF)
-  const salesDatabase = {
-    '16/10/2026': [
-      { no: '025316', time: '14:52', patient: 'PRADEEPKUMAR', doctor: 'Dr. Madhusoodanan T', items: 1, amount: 257.80, cost: 206.24, mode: 'CASH' },
-      { no: '025315', time: '13:59', patient: 'DINOOP', doctor: 'Dr. Madhusoodanan T', items: 2, amount: 583.80, cost: 467.04, mode: 'UPI' },
-      { no: '025314', time: '13:21', patient: 'SOBHA', doctor: 'Dr. Manojan', items: 1, amount: 143.46, cost: 114.77, mode: 'CASH' },
-      { no: '025313', time: '12:45', patient: 'RAJAN', doctor: 'Dr. Deepa Manojan', items: 5, amount: 505.26, cost: 404.21, mode: 'UPI' },
-      { no: '025312', time: '11:15', patient: 'SUSHAMA', doctor: 'Dr. Saurabh Manojan', items: 4, amount: 415.33, cost: 332.26, mode: 'CASH' },
-      { no: '025311', time: '10:30', patient: 'PRAKASAN', doctor: 'Dr. Lakshmi Saurabh', items: 2, amount: 180.00, cost: 144.00, mode: 'CASH' },
-      { no: '025310', time: '09:45', patient: 'USHA', doctor: 'Dr. Madhusoodanan T', items: 3, amount: 320.50, cost: 256.40, mode: 'UPI' }
-    ],
-    '15/10/2026': [
-      { no: '025309', time: '19:40', patient: 'BALAKRISHNAN', doctor: 'Dr. Madhusoodanan T', items: 3, amount: 420.00, cost: 330.00, mode: 'CASH' },
-      { no: '025308', time: '18:15', patient: 'GEETHA', doctor: 'Dr. Manojan', items: 2, amount: 310.50, cost: 245.00, mode: 'UPI' },
-      { no: '025307', time: '16:30', patient: 'MOHAMMED', doctor: 'Dr. Deepa Manojan', items: 4, amount: 680.00, cost: 540.00, mode: 'CASH' },
-      { no: '025306', time: '14:20', patient: 'SHEELA', doctor: 'Dr. Saurabh Manojan', items: 1, amount: 95.00, cost: 72.00, mode: 'CASH' },
-      { no: '025305', time: '11:10', patient: 'ANANDAN', doctor: 'Dr. Lakshmi Saurabh', items: 6, amount: 890.00, cost: 710.00, mode: 'UPI' }
-    ],
-    '14/10/2026': [
-      { no: '025304', time: '20:10', patient: 'RAMESHAN', doctor: 'Dr. Madhusoodanan T', items: 2, amount: 340.00, cost: 270.00, mode: 'CASH' },
-      { no: '025303', time: '17:45', patient: 'SREELATHA', doctor: 'Dr. Manojan', items: 3, amount: 510.00, cost: 405.00, mode: 'UPI' },
-      { no: '025302', time: '15:30', patient: 'VIJAYAN', doctor: 'Dr. Deepa Manojan', items: 5, amount: 720.00, cost: 575.00, mode: 'CASH' },
-      { no: '025301', time: '12:00', patient: 'DEVAKI', doctor: 'Dr. Saurabh Manojan', items: 2, amount: 260.00, cost: 205.00, mode: 'CASH' }
-    ]
-  };
+  // Load all recorded bills from props or localStorage
+  const allBills = useMemo(() => {
+    if (Array.isArray(recentBills) && recentBills.length > 0) return recentBills;
+    try {
+      const raw = localStorage.getItem('beta_pharma_recent_bills');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  }, [recentBills]);
 
-  // Day navigation helpers
-  const availableDates = Object.keys(salesDatabase);
+  // Today formatted in DD/MM/YYYY
+  const todayFormatted = useMemo(() => {
+    const now = new Date();
+    return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  }, []);
+
+  // Dynamically group bills by date
+  const salesDatabase = useMemo(() => {
+    const db = {};
+    allBills.forEach(b => {
+      const d = b.date || todayFormatted;
+      if (!db[d]) db[d] = [];
+
+      let totalBillCost = 0;
+      (b.items || []).forEach(it => {
+        const ptr = it.ptr || (it.mrp ? it.mrp * 0.78 : 0);
+        const per = it.per || 10;
+        const lineQty = parseFloat(it.qty) || 1;
+        totalBillCost += (ptr / per) * lineQty;
+      });
+
+      const billAmt = parseFloat(b.netPayable || b.grossTotal) || 0;
+      if (totalBillCost === 0 && billAmt > 0) {
+        totalBillCost = billAmt * 0.8;
+      }
+
+      db[d].push({
+        no: b.billNo,
+        time: b.time || '12:00',
+        patient: b.patientName || 'CASH PATIENT',
+        doctor: b.doctorName || 'GENERAL OTC',
+        items: b.items ? b.items.length : 1,
+        amount: billAmt,
+        cost: totalBillCost,
+        mode: (b.paymentMode || 'CASH').toUpperCase()
+      });
+    });
+    return db;
+  }, [allBills, todayFormatted]);
+
+  const availableDates = useMemo(() => Object.keys(salesDatabase), [salesDatabase]);
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const now = new Date();
+    return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  });
+
+  // Keep selected date aligned if bills load asynchronously
+  React.useEffect(() => {
+    if (availableDates.length > 0 && !availableDates.includes(selectedDate)) {
+      setSelectedDate(availableDates[0]);
+    }
+  }, [availableDates]);
+
   const currentBills = salesDatabase[selectedDate] || [];
 
   const handlePrevDay = () => {
@@ -66,7 +105,6 @@ export default function DailySalesRegisterPage({
     if (idx !== -1 && idx < availableDates.length - 1) {
       setSelectedDate(availableDates[idx + 1]);
     } else {
-      // Create a previous day date string
       const [d, m, y] = selectedDate.split('/').map(Number);
       const prev = new Date(y, m - 1, d - 1);
       const str = `${String(prev.getDate()).padStart(2, '0')}/${String(prev.getMonth() + 1).padStart(2, '0')}/${prev.getFullYear()}`;
@@ -115,28 +153,75 @@ _Generated by Beta Pharmacy Modern POS Terminal_`;
     window.open(waUrl, '_blank');
   };
 
-  // Monthly summary aggregation (Days 1 to 16 for October 2026)
-  const monthlyDays = [
-    { date: '16/10/2026', day: 'Fri', bills: 7, cash: 996.59, upi: 1409.56, gross: 2406.15, cost: 1924.92, margin: 481.23, pct: '20.0%' },
-    { date: '15/10/2026', day: 'Thu', bills: 5, cash: 1195.00, upi: 1200.50, gross: 2395.50, cost: 1897.00, margin: 498.50, pct: '20.8%' },
-    { date: '14/10/2026', day: 'Wed', bills: 4, cash: 1320.00, upi: 510.00, gross: 1830.00, cost: 1455.00, margin: 375.00, pct: '20.5%' },
-    { date: '13/10/2026', day: 'Tue', bills: 8, cash: 1650.00, upi: 1120.00, gross: 2770.00, cost: 2188.00, margin: 582.00, pct: '21.0%' },
-    { date: '12/10/2026', day: 'Mon', bills: 9, cash: 1890.00, upi: 1450.00, gross: 3340.00, cost: 2638.00, margin: 702.00, pct: '21.0%' },
-    { date: '11/10/2026', day: 'Sun', bills: 6, cash: 1400.00, upi: 950.00, gross: 2350.00, cost: 1856.00, margin: 494.00, pct: '21.0%' },
-    { date: '10/10/2026', day: 'Sat', bills: 11, cash: 2450.00, upi: 1890.00, gross: 4340.00, cost: 3428.00, margin: 912.00, pct: '21.0%' },
-    { date: '09/10/2026', day: 'Fri', bills: 8, cash: 1580.00, upi: 1240.00, gross: 2820.00, cost: 2227.00, margin: 593.00, pct: '21.0%' },
-    { date: '08/10/2026', day: 'Thu', bills: 7, cash: 1350.00, upi: 1080.00, gross: 2430.00, cost: 1919.00, margin: 511.00, pct: '21.0%' },
-    { date: '07/10/2026', day: 'Wed', bills: 6, cash: 1220.00, upi: 990.00, gross: 2210.00, cost: 1745.00, margin: 465.00, pct: '21.0%' }
-  ];
+  // Monthly summary dynamic aggregation from all recorded bills
+  const monthlyDays = useMemo(() => {
+    const daysMap = {};
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    allBills.forEach(b => {
+      const d = b.date || todayFormatted;
+      if (!daysMap[d]) {
+        let dayName = 'Day';
+        try {
+          const parts = d.split('/').map(Number);
+          if (parts.length === 3) {
+            const dt = new Date(parts[2], parts[1] - 1, parts[0]);
+            dayName = dayNames[dt.getDay()] || 'Day';
+          }
+        } catch (e) {}
+
+        daysMap[d] = {
+          date: d,
+          day: dayName,
+          bills: 0,
+          cash: 0,
+          upi: 0,
+          gross: 0,
+          cost: 0,
+          margin: 0,
+          pct: '0.0%'
+        };
+      }
+
+      const amt = parseFloat(b.netPayable || b.grossTotal) || 0;
+      let billCost = 0;
+      (b.items || []).forEach(it => {
+        const ptr = it.ptr || (it.mrp ? it.mrp * 0.78 : 0);
+        const per = it.per || 10;
+        const lineQty = parseFloat(it.qty) || 1;
+        billCost += (ptr / per) * lineQty;
+      });
+      if (billCost === 0 && amt > 0) billCost = amt * 0.8;
+
+      daysMap[d].bills += 1;
+      daysMap[d].gross += amt;
+      daysMap[d].cost += billCost;
+      if ((b.paymentMode || '').toUpperCase() === 'CASH') {
+        daysMap[d].cash += amt;
+      } else {
+        daysMap[d].upi += amt;
+      }
+    });
+
+    return Object.values(daysMap).map(row => {
+      const margin = row.gross - row.cost;
+      const pct = row.gross > 0 ? ((margin / row.gross) * 100).toFixed(1) + '%' : '0.0%';
+      return {
+        ...row,
+        margin,
+        pct
+      };
+    });
+  }, [allBills, todayFormatted]);
 
   const monthGross = monthlyDays.reduce((a, b) => a + b.gross, 0);
   const monthCash = monthlyDays.reduce((a, b) => a + b.cash, 0);
   const monthUpi = monthlyDays.reduce((a, b) => a + b.upi, 0);
   const monthCost = monthlyDays.reduce((a, b) => a + b.cost, 0);
   const monthMargin = monthGross - monthCost;
-  const monthMarginPct = ((monthMargin / monthGross) * 100).toFixed(1);
+  const monthMarginPct = monthGross > 0 ? ((monthMargin / monthGross) * 100).toFixed(1) : '0.0';
 
-  // Staff Shift Reconciliation History (loaded from localStorage or defaults)
+  // Staff Shift Reconciliation History (strictly loaded from real shift handover records)
   const shiftHistory = useMemo(() => {
     try {
       const raw = localStorage.getItem('beta_pharma_shift_history');
@@ -145,50 +230,7 @@ _Generated by Beta Pharmacy Modern POS Terminal_`;
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return [
-      {
-        shiftId: 'SHIFT-001',
-        staffName: 'Rahul C',
-        counter: 'Counter 01',
-        date: '16/10/2026',
-        startTime: '08:00 AM',
-        endTime: '02:00 PM',
-        openingFloat: 2000,
-        totalBills: 7,
-        cashSales: 996.59,
-        upiSales: 1409.56,
-        creditSales: 0,
-        grossTotal: 2406.15,
-        expectedCash: 2996.59,
-        countedPhysicalCash: 2996.59,
-        variance: 0,
-        denominations: { 500: 4, 200: 4, 100: 1, 50: 1, 20: 2, 10: 0, coins: 6.59 },
-        managerApproved: true,
-        managerNotes: 'Tally 100% matched, verified physical notes.',
-        nextStaffName: 'Suresh Kumar'
-      },
-      {
-        shiftId: 'SHIFT-000',
-        staffName: 'Suresh Kumar',
-        counter: 'Counter 01',
-        date: '15/10/2026',
-        startTime: '02:00 PM',
-        endTime: '09:30 PM',
-        openingFloat: 2000,
-        totalBills: 5,
-        cashSales: 1195.00,
-        upiSales: 1200.50,
-        creditSales: 0,
-        grossTotal: 2395.50,
-        expectedCash: 3195.00,
-        countedPhysicalCash: 3175.00,
-        variance: -20,
-        denominations: { 500: 5, 200: 3, 100: 0, 50: 1, 20: 1, 10: 0, coins: 5.00 },
-        managerApproved: true,
-        managerNotes: 'Shortage of ₹20 deducted from allowance.',
-        nextStaffName: 'Rahul C'
-      }
-    ];
+    return [];
   }, []);
 
 
@@ -323,9 +365,9 @@ _Generated by Beta Pharmacy Modern POS Terminal_`;
               </button>
 
               <button
-                onClick={() => setSelectedDate('16/10/2026')}
+                onClick={() => setSelectedDate(todayFormatted)}
                 className={`px-2 py-1 rounded font-bold underline ${
-                  selectedDate === '16/10/2026' ? 'text-sky-600' : 'text-slate-500'
+                  selectedDate === todayFormatted ? 'text-sky-600' : 'text-slate-500'
                 }`}
               >
                 Jump to Today
@@ -521,19 +563,27 @@ _Generated by Beta Pharmacy Modern POS Terminal_`;
               </tr>
             </thead>
             <tbody className="divide-y divide-inherit">
-              {monthlyDays.map((row, i) => (
-                <tr key={i} className={`border-b ${theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50'}`}>
-                  <td className={`py-2 px-3 font-bold border-r border-inherit ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>{row.date}</td>
-                  <td className="py-2 px-3 text-center border-r border-inherit text-slate-500">{row.day}</td>
-                  <td className="py-2 px-3 text-center border-r border-inherit font-bold text-sky-700">{row.bills}</td>
-                  <td className="py-2 px-3 text-right border-r border-inherit font-mono">₹{row.cash.toFixed(2)}</td>
-                  <td className="py-2 px-3 text-right border-r border-inherit font-mono">₹{row.upi.toFixed(2)}</td>
-                  <td className={`py-2 px-3 text-right border-r border-inherit font-black font-mono ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>₹{row.gross.toFixed(2)}</td>
-                  <td className="py-2 px-3 text-right border-r border-inherit font-mono text-slate-500">₹{row.cost.toFixed(2)}</td>
-                  <td className="py-2 px-3 text-right border-r border-inherit font-black font-mono text-emerald-700">₹{row.margin.toFixed(2)}</td>
-                  <td className="py-2 px-3 text-right font-black text-amber-700">{row.pct}</td>
+              {monthlyDays.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-500 font-bold">
+                    No monthly sales recorded yet. Completed counter invoices will automatically aggregate here.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                monthlyDays.map((row, i) => (
+                  <tr key={i} className={`border-b ${theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50'}`}>
+                    <td className={`py-2 px-3 font-bold border-r border-inherit ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>{row.date}</td>
+                    <td className="py-2 px-3 text-center border-r border-inherit text-slate-500">{row.day}</td>
+                    <td className="py-2 px-3 text-center border-r border-inherit font-bold text-sky-700">{row.bills}</td>
+                    <td className="py-2 px-3 text-right border-r border-inherit font-mono">₹{row.cash.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right border-r border-inherit font-mono">₹{row.upi.toFixed(2)}</td>
+                    <td className={`py-2 px-3 text-right border-r border-inherit font-black font-mono ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>₹{row.gross.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right border-r border-inherit font-mono text-slate-500">₹{row.cost.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right border-r border-inherit font-black font-mono text-emerald-700">₹{row.margin.toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right font-black text-amber-700">{row.pct}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
             {/* Monthly Grand Total Row */}
             <tfoot>
@@ -661,69 +711,77 @@ _Generated by Beta Pharmacy Modern POS Terminal_`;
                 </tr>
               </thead>
               <tbody className="divide-y divide-inherit">
-                {shiftHistory.map((s, idx) => {
-                  const variance = s.variance !== undefined ? s.variance : (s.countedPhysicalCash - s.expectedCash);
-                  const isShortage = variance < 0;
-                  const isBalanced = variance === 0;
+                {shiftHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="py-12 text-center text-slate-500 font-bold">
+                      No shift handovers completed yet. When a cashier completes a shift handover, the full reconciliation breakdown and cash drawer tally will appear here.
+                    </td>
+                  </tr>
+                ) : (
+                  shiftHistory.map((s, idx) => {
+                    const variance = s.variance !== undefined ? s.variance : (s.countedPhysicalCash - s.expectedCash);
+                    const isShortage = variance < 0;
+                    const isBalanced = variance === 0;
 
-                  return (
-                    <tr key={s.shiftId || idx} className={`border-b ${theme === 'dark' ? 'hover:bg-zinc-900/80' : 'hover:bg-slate-50'}`}>
-                      <td className={`py-2 px-3 font-bold border-r border-inherit ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
-                        {s.shiftId}
-                      </td>
-                      <td className="py-2 px-3 border-r border-inherit text-[11px]">
-                        <div>{s.date}</div>
-                        <div className="text-slate-500 text-[10px]">{s.startTime} - {s.endTime || 'Ongoing'}</div>
-                      </td>
-                      <td className={`py-2 px-3 font-black font-sans border-r border-inherit ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                        {s.staffName}
-                      </td>
-                      <td className="py-2 px-3 text-center font-bold border-r border-inherit text-sky-700">
-                        {s.totalBills || s.billsCount || 0}
-                      </td>
-                      <td className="py-2 px-3 text-right border-r border-inherit">
-                        ₹{(s.openingFloat || 2000).toFixed(2)}
-                      </td>
-                      <td className="py-2 px-3 text-right border-r border-inherit font-black text-emerald-600">
-                        ₹{(s.cashSales || 0).toFixed(2)}
-                      </td>
-                      <td className="py-2 px-3 text-right border-r border-inherit font-bold">
-                        ₹{(s.expectedCash || 0).toFixed(2)}
-                      </td>
-                      <td className={`py-2 px-3 text-right border-r border-inherit font-black ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
-                        ₹{(s.countedPhysicalCash || 0).toFixed(2)}
-                      </td>
-                      <td className="py-2 px-3 text-center border-r border-inherit">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${
-                          isShortage
-                            ? (theme === 'dark' ? 'bg-rose-950 text-rose-300 border-rose-700' : 'bg-rose-100 text-rose-950 border-rose-300')
-                            : isBalanced
-                              ? (theme === 'dark' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-950 border-emerald-300')
-                              : (theme === 'dark' ? 'bg-sky-950 text-sky-300 border-sky-700' : 'bg-sky-100 text-sky-950 border-sky-300')
-                        }`}>
-                          {isShortage && `SHORTAGE (-₹${Math.abs(variance).toFixed(2)})`}
-                          {isBalanced && `BALANCED (₹0.00)`}
-                          {!isShortage && !isBalanced && `OVERAGE (+₹${variance.toFixed(2)})`}
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 border-r border-inherit font-sans text-slate-500 font-bold">
-                        {s.nextStaffName || 'Next Shift'}
-                      </td>
-                      <td className="py-2 px-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedShiftForDetail(selectedShiftForDetail === s ? null : s)}
-                          className={`p-1 rounded transition ${
-                            theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-slate-200 text-slate-700'
-                          }`}
-                          title="Inspect Physical Denomination Breakdown"
-                        >
-                          <Eye className="w-4 h-4 text-sky-600" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                    return (
+                      <tr key={s.shiftId || idx} className={`border-b ${theme === 'dark' ? 'hover:bg-zinc-900/80' : 'hover:bg-slate-50'}`}>
+                        <td className={`py-2 px-3 font-bold border-r border-inherit ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                          {s.shiftId}
+                        </td>
+                        <td className="py-2 px-3 border-r border-inherit text-[11px]">
+                          <div>{s.date}</div>
+                          <div className="text-slate-500 text-[10px]">{s.startTime} - {s.endTime || 'Ongoing'}</div>
+                        </td>
+                        <td className={`py-2 px-3 font-black font-sans border-r border-inherit ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                          {s.staffName}
+                        </td>
+                        <td className="py-2 px-3 text-center font-bold border-r border-inherit text-sky-700">
+                          {s.totalBills || s.billsCount || 0}
+                        </td>
+                        <td className="py-2 px-3 text-right border-r border-inherit">
+                          ₹{(s.openingFloat || 2000).toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3 text-right border-r border-inherit font-black text-emerald-600">
+                          ₹{(s.cashSales || 0).toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3 text-right border-r border-inherit font-bold">
+                          ₹{(s.expectedCash || 0).toFixed(2)}
+                        </td>
+                        <td className={`py-2 px-3 text-right border-r border-inherit font-black ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                          ₹{(s.countedPhysicalCash || 0).toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3 text-center border-r border-inherit">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${
+                            isShortage
+                              ? (theme === 'dark' ? 'bg-rose-950 text-rose-300 border-rose-700' : 'bg-rose-100 text-rose-950 border-rose-300')
+                              : isBalanced
+                                ? (theme === 'dark' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-950 border-emerald-300')
+                                : (theme === 'dark' ? 'bg-sky-950 text-sky-300 border-sky-700' : 'bg-sky-100 text-sky-950 border-sky-300')
+                          }`}>
+                            {isShortage && `SHORTAGE (-₹${Math.abs(variance).toFixed(2)})`}
+                            {isBalanced && `BALANCED (₹0.00)`}
+                            {!isShortage && !isBalanced && `OVERAGE (+₹${variance.toFixed(2)})`}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 border-r border-inherit font-sans text-slate-500 font-bold">
+                          {s.nextStaffName || 'Next Shift'}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedShiftForDetail(selectedShiftForDetail === s ? null : s)}
+                            className={`p-1 rounded transition ${
+                              theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-slate-200 text-slate-700'
+                            }`}
+                            title="Inspect Physical Denomination Breakdown"
+                          >
+                            <Eye className="w-4 h-4 text-sky-600" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

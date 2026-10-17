@@ -17,7 +17,15 @@ import {
 import initialSuppliers from '../data/suppliers.json';
 
 export default function SupplierMasterPage({ theme, onBackToBilling }) {
-  const [suppliers, setSuppliers] = useState(initialSuppliers);
+  const [suppliers, setSuppliers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_custom_suppliers');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {}
+    return initialSuppliers;
+  });
   const [search, setSearch] = useState('');
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [isAddMode, setIsAddMode] = useState(false);
@@ -88,12 +96,20 @@ export default function SupplierMasterPage({ theme, onBackToBilling }) {
       creditDays: parseInt(formData.creditDays) || 21
     };
 
+    let updated;
     if (isAddMode) {
-      setSuppliers(prev => [record, ...prev]);
+      updated = [record, ...suppliers];
       setToastMessage(`Added new distributor "${record.name}" successfully!`);
     } else {
-      setSuppliers(prev => prev.map(s => s.code === record.code ? record : s));
+      updated = suppliers.map(s => s.code === record.code ? record : s);
       setToastMessage(`Updated distributor "${record.name}" successfully!`);
+    }
+
+    setSuppliers(updated);
+    try {
+      localStorage.setItem('beta_pharma_custom_suppliers', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to persist suppliers', err);
     }
 
     setTimeout(() => setToastMessage(''), 3500);

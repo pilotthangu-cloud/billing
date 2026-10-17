@@ -28,79 +28,32 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [receiptToast, setReceiptToast] = useState('');
 
-  // Mock Active Customer Credit Ledger (matching DUEBILL.DBF & CUSTOMER.DBF)
-  const [dueBills, setDueBills] = useState([
-    {
-      id: 'DUE-001',
-      billNo: '025304',
-      date: '14/10/2026',
-      customer: 'RAMESHAN',
-      phone: '9447123456',
-      location: 'Chirakkara, Thalassery',
-      doctor: 'Dr. Madhusoodanan T',
-      totalAmount: 340.00,
-      paidAmount: 0.00,
-      dueAmount: 340.00,
-      daysOverdue: 2,
-      status: 'PENDING'
-    },
-    {
-      id: 'DUE-002',
-      billNo: '025288',
-      date: '10/10/2026',
-      customer: 'SURESH BABU',
-      phone: '9847234567',
-      location: 'Sadananda Pai Road',
-      doctor: 'Dr. Manojan',
-      totalAmount: 1250.00,
-      paidAmount: 500.00,
-      dueAmount: 750.00,
-      daysOverdue: 6,
-      status: 'PENDING'
-    },
-    {
-      id: 'DUE-003',
-      billNo: '025210',
-      date: '02/10/2026',
-      customer: 'MOHANAN K',
-      phone: '9495345678',
-      location: 'Near Old Bus Stand, Thalassery',
-      doctor: 'Dr. Deepa Manojan',
-      totalAmount: 890.00,
-      paidAmount: 0.00,
-      dueAmount: 890.00,
-      daysOverdue: 14,
-      status: 'PENDING'
-    },
-    {
-      id: 'DUE-004',
-      billNo: '025150',
-      date: '25/09/2026',
-      customer: 'DEVADASAN',
-      phone: '9446456789',
-      location: 'Temple Gate, Thalassery',
-      doctor: 'Dr. Saurabh Manojan',
-      totalAmount: 450.00,
-      paidAmount: 450.00,
-      dueAmount: 0.00,
-      daysOverdue: 0,
-      status: 'SETTLED'
-    },
-    {
-      id: 'DUE-005',
-      billNo: '025092',
-      date: '18/09/2026',
-      customer: 'VASANTHA',
-      phone: '9447567890',
-      location: 'Kadirur, Thalassery',
-      doctor: 'Dr. Lakshmi Saurabh',
-      totalAmount: 620.00,
-      paidAmount: 620.00,
-      dueAmount: 0.00,
-      daysOverdue: 0,
-      status: 'SETTLED'
-    }
-  ]);
+  // Live Customer Credit Ledger loaded from localStorage (matching DUEBILL.DBF & CUSTOMER.DBF)
+  const [dueBills, setDueBills] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_due_bills');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(b => ({
+            id: b.id || `DUE-${b.billNo}`,
+            billNo: b.billNo,
+            date: b.date || '',
+            customer: b.customer || b.customerName || 'CUSTOMER',
+            phone: b.phone || b.customerPhone || '',
+            location: b.location || 'Thalassery',
+            doctor: b.doctor || b.doctorName || 'GENERAL OTC',
+            totalAmount: parseFloat(b.totalAmount !== undefined ? b.totalAmount : b.amount) || 0,
+            paidAmount: parseFloat(b.paidAmount || (b.amount - (b.balance !== undefined ? b.balance : b.amount))) || 0,
+            dueAmount: parseFloat(b.dueAmount !== undefined ? b.dueAmount : (b.balance !== undefined ? b.balance : b.amount)) || 0,
+            daysOverdue: b.daysOverdue || 0,
+            status: (b.status === 'PAID' || b.status === 'SETTLED' || (b.dueAmount !== undefined && b.dueAmount <= 0) || (b.balance !== undefined && b.balance <= 0)) ? 'SETTLED' : 'PENDING'
+          }));
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
 
   // Aggregate stats
   const totalOutstanding = dueBills
@@ -131,7 +84,7 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
     setPaymentMode('CASH');
   };
 
-  // Submit Payment Settlement
+  // Submit Payment Settlement with localStorage persistence
   const handleSubmitPayment = (e) => {
     e.preventDefault();
     const amount = parseFloat(paymentAmount);
@@ -144,19 +97,26 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
       return;
     }
 
-    setDueBills(prev => prev.map(b => {
-      if (b.id === selectedBillForPayment.id) {
-        const newPaid = b.paidAmount + amount;
-        const newDue = b.totalAmount - newPaid;
-        return {
-          ...b,
-          paidAmount: newPaid,
-          dueAmount: newDue,
-          status: newDue <= 0 ? 'SETTLED' : 'PENDING'
-        };
-      }
-      return b;
-    }));
+    setDueBills(prev => {
+      const updated = prev.map(b => {
+        if (b.id === selectedBillForPayment.id) {
+          const newPaid = b.paidAmount + amount;
+          const newDue = Math.max(0, b.totalAmount - newPaid);
+          return {
+            ...b,
+            paidAmount: newPaid,
+            dueAmount: newDue,
+            balance: newDue,
+            status: newDue <= 0 ? 'SETTLED' : 'PENDING'
+          };
+        }
+        return b;
+      });
+      try {
+        localStorage.setItem('beta_pharma_due_bills', JSON.stringify(updated));
+      } catch (err) {}
+      return updated;
+    });
 
     setReceiptToast(`Receipt generated! Received ₹${amount.toFixed(2)} from ${selectedBillForPayment.customer} for Bill #${selectedBillForPayment.billNo}`);
     setTimeout(() => setReceiptToast(''), 4000);
@@ -326,7 +286,14 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-inherit">
-            {filteredBills.map((b, idx) => (
+            {filteredBills.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="py-12 text-center text-slate-500 font-bold font-sans">
+                  No customer credit bills found. Credit / Udhaar invoices issued at the billing counter will automatically appear here.
+                </td>
+              </tr>
+            ) : (
+              filteredBills.map((b, idx) => (
               <tr 
                 key={b.id}
                 className={`transition-colors border-b ${
@@ -425,7 +392,7 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
                   )}
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

@@ -15,86 +15,6 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-// Realistic sample customer history matching regular Kerala chronic patients
-const INITIAL_SAMPLE_CUSTOMERS = {
-  '9447123456': {
-    phone: '9447123456',
-    name: 'RAMESHAN K',
-    preferredDoctor: 'Dr. Madhusoodanan T',
-    totalVisits: 4,
-    totalSpent: 3840.00,
-    bills: [
-      {
-        billNo: '025304',
-        date: '14/10/2026',
-        time: '20:10',
-        doctorName: 'Dr. Madhusoodanan T',
-        paymentMode: 'cash',
-        netPayable: 340.00,
-        items: [
-          { code: 'M10014', name: 'TELMA 40MG TAB', batch: 'TLM8912', exp: '03/28', qty: 30, mrp: 22.40, totalValue: 224.00 },
-          { code: 'M10015', name: 'GLYCOMET 500MG SR', batch: 'GLY4410', exp: '08/27', qty: 30, mrp: 11.60, totalValue: 116.00 }
-        ]
-      },
-      {
-        billNo: '024890',
-        date: '15/09/2026',
-        time: '18:45',
-        doctorName: 'Dr. Madhusoodanan T',
-        paymentMode: 'cash',
-        netPayable: 450.00,
-        items: [
-          { code: 'M10014', name: 'TELMA 40MG TAB', batch: 'TLM8912', exp: '03/28', qty: 30, mrp: 22.40, totalValue: 224.00 },
-          { code: 'M10015', name: 'GLYCOMET 500MG SR', batch: 'GLY4410', exp: '08/27', qty: 30, mrp: 11.60, totalValue: 116.00 },
-          { code: 'M10016', name: 'ECOSPRIN 75MG TAB', batch: 'ECO1029', exp: '05/28', qty: 30, mrp: 11.00, totalValue: 110.00 }
-        ]
-      }
-    ]
-  },
-  '9497172662': {
-    phone: '9497172662',
-    name: 'DINESH CHIRAKKARA',
-    preferredDoctor: 'Dr. Manojan',
-    totalVisits: 3,
-    totalSpent: 2150.00,
-    bills: [
-      {
-        billNo: '025315',
-        date: '16/10/2026',
-        time: '13:59',
-        doctorName: 'Dr. Manojan',
-        paymentMode: 'upi',
-        netPayable: 583.80,
-        items: [
-          { code: 'M10001', name: 'AUGMENTIN 625MG TAB', batch: 'AUG9901', exp: '04/28', qty: 10, mrp: 22.34, totalValue: 223.40 },
-          { code: 'M10002', name: 'PAN 40MG TAB', batch: 'PAN2041', exp: '11/27', qty: 15, mrp: 15.50, totalValue: 232.50 }
-        ]
-      }
-    ]
-  },
-  '9847234567': {
-    phone: '9847234567',
-    name: 'SURESH BABU',
-    preferredDoctor: 'Dr. Deepa Manojan',
-    totalVisits: 5,
-    totalSpent: 4920.00,
-    bills: [
-      {
-        billNo: '025288',
-        date: '10/10/2026',
-        time: '11:30',
-        doctorName: 'Dr. Deepa Manojan',
-        paymentMode: 'cash',
-        netPayable: 750.00,
-        items: [
-          { code: 'M10017', name: 'AMLONG 5MG TAB', batch: 'AML2031', exp: '10/27', qty: 30, mrp: 14.50, totalValue: 145.00 },
-          { code: 'M10018', name: 'ATORVA 10MG TAB', batch: 'ATV9042', exp: '12/27', qty: 30, mrp: 21.00, totalValue: 210.00 }
-        ]
-      }
-    ]
-  }
-};
-
 export default function CustomerHistoryModal({
   isOpen,
   onClose,
@@ -108,18 +28,38 @@ export default function CustomerHistoryModal({
   const [customerData, setCustomerData] = useState({});
   const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // Load customer records from localStorage + initial samples
+  // Load customer records from localStorage or index from recent bills
   useEffect(() => {
     try {
       const stored = localStorage.getItem('beta_pharma_customer_history');
       if (stored) {
-        const parsed = JSON.parse(stored);
-        setCustomerData({ ...INITIAL_SAMPLE_CUSTOMERS, ...parsed });
-      } else {
-        setCustomerData(INITIAL_SAMPLE_CUSTOMERS);
+        setCustomerData(JSON.parse(stored));
+        return;
       }
+      // If customer history map is empty, build from recent bills
+      const recent = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
+      const built = {};
+      recent.forEach(b => {
+        if (b.customerPhone && b.customerPhone.trim()) {
+          const ph = b.customerPhone.trim();
+          if (!built[ph]) {
+            built[ph] = {
+              phone: ph,
+              name: b.patientName || 'Customer',
+              preferredDoctor: b.doctorName || 'GENERAL OTC',
+              totalVisits: 0,
+              totalSpent: 0,
+              bills: []
+            };
+          }
+          built[ph].totalVisits += 1;
+          built[ph].totalSpent += (b.netPayable || b.grossTotal || 0);
+          built[ph].bills.push(b);
+        }
+      });
+      setCustomerData(built);
     } catch (e) {
-      setCustomerData(INITIAL_SAMPLE_CUSTOMERS);
+      setCustomerData({});
     }
   }, [isOpen]);
 
@@ -229,23 +169,25 @@ export default function CustomerHistoryModal({
             />
           </div>
 
-          {/* Quick patient chip buttons */}
-          <div className="flex items-center space-x-2 mt-2.5 text-[11px] overflow-x-auto pb-1">
-            <span className="text-slate-500 shrink-0 font-bold">Quick Demo Records:</span>
-            {Object.values(customerData).slice(0, 4).map((c, i) => (
-              <button
-                key={i}
-                onClick={() => setSearchTerm(c.phone)}
-                className={`px-2 py-0.5 rounded-lg border text-[10px] font-mono font-bold shrink-0 transition ${
-                  searchTerm === c.phone
-                    ? 'bg-sky-600 text-white border-sky-600'
-                    : (isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100')
-                }`}
-              >
-                {c.name} ({c.phone.slice(-4)})
-              </button>
-            ))}
-          </div>
+          {/* Quick patient chip buttons (only if real customers exist) */}
+          {Object.keys(customerData).length > 0 && (
+            <div className="flex items-center space-x-2 mt-2.5 text-[11px] overflow-x-auto pb-1">
+              <span className="text-slate-500 shrink-0 font-bold">Recent Customers:</span>
+              {Object.values(customerData).slice(0, 4).map((c, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSearchTerm(c.phone)}
+                  className={`px-2 py-0.5 rounded-lg border text-[10px] font-mono font-bold shrink-0 transition ${
+                    searchTerm === c.phone
+                      ? 'bg-sky-600 text-white border-sky-600'
+                      : (isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100')
+                  }`}
+                >
+                  {c.name} ({c.phone.slice(-4)})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Content Area */}
@@ -367,7 +309,7 @@ export default function CustomerHistoryModal({
               <div>
                 <h4 className="font-bold text-sm">No Customer Profile Found</h4>
                 <p className="text-xs text-slate-500 font-mono max-w-md mx-auto mt-1">
-                  Type a 10-digit mobile number or patient name above, or click one of the demo records (e.g. Rameshan - 9447123456).
+                  Enter a 10-digit customer mobile number or patient name above to view historical prescriptions and repeat past bills.
                 </p>
               </div>
             </div>

@@ -5,6 +5,40 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
   const isDark = theme === 'dark';
   const shortages = (medicines || []).filter(m => (m.stock_shop1 || 0) <= (m.ro_level || 5)).slice(0, 50);
 
+  const handleGenerateOrder = () => {
+    if (shortages.length === 0) {
+      alert('No shortage items below re-order level.');
+      return;
+    }
+    const headers = ['Sr', 'Product Name', 'Salt', 'Shelf Rack', 'Company', 'Current Stock', 'Re-Order Level', 'Suggested Order Units', 'Est PTR Cost'];
+    const rows = shortages.map((med, idx) => {
+      const stock = med.stock_shop1 || 0;
+      const roLevel = med.ro_level || 5;
+      const suggested = Math.max(10, roLevel * 2 - stock);
+      const cost = (med.ptr || med.mrp * 0.78) * (suggested / (med.per || 10));
+      return [
+        idx + 1,
+        `"${med.name}"`,
+        `"${med.generic || ''}"`,
+        `"${med.rack || 'GN'}"`,
+        `"${med.company || ''}"`,
+        stock,
+        roLevel,
+        suggested,
+        cost.toFixed(2)
+      ];
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Purchase_Order_Draft_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert(`Purchase Order Draft exported with ${shortages.length} shortage items!`);
+  };
+
   return (
     <div className={`flex-1 flex flex-col overflow-hidden font-sans transition-colors ${
       isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
@@ -36,7 +70,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
                   ? 'bg-rose-950 text-rose-300 border-rose-800' 
                   : 'bg-rose-100 text-rose-950 border-rose-300'
               }`}>
-                Critical Replenishment
+                {shortages.length} Shortages
               </span>
             </div>
             <p className={`text-xs font-mono mt-0.5 font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
@@ -46,7 +80,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
         </div>
 
         <button 
-          onClick={() => alert('Purchase Order Draft generated for Kannur / Thalassery Drug Houses!')}
+          onClick={handleGenerateOrder}
           className="py-2 px-3.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg text-xs flex items-center space-x-1.5 shadow"
         >
           <ShoppingCart className="w-4 h-4" />
@@ -147,6 +181,13 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
                 </tr>
               );
             })}
+            {shortages.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-12 text-center text-slate-500 font-bold text-sm">
+                  ✓ All stock levels are healthy. No items currently below re-order threshold.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

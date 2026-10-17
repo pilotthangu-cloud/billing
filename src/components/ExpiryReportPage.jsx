@@ -5,17 +5,47 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
   const [filterTab, setFilterTab] = useState('30days');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Helper to dynamically calculate days remaining from MM/YY or MM/YYYY
+  const parseDaysToExpiry = (expStr) => {
+    if (!expStr) return 999;
+    try {
+      const parts = expStr.trim().split(/[\/-]/);
+      let month = 1, year = 2026;
+      if (parts.length === 2) {
+        month = parseInt(parts[0], 10);
+        let yr = parseInt(parts[1], 10);
+        year = yr < 100 ? 2000 + yr : yr;
+      } else if (parts.length === 3) {
+        month = parseInt(parts[1], 10);
+        let yr = parseInt(parts[2], 10);
+        year = yr < 100 ? 2000 + yr : yr;
+      }
+      const expDate = new Date(year, month, 0); // End of expiry month
+      const now = new Date();
+      const diffMs = expDate - now;
+      return Math.round(diffMs / (1000 * 60 * 60 * 24));
+    } catch (e) {
+      return 180;
+    }
+  };
+
   // Extract all batches from catalog
-  const expiringItems = medicines.flatMap((med) => {
-    return (med.batches || []).map((b) => ({
-      ...b,
-      medicineName: med.name,
-      company: med.company,
-      rack: med.rack,
-      generic: med.generic,
-      daysLeft: b.exp_date?.startsWith('10/') ? 14 : (b.exp_date?.startsWith('11/') ? 45 : (b.exp_date?.startsWith('12/') ? 75 : 180))
-    }));
-  });
+  const expiringItems = useMemo(() => {
+    return (medicines || []).flatMap((med) => {
+      return (med.batches || []).map((b) => ({
+        ...b,
+        medicineName: med.name,
+        company: med.company,
+        rack: med.rack || 'GN',
+        generic: med.generic || '',
+        daysLeft: parseDaysToExpiry(b.exp_date)
+      }));
+    });
+  }, [medicines]);
+
+  const count30 = useMemo(() => expiringItems.filter(it => it.daysLeft <= 30).length, [expiringItems]);
+  const count60 = useMemo(() => expiringItems.filter(it => it.daysLeft > 30 && it.daysLeft <= 60).length, [expiringItems]);
+  const count90 = useMemo(() => expiringItems.filter(it => it.daysLeft > 60 && it.daysLeft <= 90).length, [expiringItems]);
 
   // Filter by Tab and Search Query
   const filtered = expiringItems.filter((item) => {
@@ -29,10 +59,10 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
       const q = searchQuery.toLowerCase();
       const match = (
         item.medicineName.toLowerCase().includes(q) ||
-        item.batch_no.toLowerCase().includes(q) ||
+        (item.batch_no && item.batch_no.toLowerCase().includes(q)) ||
         (item.supplier && item.supplier.toLowerCase().includes(q)) ||
         (item.generic && item.generic.toLowerCase().includes(q)) ||
-        item.rack.toLowerCase().includes(q)
+        (item.rack && item.rack.toLowerCase().includes(q))
       );
       if (!match) return false;
     }
@@ -66,7 +96,7 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
               <span className={`text-xs font-mono font-extrabold px-2 py-0.5 rounded border ${
                 theme === 'dark' ? 'bg-rose-950 text-rose-200 border-rose-800' : 'bg-rose-100 text-rose-950 border-rose-400'
               }`}>
-                1,089 Total Expiring Batches
+                {expiringItems.length.toLocaleString('en-IN')} Total Batches
               </span>
             </div>
             <p className={`text-xs font-mono mt-0.5 font-medium ${
@@ -110,7 +140,7 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
                 : (theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white' : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50')
             }`}
           >
-            &lt; 30 Days (379 Batches)
+            &lt; 30 Days ({count30.toLocaleString('en-IN')} Batches)
           </button>
           <button
             onClick={() => setFilterTab('60days')}
@@ -120,7 +150,7 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
                 : (theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white' : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50')
             }`}
           >
-            31 - 60 Days (361 Batches)
+            31 - 60 Days ({count60.toLocaleString('en-IN')} Batches)
           </button>
           <button
             onClick={() => setFilterTab('90days')}
@@ -130,7 +160,7 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
                 : (theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white' : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50')
             }`}
           >
-            61 - 90 Days (349 Batches)
+            61 - 90 Days ({count90.toLocaleString('en-IN')} Batches)
           </button>
         </div>
 
@@ -231,11 +261,30 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
                   <td className={`py-2.5 px-3 font-bold border-r border-inherit ${
                     theme === 'dark' ? 'text-white' : 'text-slate-900'
                   }`}>
-                    {item.supplier || 'THE CAN DRUG HOUSE'}
+                    {item.supplier || 'Direct Inward'}
                   </td>
                   <td className="py-2.5 px-3 text-center">
                     <button
-                      onClick={() => alert(`Return Debit Note created for ${item.medicineName} (Batch: ${item.batch_no}) to ${item.supplier || 'Supplier'}`)}
+                      onClick={() => {
+                        const noteId = `DN-${Date.now().toString().slice(-6)}`;
+                        const returnNote = {
+                          id: noteId,
+                          date: new Date().toLocaleDateString('en-GB'),
+                          supplier: item.supplier || 'Direct Inward',
+                          medicine: item.medicineName,
+                          batch: item.batch_no,
+                          expDate: item.exp_date,
+                          amount: item.mrp || 0,
+                          status: 'GENERATED'
+                        };
+                        try {
+                          const existing = JSON.parse(localStorage.getItem('beta_pharma_purchase_returns') || '[]');
+                          localStorage.setItem('beta_pharma_purchase_returns', JSON.stringify([returnNote, ...existing]));
+                        } catch (err) {
+                          console.error(err);
+                        }
+                        alert(`Return Debit Note #${noteId} created for ${item.medicineName} (Batch: ${item.batch_no}) to ${item.supplier || 'Supplier'}`);
+                      }}
                       className="py-1 px-3 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded text-xs transition shadow"
                     >
                       Return Note

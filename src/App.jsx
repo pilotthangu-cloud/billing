@@ -1070,6 +1070,8 @@ export default function App() {
           theme={theme}
           onBackToBilling={() => setActivePage('billing')}
           authenticatedRole={authenticatedRole}
+          recentBills={recentBills}
+          medicines={medicines}
           onOpenPasswordModal={(title, desc) => {
             setPasswordModalInfo({ title, description: desc });
             setIsPasswordModalOpen(true);

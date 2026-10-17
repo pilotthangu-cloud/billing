@@ -18,7 +18,23 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
       }).slice(0, 60);
 
   const handleTransfer = (med, fromShop, toShop, qty = 5) => {
-    setTransferSuccess(`Inter-store Transfer Note Created: ${qty} strips of ${med.name} moving from ${fromShop} to ${toShop}. Voucher #TR-${Math.floor(1000 + Math.random()*9000)} generated.`);
+    const trNumber = `TR-${Date.now().toString().slice(-6)}`;
+    const note = {
+      id: trNumber,
+      date: new Date().toLocaleDateString('en-GB'),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      medicineName: med.name,
+      medCode: med.code,
+      fromBranch: fromShop,
+      toBranch: toShop,
+      qty,
+      status: 'DISPATCHED'
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem('beta_pharma_transfer_notes') || '[]');
+      localStorage.setItem('beta_pharma_transfer_notes', JSON.stringify([note, ...existing]));
+    } catch (e) {}
+    setTransferSuccess(`Inter-store Transfer Note Created: ${qty} strips of ${med.name} moving from ${fromShop} to ${toShop}. Voucher #${trNumber} generated.`);
     setTimeout(() => setTransferSuccess(null), 5000);
   };
 

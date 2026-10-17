@@ -33,78 +33,44 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
   const [chequeDate, setChequeDate] = useState('16/10/2026');
   const [paymentToast, setPaymentToast] = useState('');
 
-  // Mock Distributor Purchase Invoices Ledger (PURCHASE.DBF & ACCTBOOK.DBF)
-  const [invoices, setInvoices] = useState([
-    {
-      id: 'PUR-06927',
-      purNo: '06927',
-      distBillNo: '020456',
-      supplierCode: 'T010',
-      supplierName: 'THE CAN DRUG HOUSE',
-      billDate: '25/09/2026',
-      creditDays: 21,
-      dueDate: '16/10/2026',
-      totalAmount: 4789.50,
-      paidAmount: 0.00,
-      balanceDue: 4789.50,
-      status: 'DUE'
-    },
-    {
-      id: 'PUR-06926',
-      purNo: '06926',
-      distBillNo: 'INV-88912',
-      supplierCode: 'K043',
-      supplierName: 'KERALA TRADE WINGS',
-      billDate: '10/09/2026',
-      creditDays: 30,
-      dueDate: '10/10/2026',
-      totalAmount: 12450.00,
-      paidAmount: 0.00,
-      balanceDue: 12450.00,
-      status: 'OVERDUE'
-    },
-    {
-      id: 'PUR-06925',
-      purNo: '06925',
-      distBillNo: 'CG-4412',
-      supplierCode: 'C013',
-      supplierName: 'CENTREL AGENCIES',
-      billDate: '01/10/2026',
-      creditDays: 35,
-      dueDate: '05/11/2026',
-      totalAmount: 8320.00,
-      paidAmount: 3000.00,
-      balanceDue: 5320.00,
-      status: 'DUE'
-    },
-    {
-      id: 'PUR-06924',
-      purNo: '06924',
-      distBillNo: 'GT-9011',
-      supplierCode: 'G041',
-      supplierName: 'GEETHA AGENCIES',
-      billDate: '15/09/2026',
-      creditDays: 35,
-      dueDate: '20/10/2026',
-      totalAmount: 6540.00,
-      paidAmount: 6540.00,
-      balanceDue: 0.00,
-      status: 'PAID'
-    }
-  ]);
+  // Live Distributor Purchase Invoices Ledger loaded from localStorage (PURCHASE.DBF & ACCTBOOK.DBF)
+  const [invoices, setInvoices] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_purchase_bills');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p, idx) => ({
+            id: p.id || p.purNo || `PUR-${p.billNo || idx}`,
+            purNo: p.purNo || `0${6927 + idx + 1}`,
+            distBillNo: p.distBillNo || p.billNo || '0000',
+            supplierCode: p.supplierCode || 'S001',
+            supplierName: p.supplierName || p.supplier || p.name || 'DISTRIBUTOR',
+            billDate: p.billDate || p.date || '',
+            creditDays: p.creditDays || p.cDays || 21,
+            dueDate: p.dueDate || p.due || '',
+            totalAmount: parseFloat(p.totalAmount !== undefined ? p.totalAmount : p.amount) || 0,
+            paidAmount: parseFloat(p.paidAmount) || 0,
+            balanceDue: parseFloat(p.balanceDue !== undefined ? p.balanceDue : (p.totalAmount !== undefined ? p.totalAmount - (p.paidAmount || 0) : p.amount)) || 0,
+            status: p.status || 'DUE'
+          }));
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
 
-  // Cheque Register (CHEQUES.DBF)
-  const [cheques, setCheques] = useState([
-    {
-      chequeNo: '445210',
-      bank: 'State Bank of India',
-      supplier: 'GEETHA AGENCIES',
-      date: '15/10/2026',
-      amount: 6540.00,
-      purNo: '06924',
-      status: 'CLEARED'
-    }
-  ]);
+  // Cheque Register loaded from localStorage (CHEQUES.DBF)
+  const [cheques, setCheques] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_cheques');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
 
   // Calculations
   const totalPayable = invoices
@@ -148,33 +114,45 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
       return;
     }
 
-    setInvoices(prev => prev.map(inv => {
-      if (inv.id === selectedBillForPayment.id) {
-        const newPaid = inv.paidAmount + amount;
-        const newBalance = inv.totalAmount - newPaid;
-        return {
-          ...inv,
-          paidAmount: newPaid,
-          balanceDue: newBalance,
-          status: newBalance <= 0 ? 'PAID' : inv.status
-        };
-      }
-      return inv;
-    }));
+    setInvoices(prev => {
+      const updated = prev.map(inv => {
+        if (inv.id === selectedBillForPayment.id) {
+          const newPaid = inv.paidAmount + amount;
+          const newBalance = Math.max(0, inv.totalAmount - newPaid);
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            balanceDue: newBalance,
+            status: newBalance <= 0 ? 'PAID' : inv.status
+          };
+        }
+        return inv;
+      });
+      try {
+        localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(updated));
+      } catch (err) {}
+      return updated;
+    });
 
     if (paymentMode === 'CHEQUE') {
-      setCheques(prev => [
-        {
-          chequeNo: chequeNo || 'CHQ-' + Date.now().toString().slice(-6),
-          bank: bankName,
-          supplier: selectedBillForPayment.supplierName,
-          date: chequeDate,
-          amount: amount,
-          purNo: selectedBillForPayment.purNo,
-          status: 'ISSUED'
-        },
-        ...prev
-      ]);
+      setCheques(prev => {
+        const updatedChqs = [
+          {
+            chequeNo: chequeNo || 'CHQ-' + Date.now().toString().slice(-6),
+            bank: bankName,
+            supplier: selectedBillForPayment.supplierName,
+            date: chequeDate,
+            amount: amount,
+            purNo: selectedBillForPayment.purNo,
+            status: 'ISSUED'
+          },
+          ...prev
+        ];
+        try {
+          localStorage.setItem('beta_pharma_cheques', JSON.stringify(updatedChqs));
+        } catch (err) {}
+        return updatedChqs;
+      });
     }
 
     setPaymentToast(`Payment voucher recorded! Paid ₹${amount.toFixed(2)} to ${selectedBillForPayment.supplierName} (${paymentMode})`);
@@ -341,7 +319,14 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-inherit">
-              {filteredInvoices.map((inv, idx) => (
+              {filteredInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-500 font-bold font-sans">
+                    No distributor purchase invoices found. Record a purchase voucher or import a distributor invoice to view payables here.
+                  </td>
+                </tr>
+              ) : (
+                filteredInvoices.map((inv, idx) => (
                 <tr 
                   key={inv.id}
                   className={`transition-colors border-b ${
@@ -442,7 +427,7 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
                     )}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
@@ -467,26 +452,34 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-inherit">
-              {cheques.map((chq, idx) => (
-                <tr key={idx} className="border-b">
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
-                  <td className="py-2 px-3 text-center font-black border-r border-inherit text-purple-700 dark:text-purple-400">
-                    {chq.chequeNo}
-                  </td>
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{chq.date}</td>
-                  <td className="py-2 px-3 font-bold font-sans border-r border-inherit">{chq.supplier}</td>
-                  <td className="py-2 px-3 font-medium border-r border-inherit">{chq.bank}</td>
-                  <td className="py-2 px-3 text-center font-mono border-r border-inherit">#{chq.purNo}</td>
-                  <td className="py-2 px-3 text-right font-black border-r border-inherit text-slate-950 dark:text-white">
-                    ₹{chq.amount.toFixed(2)}
-                  </td>
-                  <td className="py-2 px-3 text-center font-bold">
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-950 border border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300">
-                      {chq.status}
-                    </span>
+              {cheques.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500 font-bold font-sans">
+                    No cheques issued yet. Cheques issued during distributor invoice payments will appear in this audit register.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                cheques.map((chq, idx) => (
+                  <tr key={idx} className="border-b">
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
+                    <td className="py-2 px-3 text-center font-black border-r border-inherit text-purple-700 dark:text-purple-400">
+                      {chq.chequeNo}
+                    </td>
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{chq.date}</td>
+                    <td className="py-2 px-3 font-bold font-sans border-r border-inherit">{chq.supplier}</td>
+                    <td className="py-2 px-3 font-medium border-r border-inherit">{chq.bank}</td>
+                    <td className="py-2 px-3 text-center font-mono border-r border-inherit">#{chq.purNo}</td>
+                    <td className="py-2 px-3 text-right font-black border-r border-inherit text-slate-950 dark:text-white">
+                      ₹{chq.amount.toFixed(2)}
+                    </td>
+                    <td className="py-2 px-3 text-center font-bold">
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-950 border border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300">
+                        {chq.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

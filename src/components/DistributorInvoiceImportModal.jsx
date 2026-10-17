@@ -17,11 +17,14 @@ export default function DistributorInvoiceImportModal({
   isOpen,
   onClose,
   allMedicines = [],
+  catalogMedicines = [],
   activeBranch,
   theme,
-  onInwardInvoice
+  onInwardInvoice,
+  onImportSuccess
 }) {
   const isDark = theme === 'dark';
+  const medCatalog = (catalogMedicines && catalogMedicines.length > 0) ? catalogMedicines : allMedicines;
   const [distributorName, setDistributorName] = useState('THE CAN DRUG HOUSE');
   const [invoiceNumber, setInvoiceNumber] = useState('INV-' + Math.floor(10000 + Math.random() * 90000));
   const [invoiceDate, setInvoiceDate] = useState(new Date().toLocaleDateString('en-GB'));
@@ -95,25 +98,31 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
 
       // Match against master medicines catalog
       const cleanName = rawName.toUpperCase();
-      const existing = allMedicines.find(m => 
+      const existing = medCatalog.find(m => 
         m.name.toUpperCase() === cleanName || 
         m.name.toUpperCase().startsWith(cleanName.slice(0, 10))
       );
 
+      const resolvedCode = existing ? existing.code : ('M' + Math.floor(10000 + Math.random() * 90000));
+
       items.push({
         id: i,
-        name: existing ? existing.name : cleanName,
+        code: resolvedCode,
         matchedCode: existing ? existing.code : null,
+        name: existing ? existing.name : cleanName,
+        generic: existing ? existing.generic : '',
         isExisting: !!existing,
         existingStock: existing ? (existing.stock_shop1 || 0) : 0,
-        rack: existing ? existing.rack : '1',
+        rack: existing ? existing.rack : 'GN',
         batch: rawBatch.toUpperCase(),
         exp: rawExp,
+        qty: rawQty,
         qtyPacks: rawQty,
         ptr: rawPtr,
         mrp: rawMrp,
         per: rawPer,
-        totalCost: rawPtr * rawQty
+        totalCost: +(rawPtr * rawQty).toFixed(2),
+        total: +(rawPtr * rawQty).toFixed(2)
       });
     }
 
@@ -143,8 +152,47 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
       due: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB')
     };
 
-    if (onInwardInvoice) {
-      onInwardInvoice(invoicePayload);
+    const inwardFn = onImportSuccess || onInwardInvoice;
+    if (inwardFn) {
+      inwardFn(invoicePayload);
+    }
+
+    // Persist into beta_pharma_purchase_bills so it appears in Payables and Batch Enquiry
+    try {
+      const existingBills = JSON.parse(localStorage.getItem('beta_pharma_purchase_bills') || '[]');
+      const newVoucher = {
+        purNo: '0' + (6927 + existingBills.length + 1),
+        billNo: invoiceNumber,
+        supplier: distributorName,
+        supplierName: distributorName,
+        date: invoiceDate,
+        billDate: invoiceDate,
+        amount: totalInvoiceCost,
+        totalAmount: totalInvoiceCost,
+        balanceDue: totalInvoiceCost,
+        paidAmount: 0,
+        creditDays: 30,
+        itemsCount: parsedItems.length,
+        items: parsedItems.map(it => ({
+          code: it.code,
+          name: it.name,
+          batch: it.batch,
+          exp: it.exp,
+          wQty: it.qty,
+          freeQty: 0,
+          packSize: it.per || 10,
+          ptr: it.ptr,
+          rate: it.ptr,
+          mrp: it.mrp,
+          totalUnits: it.qty * (it.per || 10),
+          taxPercent: 12,
+          total: it.totalCost
+        })),
+        status: 'DUE'
+      };
+      localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify([newVoucher, ...existingBills]));
+    } catch (e) {
+      console.error('Failed to store purchase voucher', e);
     }
 
     setInwardSuccessSummary(invoicePayload);

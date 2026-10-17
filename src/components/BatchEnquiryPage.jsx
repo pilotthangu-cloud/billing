@@ -381,11 +381,50 @@ export default function BatchEnquiryPage({
     return new Date(0);
   };
 
+  // Combine purchase inward vouchers from localStorage with baseline lots
+  const allInwardLots = useMemo(() => {
+    let purchaseLots = [];
+    try {
+      const savedBills = localStorage.getItem('beta_pharma_purchase_bills');
+      if (savedBills) {
+        const parsed = JSON.parse(savedBills);
+        if (Array.isArray(parsed)) {
+          purchaseLots = parsed.flatMap(p => {
+            return (p.items || []).map(it => ({
+              inwardDate: p.date || p.billDate || '16/10/2026',
+              billNo: p.billNo || 'PUR',
+              supplier: p.supplier || p.supplierName || 'DISTRIBUTOR',
+              supplierCode: p.supplierCode || 'S001',
+              supplierCity: 'KANNUR',
+              productName: it.name,
+              salt: it.generic || '',
+              company: it.company || 'Pharma Labs',
+              packSize: it.packSize || 10,
+              batchNo: it.batch,
+              expDate: it.exp,
+              billedPacks: it.wQty || 0,
+              freePacks: it.freeQty || 0,
+              totalUnits: it.totalUnits || ((it.wQty || 0) * (it.packSize || 10)),
+              ptr: it.ptr || it.rate || 0,
+              mrp: it.mrp || 0,
+              gstPercent: it.taxPercent || 12,
+              rack: it.rack || 'A1',
+              stockStatus: 'In Stock',
+              unitsRemaining: it.totalUnits || 0
+            }));
+          });
+        }
+      }
+    } catch (e) {}
+
+    return [...purchaseLots, ...SEEDED_INWARD_LOTS];
+  }, [medicines]);
+
   // Filtered Inward Lots List
   const filteredLots = useMemo(() => {
     const today = new Date(2026, 9, 16); // 16 Oct 2026 reference date
 
-    return SEEDED_INWARD_LOTS.filter((lot) => {
+    return allInwardLots.filter((lot) => {
       const lotDate = parseDateStr(lot.inwardDate);
 
       // 1. Time Period Filter

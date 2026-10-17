@@ -30,8 +30,14 @@ export default function TaxMasterPage({ theme, medicines, onBackToBilling, onUpd
   const [selectedHsn, setSelectedHsn] = useState('ALL');
   const [selectedSlab, setSelectedSlab] = useState('ALL');
 
-  // Editable Tax Slabs state (Loaded from statutory JSON with in-memory persistence)
-  const [gstSlabs, setGstSlabs] = useState(initialTaxData.gstSlabs);
+  // Editable Tax Slabs state (Loaded from statutory JSON with localStorage persistence)
+  const [gstSlabs, setGstSlabs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_tax_slabs');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return initialTaxData.gstSlabs;
+  });
   const [editingSlab, setEditingSlab] = useState(null);
   const [isNewSlabModalOpen, setIsNewSlabModalOpen] = useState(false);
   const [slabFormData, setSlabFormData] = useState({
@@ -97,7 +103,11 @@ export default function TaxMasterPage({ theme, medicines, onBackToBilling, onUpd
       igst: rate
     };
 
-    setGstSlabs(prev => prev.map(s => s.code === updatedSlab.code ? updatedSlab : s));
+    const updatedList = gstSlabs.map(s => s.code === updatedSlab.code ? updatedSlab : s);
+    setGstSlabs(updatedList);
+    try {
+      localStorage.setItem('beta_pharma_tax_slabs', JSON.stringify(updatedList));
+    } catch (err) {}
     showToast(`GST Tax Slab "${updatedSlab.code}" updated to ${rate}% successfully!`);
     setEditingSlab(null);
   };
@@ -120,7 +130,11 @@ export default function TaxMasterPage({ theme, medicines, onBackToBilling, onUpd
       activeItemsCount: 0
     };
 
-    setGstSlabs(prev => [...prev, newSlab]);
+    const updatedList = [...gstSlabs, newSlab];
+    setGstSlabs(updatedList);
+    try {
+      localStorage.setItem('beta_pharma_tax_slabs', JSON.stringify(updatedList));
+    } catch (err) {}
     showToast(`New Tax Slab "${newSlab.code}" (${rate}%) created successfully!`);
     setIsNewSlabModalOpen(false);
   };

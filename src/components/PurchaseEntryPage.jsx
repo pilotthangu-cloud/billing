@@ -209,10 +209,26 @@ export default function PurchaseEntryPage({
   // Inward Line Items Ledger (Starts clean & empty!)
   const [purchaseItems, setPurchaseItems] = useState([]);
 
-  // Saved Invoices History (Voucher history)
-  const [savedVouchers, setSavedVouchers] = useState([
-    { purNo: '06927', billNo: '020456', supplier: 'THE CAN DRUG HOUSE', date: '16/10/2026', amount: 4789.50, itemsCount: 2 }
-  ]);
+  // Saved Invoices History (Voucher history loaded from localStorage)
+  const [savedVouchers, setSavedVouchers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_purchase_bills');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p, idx) => ({
+            purNo: p.purNo || `0${6927 + idx + 1}`,
+            billNo: p.billNo || p.distBillNo || '0000',
+            supplier: p.supplier || p.supplierName || p.name || 'DISTRIBUTOR',
+            date: p.date || p.billDate || '',
+            amount: parseFloat(p.amount !== undefined ? p.amount : p.totalAmount) || 0,
+            itemsCount: p.itemsCount || (p.items ? p.items.length : 1)
+          }));
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
   const [activeTab, setActiveTab] = useState('entry'); // 'entry' or 'vouchers'
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
 
@@ -684,12 +700,27 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       purNo: voucherNumber,
       billNo: invoiceNo.trim(),
       supplier: currentSupplier.name,
+      supplierCode: currentSupplier.code,
+      supplierName: currentSupplier.name,
       date: billDate,
+      billDate: billDate,
       amount: netPayable,
-      itemsCount: purchaseItems.length
+      totalAmount: netPayable,
+      balanceDue: netPayable,
+      paidAmount: 0,
+      creditDays: currentSupplier.creditDays || 21,
+      itemsCount: purchaseItems.length,
+      items: purchaseItems,
+      status: 'DUE'
     };
 
-    setSavedVouchers(prev => [newVoucher, ...prev]);
+    setSavedVouchers(prev => {
+      const updated = [newVoucher, ...prev];
+      try {
+        localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
 
     // Update live stock in App catalog!
     if (onUpdateCatalogStock) {
@@ -1402,20 +1433,28 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
               </tr>
             </thead>
             <tbody className="divide-y divide-inherit">
-              {savedVouchers.map((v, idx) => (
-                <tr key={idx} className="border-b">
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
-                  <td className="py-2 px-3 text-center font-black border-r border-inherit text-sky-600">#{v.purNo}</td>
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.billNo}</td>
-                  <td className="py-2 px-3 font-bold font-sans border-r border-inherit">{v.supplier}</td>
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.date}</td>
-                  <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.itemsCount}</td>
-                  <td className={`py-2 px-3 text-right font-black border-r border-inherit ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    ₹{v.amount.toFixed(2)}
+              {savedVouchers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500 font-bold font-sans">
+                    No purchase vouchers posted yet. Complete and post an inward voucher to view historical entries.
                   </td>
-                  <td className="py-2 px-3 text-center font-bold text-emerald-600">POSTED</td>
                 </tr>
-              ))}
+              ) : (
+                savedVouchers.map((v, idx) => (
+                  <tr key={idx} className="border-b">
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
+                    <td className="py-2 px-3 text-center font-black border-r border-inherit text-sky-600">#{v.purNo}</td>
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.billNo}</td>
+                    <td className="py-2 px-3 font-bold font-sans border-r border-inherit">{v.supplier}</td>
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.date}</td>
+                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.itemsCount}</td>
+                    <td className={`py-2 px-3 text-right font-black border-r border-inherit ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                      ₹{v.amount.toFixed(2)}
+                    </td>
+                    <td className="py-2 px-3 text-center font-bold text-emerald-600">POSTED</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
