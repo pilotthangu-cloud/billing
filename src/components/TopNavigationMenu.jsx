@@ -447,36 +447,7 @@ export default function TopNavigationMenu({
             <span>ADMIN HQ</span>
           </button>
 
-          {/* Security Status Badge */}
-          {authenticatedRole ? (
-            <button
-              onClick={onLogoutRole}
-              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold ${
-                authenticatedRole === 'MANAGER'
-                  ? (isDark 
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800' 
-                      : 'bg-emerald-100 text-emerald-950 border-emerald-400')
-                  : (isDark 
-                      ? 'bg-sky-950 text-sky-300 border-sky-800' 
-                      : 'bg-sky-100 text-sky-950 border-sky-400')
-              }`}
-              title="Click to lock session"
-            >
-              <Unlock className={`w-3 h-3 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-              <span>{authenticatedRole === 'MANAGER' ? 'MANAGER (CC)' : 'STAFF (DD)'}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onOpenPasswordModal('Manager Authorization', 'Enter 2-character PIN to access protected modules.')}
-              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold ${
-                isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-              title="Click to authenticate as Manager or Staff"
-            >
-              <Lock className="w-3 h-3 text-amber-500" />
-              <span>PIN [CC/DD]</span>
-            </button>
-          )}
+
 
           {/* Cloud Sync Status Indicator */}
           <button
@@ -595,7 +566,6 @@ export default function TopNavigationMenu({
           >
             <Truck className="w-3.5 h-3.5" />
             <span>Purchase Entry</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
           </button>
 
           <button
@@ -680,7 +650,6 @@ export default function TopNavigationMenu({
           >
             <BarChart3 className="w-3.5 h-3.5" />
             <span>Sales & Margins</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
           </button>
 
           <button
@@ -695,7 +664,6 @@ export default function TopNavigationMenu({
           >
             <Building2 className={`w-3.5 h-3.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
             <span>Admin HQ Portal</span>
-            {!authenticatedRole && <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-0.5" />}
           </button>
         </div>
 

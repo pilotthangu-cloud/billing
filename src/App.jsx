@@ -702,6 +702,10 @@ export default function App() {
     try {
       localStorage.setItem('beta_pharma_active_shift', JSON.stringify(nextShift));
     } catch (e) {}
+
+    // Ensure terminal returns immediately to billing with new cashier active and zero password prompts
+    setActivePage('billing');
+    setAuthenticatedRole('MANAGER');
   };
 
   return (
@@ -765,6 +769,11 @@ export default function App() {
           onRestoreHeldBill={handleRestoreHeldBill}
           onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
           onReprintLastBill={handleReprintLastBill}
+          activeShift={activeShift}
+          staffList={staffList}
+          onSelectActiveStaff={handleSelectActiveStaff}
+          onAddStaff={handleAddStaff}
+          onOpenShiftModal={() => setIsShiftModalOpen(true)}
         />
       )}
 
