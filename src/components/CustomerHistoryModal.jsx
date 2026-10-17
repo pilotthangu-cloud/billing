@@ -252,38 +252,26 @@ export default function CustomerHistoryModal({
         <div className="p-4 overflow-y-auto flex-1 space-y-4">
           {selectedRecord ? (
             <>
-              {/* Customer Profile Banner */}
-              <div className={`p-3.5 rounded-xl border grid grid-cols-12 gap-3 items-center ${
+              {/* Customer Profile Banner (Clean: No Lifetime Spend or stats) */}
+              <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
                 isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-sky-50/60 border-sky-200'
               }`}>
-                <div className="col-span-12 sm:col-span-5 flex items-center space-x-3">
+                <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-sky-600 text-white flex items-center justify-center font-black text-sm shrink-0">
                     {selectedRecord.name ? selectedRecord.name.charAt(0) : 'P'}
                   </div>
                   <div>
-                    <h3 className="font-black text-sm">{selectedRecord.name || 'REGISTERED PATIENT'}</h3>
+                    <h3 className="font-black text-sm text-slate-950 dark:text-zinc-100">{selectedRecord.name || 'REGISTERED PATIENT'}</h3>
                     <div className="flex items-center space-x-2 font-mono text-xs text-sky-600 font-bold">
-                      <Phone className="w-3 h-3" />
+                      <Phone className="w-3.5 h-3.5" />
                       <span>{selectedRecord.phone}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="col-span-4 sm:col-span-2 text-center border-l border-r border-slate-300/40">
-                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Total Visits</span>
-                  <span className="font-mono font-black text-base text-sky-600">{selectedRecord.bills?.length || selectedRecord.totalVisits || 1}</span>
-                </div>
-
-                <div className="col-span-4 sm:col-span-2 text-center border-r border-slate-300/40">
-                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Lifetime Spend</span>
-                  <span className="font-mono font-black text-sm text-emerald-600">
-                    ₹{(selectedRecord.bills?.reduce((acc, b) => acc + (b.netPayable || 0), 0) || selectedRecord.totalSpent || 0).toFixed(0)}
-                  </span>
-                </div>
-
-                <div className="col-span-4 sm:col-span-3 text-right">
-                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Frequent Doctor</span>
-                  <span className="font-bold text-xs truncate block text-slate-700 dark:text-zinc-300">
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Doctor:</span>
+                  <span className="font-bold text-xs text-slate-800 dark:text-zinc-200">
                     {selectedRecord.preferredDoctor || selectedRecord.bills?.[0]?.doctorName || 'General OTC'}
                   </span>
                 </div>

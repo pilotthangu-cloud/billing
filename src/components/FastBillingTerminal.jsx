@@ -313,9 +313,6 @@ export default function FastBillingTerminal({
   // Medicine to inspect in bottom radar
   const inspectedMed = activeMedicine || (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || null;
 
-  // Always show at least 12 grid rows so the table is never a blank hole!
-  const DISPLAY_ROWS = Math.max(12, items.length + 2);
-
   // Focus search input helper
   const focusSearchInput = () => {
     searchInputRef.current?.focus();
@@ -326,27 +323,91 @@ export default function FastBillingTerminal({
     <div className={`flex-1 flex flex-col overflow-hidden font-sans ${
       theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
     }`}>
-      {/* 1. Invoice Metadata, Cashier Custody & Doctor Bar */}
-      <div className={`px-4 py-2 border-b flex flex-wrap items-center justify-between gap-3 text-xs ${
+      {/* 1. Single Compact Unified Prescription & Billing Bar */}
+      <div className={`px-3 py-1.5 border-b flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 text-xs select-none ${
         theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-100 border-slate-300'
       }`}>
-        <div className="flex items-center space-x-3">
+        {/* Left Section: Bill No, Patient Name, Patient Mobile, Doctor */}
+        <div className="flex items-center space-x-2 flex-1 min-w-0 flex-wrap sm:flex-nowrap">
           {/* Bill No */}
-          <div className="flex items-center space-x-1.5 font-mono">
-            <span className="text-slate-600 dark:text-zinc-400 text-[10px] uppercase font-bold">Bill No:</span>
-            <span className="font-black text-sky-600 text-sm">{billNo}</span>
-            <span className="text-slate-500 text-[11px]">({billDate})</span>
+          <div className="flex items-center space-x-1 font-mono shrink-0">
+            <span className="text-slate-500 text-[10px] uppercase font-bold">Bill:</span>
+            <span className="font-black text-sky-600 text-xs">{billNo}</span>
+            <span className="text-slate-400 text-[10px]">({billDate})</span>
           </div>
 
-          <span className="text-slate-400">|</span>
+          <span className="text-slate-300 dark:text-zinc-700 hidden sm:inline">|</span>
 
-          {/* ACTIVE CASHIER SELECTOR WITH DIRECT SWITCH & ADD NAME */}
-          <div className="flex items-center space-x-1.5 font-mono">
-            <span className="text-slate-600 dark:text-zinc-400 text-[10px] uppercase font-bold flex items-center space-x-1">
-              <User className="w-3.5 h-3.5 text-sky-500" />
-              <span>Cashier:</span>
-            </span>
+          {/* Patient Name Input */}
+          <div className={`flex items-center space-x-1.5 border rounded px-2 py-1 w-48 lg:w-56 shrink-0 ${
+            theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-xs'
+          }`}>
+            <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="text-slate-500 font-mono text-[10px] uppercase font-bold shrink-0">Pt [F2]:</span>
+            <input
+              ref={patientInputRef}
+              type="text"
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              placeholder="Customer Name..."
+              className={`w-full bg-transparent font-bold text-xs focus:outline-none ${
+                theme === 'dark' ? 'text-zinc-100 placeholder-zinc-600' : 'text-slate-900 placeholder-slate-400'
+              }`}
+            />
+          </div>
 
+          {/* Patient Mobile Input */}
+          <div className={`flex items-center space-x-1 border rounded px-2 py-1 w-44 lg:w-48 shrink-0 ${
+            customerPhone && customerPhone.length >= 4 
+              ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40' 
+              : (theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-xs')
+          }`}>
+            <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
+            <span className="text-slate-500 font-mono text-[10px] uppercase font-bold shrink-0">Mob:</span>
+            <input
+              ref={phoneInputRef}
+              type="tel"
+              maxLength={10}
+              value={customerPhone}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (setCustomerPhone) setCustomerPhone(val);
+              }}
+              placeholder="10-digit..."
+              className={`w-full bg-transparent font-mono font-bold text-xs focus:outline-none ${
+                theme === 'dark' ? 'text-zinc-100 placeholder-zinc-600' : 'text-slate-900 placeholder-slate-400'
+              }`}
+            />
+            {onOpenCustomerHistory && (
+              <button
+                type="button"
+                onClick={onOpenCustomerHistory}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 cursor-pointer transition ${
+                  customerPhone && customerPhone.length >= 4
+                    ? 'bg-sky-600 text-white hover:bg-sky-500'
+                    : (theme === 'dark' ? 'bg-zinc-800 text-sky-400 hover:bg-zinc-700' : 'bg-slate-200 text-sky-700 hover:bg-slate-300')
+                }`}
+                title="Customer Rx History (F4)"
+              >
+                F4
+              </button>
+            )}
+          </div>
+
+          {/* Doctor Selector */}
+          <div className="w-48 lg:w-56 shrink-0">
+            <DoctorSelector
+              doctorName={doctorName}
+              setDoctorName={setDoctorName}
+              theme={theme}
+            />
+          </div>
+        </div>
+
+        {/* Right Section: Cashier Selector & Payment Mode */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {/* Cashier Selector */}
+          <div className="flex items-center space-x-1 font-mono">
             {isAddingCashier ? (
               <form onSubmit={handleSaveNewCashierDirect} className="flex items-center space-x-1">
                 <input
@@ -354,8 +415,8 @@ export default function FastBillingTerminal({
                   autoFocus
                   value={newCashierInput}
                   onChange={(e) => setNewCashierInput(e.target.value)}
-                  placeholder="Type Cashier Name..."
-                  className={`px-2 py-0.5 rounded border text-xs font-bold ${
+                  placeholder="Cashier Name..."
+                  className={`px-2 py-0.5 rounded border text-xs font-bold w-28 ${
                     theme === 'dark' ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
                   }`}
                 />
@@ -368,15 +429,16 @@ export default function FastBillingTerminal({
                 <button
                   type="button"
                   onClick={() => setIsAddingCashier(false)}
-                  className="px-1.5 py-0.5 text-[10px] text-slate-500"
+                  className="px-1 text-[10px] text-slate-500"
                 >
-                  Cancel
+                  ✕
                 </button>
               </form>
             ) : (
-              <div className={`flex items-center border rounded px-2 py-0.5 ${
+              <div className={`flex items-center border rounded px-2 py-1 ${
                 theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-xs'
               }`}>
+                <span className="text-slate-500 text-[10px] uppercase font-bold mr-1">Cashier:</span>
                 <select
                   value={activeShift?.staffName || (staffList && staffList[0]) || 'Rahul C'}
                   onChange={(e) => {
@@ -386,10 +448,10 @@ export default function FastBillingTerminal({
                       onSelectActiveStaff(e.target.value);
                     }
                   }}
-                  className={`bg-transparent border-0 font-black text-xs cursor-pointer focus:outline-none ${
+                  className={`bg-transparent border-0 font-bold text-xs cursor-pointer focus:outline-none ${
                     theme === 'dark' ? 'text-white' : 'text-slate-900'
                   }`}
-                  title="Select which cashier is currently operating this counter, or click to add a new name"
+                  title="Active Cashier"
                 >
                   {(staffList || ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K']).map((staff, sIdx) => (
                     <option key={sIdx} value={staff} className={theme === 'dark' ? 'bg-zinc-900 text-white' : 'bg-white text-slate-900'}>
@@ -397,10 +459,9 @@ export default function FastBillingTerminal({
                     </option>
                   ))}
                   <option value="__add_new__" className="text-sky-600 font-bold">
-                    ➕ Type New Cashier Name...
+                    ➕ Add Name...
                   </option>
                 </select>
-
                 {onOpenShiftModal && (
                   <button
                     type="button"
@@ -414,17 +475,6 @@ export default function FastBillingTerminal({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Doctor and Payment Mode */}
-        <div className="flex items-center space-x-3">
-          <div className="w-56">
-            <DoctorSelector
-              doctorName={doctorName}
-              setDoctorName={setDoctorName}
-              theme={theme}
-            />
-          </div>
 
           {/* Payment Mode */}
           <div className="flex items-center space-x-1">
@@ -432,7 +482,7 @@ export default function FastBillingTerminal({
               <button
                 key={mode}
                 onClick={() => setPaymentMode(mode)}
-                className={`px-2.5 py-1 rounded font-mono font-bold uppercase text-[10px] transition border ${
+                className={`px-2 py-1 rounded font-mono font-bold uppercase text-[10px] transition border cursor-pointer ${
                   paymentMode === mode
                     ? 'bg-sky-600 text-white border-sky-600 shadow'
                     : (theme === 'dark' ? 'border-zinc-700 text-zinc-400 hover:text-white' : 'border-slate-300 text-slate-700 hover:text-slate-950 bg-white')
@@ -442,77 +492,6 @@ export default function FastBillingTerminal({
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* 2. DEDICATED FULL-WIDTH PATIENT NAME & PATIENT PHONE NUMBER BAR (CRYSTAL CLEAR!) */}
-      <div className={`px-4 py-2 border-b grid grid-cols-12 gap-3 text-xs items-center ${
-        theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
-      }`}>
-        {/* PATIENT NAME BOX */}
-        <div className={`col-span-12 md:col-span-6 flex items-center space-x-2.5 border-2 rounded-lg px-3 py-1.5 ${
-          theme === 'dark' ? 'bg-zinc-900 border-zinc-700 focus-within:border-sky-500' : 'bg-white border-slate-300 focus-within:border-sky-500 shadow-xs'
-        }`}>
-          <User className="w-4 h-4 text-sky-600 shrink-0" />
-          <div className="flex-1">
-            <label className="text-[10px] font-mono uppercase font-black tracking-wider text-slate-500 dark:text-zinc-400 block">
-              Patient / Customer Name [F2]:
-            </label>
-            <input
-              ref={patientInputRef}
-              type="text"
-              value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-              placeholder="Enter Patient Name (Optional)..."
-              className={`w-full bg-transparent font-black text-sm focus:outline-none ${
-                theme === 'dark' ? 'text-zinc-100 placeholder-zinc-600' : 'text-slate-950 placeholder-slate-400'
-              }`}
-            />
-          </div>
-        </div>
-
-        {/* PATIENT PHONE NUMBER BOX */}
-        <div className={`col-span-12 md:col-span-6 flex items-center space-x-2.5 border-2 rounded-lg px-3 py-1.5 ${
-          customerPhone && customerPhone.length >= 4 
-            ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/30' 
-            : (theme === 'dark' ? 'bg-zinc-900 border-zinc-700 focus-within:border-sky-500' : 'bg-white border-slate-300 focus-within:border-sky-500 shadow-xs')
-        }`}>
-          <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
-          <div className="flex-1">
-            <label className="text-[10px] font-mono uppercase font-black tracking-wider text-slate-500 dark:text-zinc-400 block flex items-center justify-between">
-              <span>Patient Phone Number [F4]:</span>
-              <span className="text-[9px] font-bold text-sky-600 dark:text-sky-400">Optional • Past Rx History</span>
-            </label>
-            <input
-              ref={phoneInputRef}
-              type="tel"
-              maxLength={10}
-              value={customerPhone}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                if (setCustomerPhone) setCustomerPhone(val);
-              }}
-              placeholder="Enter 10-digit Mobile Number (e.g. 9447123456)..."
-              className={`w-full bg-transparent font-mono font-black text-sm focus:outline-none ${
-                theme === 'dark' ? 'text-zinc-100 placeholder-zinc-600' : 'text-slate-950 placeholder-slate-400'
-              }`}
-            />
-          </div>
-
-          {/* Quick Repeat / Customer History trigger */}
-          <button
-            type="button"
-            onClick={onOpenCustomerHistory}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center space-x-1.5 shrink-0 transition shadow-xs cursor-pointer ${
-              customerPhone && customerPhone.length >= 4
-                ? 'bg-sky-600 hover:bg-sky-500 text-white animate-pulse'
-                : (theme === 'dark' ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300')
-            }`}
-            title="Inspect Patient Prescription History & 1-Click Repeat Bill (F4)"
-          >
-            <History className="w-3.5 h-3.5 text-sky-400" />
-            <span>Past Rx [F4]</span>
-          </button>
         </div>
       </div>
 
@@ -780,146 +759,164 @@ export default function FastBillingTerminal({
             </tr>
           </thead>
           <tbody>
-            {[...Array(DISPLAY_ROWS)].map((_, idx) => {
-              const item = items[idx];
-              const isEven = idx % 2 === 0;
-              const isRowSelected = selectedRowIndex === idx;
+            {items.length === 0 ? (
+              <tr 
+                onClick={focusSearchInput}
+                className="cursor-pointer hover:bg-sky-50/40 dark:hover:bg-zinc-900/40 transition"
+              >
+                <td colSpan="10" className="py-16 text-center select-none">
+                  <div className="max-w-md mx-auto space-y-2">
+                    <div className="w-10 h-10 mx-auto rounded-full bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600">
+                      <Search className="w-5 h-5" />
+                    </div>
+                    <div className="text-sm font-black text-slate-800 dark:text-zinc-200">
+                      Bill Table is Ready • Unlimited Rows
+                    </div>
+                    <div className="text-xs text-slate-500 font-normal">
+                      Click the search bar above or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 font-mono text-[11px] font-bold">F2</kbd> (Patient) or <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 font-mono text-[11px] font-bold">F4</kbd> (History). Every medicine added creates the next row automatically with no limit.
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              <>
+                {items.map((item, idx) => {
+                  const isEven = idx % 2 === 0;
+                  const isRowSelected = selectedRowIndex === idx;
 
-              return (
-                <tr 
-                  key={idx}
-                  onClick={() => {
-                    if (item) {
-                      setSelectedRowIndex(idx);
-                    } else {
-                      focusSearchInput();
-                    }
-                  }}
-                  className={`border-b transition-colors cursor-pointer ${
-                    isRowSelected
-                      ? (theme === 'dark' ? 'bg-sky-950/40 border-sky-600' : 'bg-sky-100/70 border-sky-400')
-                      : item
-                      ? (theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50/60')
-                      : (theme === 'dark' ? 'hover:bg-zinc-900/40' : 'hover:bg-slate-100/60')
-                  } ${
-                    theme === 'dark' 
-                      ? (isEven ? 'bg-zinc-950' : 'bg-zinc-900/40') + ' border-zinc-800' 
-                      : (isEven ? 'bg-white' : 'bg-slate-50/60') + ' border-slate-300'
-                  }`}
-                  style={{ height: '34px' }}
-                >
-                  {/* Sr */}
-                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                    item ? 'text-slate-600 dark:text-zinc-400' : 'text-slate-300 dark:text-zinc-700'
-                  }`}>
-                    {idx + 1}
-                  </td>
-
-                  {/* Product Description */}
-                  <td 
-                    className="py-1.5 px-3 font-sans border-r border-inherit"
-                    onClick={focusSearchInput}
-                  >
-                    {item ? (
-                      <div>
-                        <div className={`font-black text-xs ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                          {item.medicine.name}
-                        </div>
-                        {item.medicine.generic && (
-                          <div className={`text-[10px] font-mono font-bold mt-0.5 ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
-                            {item.medicine.generic}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className={theme === 'dark' ? 'text-zinc-800 select-none' : 'text-slate-200 select-none'}>-</span>
-                    )}
-                  </td>
-
-                  {/* Shelf Rack */}
-                  <td className="py-1.5 px-3 text-center border-r border-inherit">
-                    {item ? (
-                      <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
+                  return (
+                    <tr 
+                      key={idx}
+                      onClick={() => setSelectedRowIndex(idx)}
+                      className={`border-b transition-colors cursor-pointer ${
+                        isRowSelected
+                          ? (theme === 'dark' ? 'bg-sky-950/40 border-sky-600' : 'bg-sky-100/70 border-sky-400')
+                          : (theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50/60')
+                      } ${
                         theme === 'dark' 
-                          ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
-                          : 'bg-sky-50 text-sky-800 border-sky-300'
-                      }`}>
-                        R-{item.medicine.rack}
-                      </span>
-                    ) : (
-                      <span className={`select-none ${theme === 'dark' ? 'text-zinc-800' : 'text-slate-200'}`}>-</span>
-                    )}
-                  </td>
+                          ? (isEven ? 'bg-zinc-950' : 'bg-zinc-900/40') + ' border-zinc-800' 
+                          : (isEven ? 'bg-white' : 'bg-slate-50/60') + ' border-slate-300'
+                      }`}
+                      style={{ height: '36px' }}
+                    >
+                      {/* Sr */}
+                      <td className="py-1.5 px-3 text-center font-bold border-r border-inherit text-slate-600 dark:text-zinc-400">
+                        {idx + 1}
+                      </td>
 
-                  {/* Batch */}
-                  <td className={`py-1.5 px-3 font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                  }`}>
-                    {item ? item.batch.batch_no : ''}
-                  </td>
-
-                  {/* Expiry */}
-                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
-                  }`}>
-                    {item ? item.batch.exp_date : ''}
-                  </td>
-
-                  {/* MRP */}
-                  <td className={`py-1.5 px-3 text-right font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                  }`}>
-                    {item ? item.batch.mrp.toFixed(2) : ''}
-                  </td>
-
-                  {/* Pack */}
-                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                    theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'
-                  }`}>
-                    {item ? `${item.batch.per || 10}s` : ''}
-                  </td>
-
-                  {/* Qty (Directly Editable) */}
-                  <td className="py-1 px-2 text-center border-r border-inherit">
-                    {item ? (
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.qty}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
-                        className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
-                          theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
-                        }`}
-                      />
-                    ) : ''}
-                  </td>
-
-                  {/* Amount */}
-                  <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
-                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
-                  }`}>
-                    {item ? `₹${item.totalValue.toFixed(2)}` : ''}
-                  </td>
-
-                  {/* Action */}
-                  <td className="py-1.5 px-3 text-center">
-                    {item && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveItem(idx);
-                        }}
-                        className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50"
-                        title="Delete Item"
+                      {/* Product Description */}
+                      <td 
+                        className="py-1.5 px-3 font-sans border-r border-inherit"
+                        onClick={focusSearchInput}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                        <div>
+                          <div className={`font-black text-xs ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                            {item.medicine.name}
+                          </div>
+                          {item.medicine.generic && (
+                            <div className={`text-[10px] font-mono font-bold mt-0.5 ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                              {item.medicine.generic}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Shelf Rack */}
+                      <td className="py-1.5 px-3 text-center border-r border-inherit">
+                        <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
+                          theme === 'dark' 
+                            ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                            : 'bg-sky-50 text-sky-800 border-sky-300'
+                        }`}>
+                          R-{item.medicine.rack}
+                        </span>
+                      </td>
+
+                      {/* Batch */}
+                      <td className={`py-1.5 px-3 font-bold border-r border-inherit ${
+                        theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
+                      }`}>
+                        {item.batch.batch_no}
+                      </td>
+
+                      {/* Expiry */}
+                      <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                        theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
+                      }`}>
+                        {item.batch.exp_date}
+                      </td>
+
+                      {/* MRP */}
+                      <td className={`py-1.5 px-3 text-right font-bold border-r border-inherit ${
+                        theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
+                      }`}>
+                        {item.batch.mrp.toFixed(2)}
+                      </td>
+
+                      {/* Pack */}
+                      <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                        theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'
+                      }`}>
+                        {item.batch.per || 10}s
+                      </td>
+
+                      {/* Qty (Directly Editable) */}
+                      <td className="py-1 px-2 text-center border-r border-inherit">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.qty}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                          className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
+                            theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
+                          }`}
+                        />
+                      </td>
+
+                      {/* Amount */}
+                      <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
+                        theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
+                      }`}>
+                        ₹{item.totalValue.toFixed(2)}
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-1.5 px-3 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveItem(idx);
+                          }}
+                          className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {/* Dynamic Next Row Prompt */}
+                <tr 
+                  onClick={focusSearchInput}
+                  className={`border-b border-dashed transition cursor-pointer select-none ${
+                    theme === 'dark' 
+                      ? 'border-zinc-800 hover:bg-zinc-900/50 text-zinc-500' 
+                      : 'border-slate-300 hover:bg-slate-50 text-slate-400'
+                  }`}
+                  style={{ height: '36px' }}
+                >
+                  <td className="py-1.5 px-3 text-center font-bold border-r border-inherit">
+                    {items.length + 1}
+                  </td>
+                  <td colSpan="9" className="py-1.5 px-3 text-left italic text-[11px] font-sans">
+                    + Click or type medicine above to add item #{items.length + 1}...
                   </td>
                 </tr>
-              );
-            })}
+              </>
+            )}
           </tbody>
         </table>
       </div>

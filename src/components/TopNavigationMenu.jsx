@@ -73,27 +73,16 @@ export default function TopNavigationMenu({
       {/* Level 1: Pharmacy Title & Menu Bar */}
       <div className="px-3 py-1.5 flex items-center justify-between border-b border-inherit">
         <div className="flex items-center space-x-4">
-          {/* Pharmacy Identity & Physical Store Branch Selector */}
+          {/* Pharmacy Identity - Locked to Onboarding Selection (No accidental switching) */}
           <div className="flex items-center space-x-2">
-            <span className="font-black text-sm tracking-wider text-sky-600 font-mono">BETA PHARMACY</span>
-            <div className={`flex items-center space-x-1 px-2 py-0.5 rounded border text-[11px] font-mono font-bold ${
+            <span className="font-black text-sm tracking-wider text-sky-600 font-mono">
+              {activeBranch?.name?.toUpperCase() || 'BETA PHARMACY'}
+            </span>
+            <div className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border text-[11px] font-mono font-bold select-none ${
               isDark ? 'bg-zinc-950 border-zinc-700 text-zinc-300' : 'bg-white border-slate-300 text-slate-800 shadow-xs'
-            }`}>
+            }`} title="Physical Branch Locked to Machine Configuration">
               <Building2 className="w-3 h-3 text-sky-500" />
-              <select
-                value={activeBranch?.id || 'MAIN'}
-                onChange={(e) => onSelectBranch && onSelectBranch(e.target.value)}
-                className={`bg-transparent border-0 cursor-pointer focus:outline-none font-bold text-[11px] ${
-                  isDark ? 'text-white' : 'text-slate-950'
-                }`}
-                title="Configure Shop Branch for this Machine"
-              >
-                {availableBranches.map(b => (
-                  <option key={b.id} value={b.id} className={isDark ? 'bg-zinc-900 text-white' : 'bg-white text-slate-950'}>
-                    {b.name} ({b.location}) • Counter 01
-                  </option>
-                ))}
-              </select>
+              <span>{activeBranch?.location ? `${activeBranch.location} • Counter 01` : 'Main Counter 01'}</span>
             </div>
           </div>
 
