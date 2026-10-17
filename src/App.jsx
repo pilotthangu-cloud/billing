@@ -18,6 +18,7 @@ import BatchEnquiryPage from './components/BatchEnquiryPage';
 import TaxMasterPage from './components/TaxMasterPage';
 import CompanyMasterPage from './components/CompanyMasterPage';
 import DoctorMasterPage from './components/DoctorMasterPage';
+import ShiftReconciliationModal from './components/ShiftReconciliationModal';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -99,12 +100,32 @@ function getInitialBillNo() {
   return '025316';
 }
 
+// Persistent storage loader for active cashier shift session
+function getInitialActiveShift() {
+  try {
+    const saved = localStorage.getItem('beta_pharma_active_shift');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return {
+    shiftId: 'SHIFT-001',
+    staffName: 'Rahul C',
+    counter: 'Counter 01',
+    startTime: '08:00 AM',
+    startTimestamp: Date.now() - 4 * 60 * 60 * 1000,
+    openingFloat: 2000
+  };
+}
+
 export default function App() {
   const initialRoute = getInitialPage();
   const [theme, setTheme] = useState('light');
   const [activePage, setActivePage] = useState(initialRoute);
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  // Staff Shift Session & Reconciliation State
+  const [activeShift, setActiveShift] = useState(getInitialActiveShift);
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
 
   // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
   const [medicines, setMedicines] = useState(getInitialMedicines);
@@ -379,7 +400,9 @@ export default function App() {
       items: [...items],
       grossTotal: gross,
       netPayable: net,
-      store: 'Beta Pharmacy (Thalassery)'
+      store: 'Beta Pharmacy (Thalassery)',
+      staffName: activeShift?.staffName || 'Rahul C',
+      shiftId: activeShift?.shiftId || 'SHIFT-001'
     };
 
     setCompletedBillData(billPayload);
@@ -438,6 +461,31 @@ export default function App() {
     setPatientName('');
   };
 
+  // Staff Shift Handover Reconciliation Handler
+  const handleSaveShiftHandover = (completedShiftRecord) => {
+    try {
+      const history = JSON.parse(localStorage.getItem('beta_pharma_shift_history') || '[]');
+      history.unshift(completedShiftRecord);
+      localStorage.setItem('beta_pharma_shift_history', JSON.stringify(history));
+    } catch (e) {
+      console.error('Error saving shift handover history', e);
+    }
+
+    const nextShift = {
+      shiftId: `SHIFT-${Date.now().toString().slice(-6)}`,
+      staffName: completedShiftRecord.nextStaffName,
+      counter: completedShiftRecord.counter || 'Counter 01',
+      startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      startTimestamp: Date.now(),
+      openingFloat: completedShiftRecord.nextOpeningFloat || 2000
+    };
+
+    setActiveShift(nextShift);
+    try {
+      localStorage.setItem('beta_pharma_active_shift', JSON.stringify(nextShift));
+    } catch (e) {}
+  };
+
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden transition-colors ${
       theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
@@ -459,6 +507,8 @@ export default function App() {
             setIsPasswordModalOpen(true);
           }}
           onLogoutRole={handleLogoutRole}
+          activeShift={activeShift}
+          onOpenShiftModal={() => setIsShiftModalOpen(true)}
         />
       )}
 
@@ -635,6 +685,16 @@ export default function App() {
         isReprint={isReprintMode}
         recentBills={recentBills}
         onSelectBill={(selected) => setCompletedBillData(selected)}
+      />
+
+      {/* Staff Shift Session Handover & Blind Cash Reconciliation Modal */}
+      <ShiftReconciliationModal
+        isOpen={isShiftModalOpen}
+        onClose={() => setIsShiftModalOpen(false)}
+        activeShift={activeShift}
+        onSaveShiftHandover={handleSaveShiftHandover}
+        recentBills={recentBills}
+        theme={theme}
       />
     </div>
   );

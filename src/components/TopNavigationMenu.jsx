@@ -19,7 +19,8 @@ import {
   CreditCard,
   Banknote,
   Clock,
-  History
+  History,
+  Coins
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -33,7 +34,9 @@ export default function TopNavigationMenu({
   onOpenNewMedModal,
   authenticatedRole,
   onOpenPasswordModal,
-  onLogoutRole
+  onLogoutRole,
+  activeShift,
+  onOpenShiftModal
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -195,6 +198,16 @@ export default function TopNavigationMenu({
                     <span className="text-[10px] font-mono opacity-70">PAYMENTS</span>
                   </button>
                   <button 
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      onOpenShiftModal();
+                    }} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between text-amber-600"
+                  >
+                    <span>Staff Shift Reconciliation</span>
+                    <span className="text-[10px] font-mono font-bold px-1 rounded bg-amber-100 text-amber-900">AUDIT</span>
+                  </button>
+                  <button 
                     onClick={() => navigateTo('expiry')} 
                     className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white"
                   >
@@ -298,8 +311,27 @@ export default function TopNavigationMenu({
           </div>
         </div>
 
-        {/* Right: Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
+        {/* Right: Cashier Shift Handover, Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
         <div className="flex items-center space-x-2 font-mono text-[11px]">
+          {/* Active Cashier Shift & Handover Button */}
+          <button
+            onClick={onOpenShiftModal}
+            className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 transition font-bold ${
+              isDark
+                ? 'bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700'
+                : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50 shadow-xs'
+            }`}
+            title="Click to perform blind cash drawer audit and shift handover"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Cashier: <strong className={isDark ? 'text-white' : 'text-slate-950 font-black'}>{activeShift?.staffName || 'Rahul C'}</strong></span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black border ${
+              isDark ? 'bg-sky-950 text-sky-300 border-sky-800' : 'bg-sky-100 text-sky-900 border-sky-300'
+            }`}>
+              Shift Handover
+            </span>
+          </button>
+
           {/* Owner Admin HQ Portal Quick Access */}
           <button
             onClick={() => navigateTo('admin')}

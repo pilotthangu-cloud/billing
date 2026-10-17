@@ -8,10 +8,12 @@ import {
   User, 
   PlusCircle,
   PauseCircle,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
+import SubstituteRadarModal from './SubstituteRadarModal';
 
 export default function FastBillingTerminal({
   theme,
@@ -42,6 +44,9 @@ export default function FastBillingTerminal({
   const [activeBatch, setActiveBatch] = useState(null);
   const [entryQty, setEntryQty] = useState(10);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+
+  // Option B: Active Salt & Generic Substitute Radar Modal
+  const [substituteModalMed, setSubstituteModalMed] = useState(null);
 
   // Input refs
   const searchInputRef = useRef(null);
@@ -110,6 +115,11 @@ export default function FastBillingTerminal({
         // Direct enter on Enter key
         handleDirectAddMedicine(filtered[selectedMedIndex]);
       }
+    } else if (e.key === 'F3') {
+      e.preventDefault();
+      if (filtered[selectedMedIndex]) {
+        setSubstituteModalMed(filtered[selectedMedIndex]);
+      }
     } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);
     }
@@ -145,6 +155,17 @@ export default function FastBillingTerminal({
         patientInputRef.current?.focus();
         patientInputRef.current?.select();
       }
+      if (e.key === 'F3') {
+        e.preventDefault();
+        // Priority: selected dropdown item > activeMedicine > selected table row medicine > last item in bill
+        const target = (isDropdownOpen && filtered[selectedMedIndex]) || 
+          activeMedicine || 
+          (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || 
+          (items.length > 0 ? items[items.length - 1].medicine : null);
+        if (target) {
+          setSubstituteModalMed(target);
+        }
+      }
       if (e.key === 'Delete' && selectedRowIndex !== null && items[selectedRowIndex]) {
         e.preventDefault();
         handleRemoveItem(selectedRowIndex);
@@ -158,7 +179,7 @@ export default function FastBillingTerminal({
     };
     window.addEventListener('keydown', handleKeys);
     return () => window.removeEventListener('keydown', handleKeys);
-  }, [selectedRowIndex, items, onCompleteBill]);
+  }, [selectedRowIndex, items, onCompleteBill, isDropdownOpen, filtered, selectedMedIndex, activeMedicine]);
 
   // Scroll dropdown selection into view
   useEffect(() => {
@@ -457,9 +478,32 @@ export default function FastBillingTerminal({
                             {stock} in stock
                           </span>
 
+                          {/* Option B: 1-Click Find In-Stock Substitutes Button */}
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setSubstituteModalMed(med);
+                            }}
+                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center space-x-1 transition shadow-xs border ${
+                              isOut
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
+                                : (isSelected 
+                                    ? 'bg-sky-800 text-white border-sky-400' 
+                                    : (theme === 'dark' ? 'bg-sky-950 text-sky-300 border-sky-700 hover:bg-sky-900' : 'bg-sky-50 text-sky-900 border-sky-300 hover:bg-sky-100'))
+                            }`}
+                            title="Find active salt & generic substitutes (F3)"
+                          >
+                            <Sparkles className="w-3 h-3 text-amber-200" />
+                            <span>{isOut ? 'Find In-Stock Subs (F3)' : 'Subs'}</span>
+                          </button>
+
                           {/* 1-Click Enter Pill */}
                           <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
-                            isSelected ? 'bg-white text-sky-900 border-white' : 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-zinc-800 dark:text-sky-400 dark:border-zinc-700'
+                            isSelected 
+                              ? 'bg-white text-sky-900 border-white' 
+                              : (theme === 'dark' ? 'bg-zinc-800 text-sky-400 border-zinc-700' : 'bg-sky-50 text-sky-700 border-sky-300')
                           }`}>
                             Click to Add ↵
                           </span>
@@ -615,7 +659,7 @@ export default function FastBillingTerminal({
                         )}
                       </div>
                     ) : (
-                      <span className="text-slate-200 dark:text-zinc-800 select-none">-</span>
+                      <span className={theme === 'dark' ? 'text-zinc-800 select-none' : 'text-slate-200 select-none'}>-</span>
                     )}
                   </td>
 
@@ -656,7 +700,9 @@ export default function FastBillingTerminal({
                   </td>
 
                   {/* Pack */}
-                  <td className="py-1.5 px-3 text-center text-slate-600 dark:text-zinc-400 font-bold border-r border-inherit">
+                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                    theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
                     {item ? `${item.batch.per || 10}s` : ''}
                   </td>
 
@@ -677,7 +723,9 @@ export default function FastBillingTerminal({
                   </td>
 
                   {/* Amount */}
-                  <td className="py-1.5 px-3 text-right font-black text-emerald-700 dark:text-emerald-400 text-sm border-r border-inherit">
+                  <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
+                  }`}>
                     {item ? `₹${item.totalValue.toFixed(2)}` : ''}
                   </td>
 
@@ -707,6 +755,7 @@ export default function FastBillingTerminal({
       <MedicineDetailRadar
         selectedMed={inspectedMed}
         theme={theme}
+        onOpenSubstitutes={(med) => setSubstituteModalMed(med)}
       />
 
       {/* 5. Financial Accounting Ledger Footer */}
@@ -770,7 +819,9 @@ export default function FastBillingTerminal({
             className={`px-3 py-1.5 rounded font-mono font-bold text-xs uppercase border transition ${
               items.length === 0 
                 ? 'opacity-40 cursor-not-allowed border-slate-300' 
-                : 'border-amber-500 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950 font-bold'
+                : (theme === 'dark' 
+                    ? 'border-amber-500 text-amber-300 hover:bg-amber-950 font-bold' 
+                    : 'border-amber-500 text-amber-900 hover:bg-amber-100 font-bold')
             }`}
           >
             Hold Bill (F12)
@@ -780,7 +831,7 @@ export default function FastBillingTerminal({
             theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-sm'
           }`}>
             <span className="text-slate-500 text-[10px] font-mono font-bold block uppercase">Net Amount</span>
-            <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+            <span className={`text-xl font-black font-mono ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
               ₹{netPayable.toFixed(2)}
             </span>
           </div>
@@ -790,7 +841,7 @@ export default function FastBillingTerminal({
             disabled={items.length === 0}
             className={`px-5 py-2.5 rounded-lg font-black text-xs font-mono uppercase flex items-center space-x-2 transition shadow ${
               items.length === 0
-                ? 'bg-slate-300 dark:bg-zinc-800 text-slate-500 cursor-not-allowed'
+                ? (theme === 'dark' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-slate-300 text-slate-500 cursor-not-allowed')
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30'
             }`}
           >
@@ -806,37 +857,51 @@ export default function FastBillingTerminal({
       }`}>
         <div className="flex items-center space-x-3 font-semibold">
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-sky-700 dark:text-sky-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F2</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-sky-400 border-zinc-700' : 'bg-white text-sky-700 border-slate-300'
+            }`}>F2</kbd>
             <span>Patient</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-sky-700 dark:text-sky-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F3</kbd>
-            <span>Doctor</span>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-amber-300 border-zinc-700' : 'bg-white text-amber-800 border-slate-300'
+            }`}>F3</kbd>
+            <span className="font-bold text-amber-600">Substitutes</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">Enter</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-amber-400 border-zinc-700' : 'bg-white text-amber-700 border-slate-300'
+            }`}>Enter</kbd>
             <span>Add / Next</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">Del</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-rose-400 border-zinc-700' : 'bg-white text-rose-700 border-slate-300'
+            }`}>Del</kbd>
             <span>Remove Row</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F7</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-purple-400 border-zinc-700' : 'bg-white text-purple-700 border-slate-300'
+            }`}>F7</kbd>
             <span>Reprint (Torn Bill)</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">F12</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-amber-400 border-zinc-700' : 'bg-white text-amber-700 border-slate-300'
+            }`}>F12</kbd>
             <span>Hold / Park</span>
           </span>
-          <span className="text-slate-400 dark:text-zinc-600">|</span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
-            <kbd className="bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-slate-300 dark:border-zinc-700 font-bold">*+</kbd>
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-emerald-400 border-zinc-700' : 'bg-white text-emerald-700 border-slate-300'
+            }`}>*+</kbd>
             <span>Print Bill</span>
           </span>
         </div>
@@ -845,17 +910,33 @@ export default function FastBillingTerminal({
           {heldBillsCount > 0 && (
             <button
               onClick={onRestoreHeldBill}
-              className="flex items-center space-x-1.5 bg-amber-200 dark:bg-amber-950 text-amber-950 dark:text-amber-300 border border-amber-500 px-2.5 py-0.5 rounded-full font-bold text-[10px] animate-pulse hover:bg-amber-300"
+              className={`flex items-center space-x-1.5 border px-2.5 py-0.5 rounded-full font-bold text-[10px] animate-pulse ${
+                theme === 'dark' 
+                  ? 'bg-amber-950 text-amber-300 border-amber-600 hover:bg-amber-900' 
+                  : 'bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200'
+              }`}
             >
               <PauseCircle className="w-3 h-3 text-amber-600" />
               <span>{heldBillsCount} Parked Bill(s) Available [F12]</span>
             </button>
           )}
-          <span className="text-slate-600 dark:text-zinc-500 text-[10px] font-bold">
+          <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-zinc-500' : 'text-slate-600'}`}>
             Beta Pharmacy POS • Offline-Ready
           </span>
         </div>
       </div>
+
+      {/* Option B: Active Salt & Therapeutic Substitute Radar Modal */}
+      <SubstituteRadarModal
+        isOpen={!!substituteModalMed}
+        onClose={() => setSubstituteModalMed(null)}
+        targetMedicine={substituteModalMed}
+        allMedicines={medicines}
+        onSelectSubstitute={(sub) => {
+          handleDirectAddMedicine(sub);
+        }}
+        theme={theme}
+      />
     </div>
   );
 }

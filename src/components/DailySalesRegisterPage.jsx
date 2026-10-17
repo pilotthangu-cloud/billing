@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ArrowLeft, 
   Printer, 
   TrendingUp, 
+  TrendingDown,
   IndianRupee, 
   CreditCard, 
   Banknote, 
@@ -12,7 +13,10 @@ import {
   ChevronRight, 
   Calendar,
   FileSpreadsheet,
-  CheckCircle2
+  CheckCircle2,
+  Coins,
+  ShieldCheck,
+  Eye
 } from 'lucide-react';
 
 export default function DailySalesRegisterPage({ 
@@ -21,9 +25,10 @@ export default function DailySalesRegisterPage({
   authenticatedRole,
   onOpenPasswordModal
 }) {
-  const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'monthly'
+  const [viewMode, setViewMode] = useState('daily'); // 'daily', 'monthly', or 'shifts'
   const [selectedDate, setSelectedDate] = useState('16/10/2026');
   const [selectedMonth, setSelectedMonth] = useState('10/2026'); // MM/YYYY
+  const [selectedShiftForDetail, setSelectedShiftForDetail] = useState(null);
 
   // Mock Sales Database across multiple days (matching COUNTER.DBF & SALES.DBF)
   const salesDatabase = {
@@ -108,6 +113,61 @@ export default function DailySalesRegisterPage({
   const monthCost = monthlyDays.reduce((a, b) => a + b.cost, 0);
   const monthMargin = monthGross - monthCost;
   const monthMarginPct = ((monthMargin / monthGross) * 100).toFixed(1);
+
+  // Staff Shift Reconciliation History (loaded from localStorage or defaults)
+  const shiftHistory = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('beta_pharma_shift_history');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      {
+        shiftId: 'SHIFT-001',
+        staffName: 'Rahul C',
+        counter: 'Counter 01',
+        date: '16/10/2026',
+        startTime: '08:00 AM',
+        endTime: '02:00 PM',
+        openingFloat: 2000,
+        totalBills: 7,
+        cashSales: 996.59,
+        upiSales: 1409.56,
+        creditSales: 0,
+        grossTotal: 2406.15,
+        expectedCash: 2996.59,
+        countedPhysicalCash: 2996.59,
+        variance: 0,
+        denominations: { 500: 4, 200: 4, 100: 1, 50: 1, 20: 2, 10: 0, coins: 6.59 },
+        managerApproved: true,
+        managerNotes: 'Tally 100% matched, verified physical notes.',
+        nextStaffName: 'Suresh Kumar'
+      },
+      {
+        shiftId: 'SHIFT-000',
+        staffName: 'Suresh Kumar',
+        counter: 'Counter 01',
+        date: '15/10/2026',
+        startTime: '02:00 PM',
+        endTime: '09:30 PM',
+        openingFloat: 2000,
+        totalBills: 5,
+        cashSales: 1195.00,
+        upiSales: 1200.50,
+        creditSales: 0,
+        grossTotal: 2395.50,
+        expectedCash: 3195.00,
+        countedPhysicalCash: 3175.00,
+        variance: -20,
+        denominations: { 500: 5, 200: 3, 100: 0, 50: 1, 20: 1, 10: 0, coins: 5.00 },
+        managerApproved: true,
+        managerNotes: 'Shortage of ₹20 deducted from allowance.',
+        nextStaffName: 'Rahul C'
+      }
+    ];
+  }, []);
 
   // STRICT SECURITY CHECK: Admin/Manager Only
   const isManager = authenticatedRole === 'MANAGER';
@@ -215,6 +275,17 @@ export default function DailySalesRegisterPage({
             >
               Monthly Summary Report
             </button>
+            <button
+              onClick={() => setViewMode('shifts')}
+              className={`px-3 py-1.5 font-bold transition flex items-center space-x-1 ${
+                viewMode === 'shifts'
+                  ? 'bg-amber-600 text-white'
+                  : (theme === 'dark' ? 'bg-zinc-800 text-zinc-300 hover:text-white' : 'bg-white text-slate-700 hover:bg-slate-100')
+              }`}
+            >
+              <Coins className="w-3.5 h-3.5" />
+              <span>Staff Shift Audits</span>
+            </button>
           </div>
 
           <button
@@ -227,7 +298,7 @@ export default function DailySalesRegisterPage({
         </div>
       </div>
 
-      {viewMode === 'daily' ? (
+      {viewMode === 'daily' && (
         <>
           {/* 2. Date Navigation Bar */}
           <div className={`px-4 py-2 border-b flex items-center justify-between font-mono text-xs ${
@@ -397,10 +468,10 @@ export default function DailySalesRegisterPage({
                         {b.items}
                       </td>
                       <td className="py-2.5 px-3 text-center border-r border-inherit">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
                           b.mode === 'CASH' 
-                            ? 'bg-emerald-100 text-emerald-950 border border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300' 
-                            : 'bg-purple-100 text-purple-950 border border-purple-400 dark:bg-purple-950 dark:text-purple-300'
+                            ? (theme === 'dark' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-950 border-emerald-400')
+                            : (theme === 'dark' ? 'bg-purple-950 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-950 border-purple-400')
                         }`}>
                           {b.mode}
                         </span>
@@ -422,8 +493,10 @@ export default function DailySalesRegisterPage({
             </table>
           </div>
         </>
-      ) : (
-        /* 5. Monthly Sales Summary Report (REP001 / REP010 / CREATEMONTHLYSALESFILE) */
+      )}
+
+      {/* 5. Monthly Sales Summary Report (REP001 / REP010 / CREATEMONTHLYSALESFILE) */}
+      {viewMode === 'monthly' && (
         <div className="flex-1 overflow-y-auto p-4 font-mono">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -491,21 +564,224 @@ export default function DailySalesRegisterPage({
                 <td className="py-3 px-3 text-right border-r border-inherit font-mono">
                   ₹{monthUpi.toFixed(2)}
                 </td>
-                <td className="py-3 px-3 text-right border-r border-inherit font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+                <td className={`py-3 px-3 text-right border-r border-inherit font-mono text-sm ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
                   ₹{monthGross.toFixed(2)}
                 </td>
                 <td className="py-3 px-3 text-right border-r border-inherit font-mono text-slate-500">
                   ₹{monthCost.toFixed(2)}
                 </td>
-                <td className="py-3 px-3 text-right border-r border-inherit font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+                <td className={`py-3 px-3 text-right border-r border-inherit font-mono text-sm ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
                   ₹{monthMargin.toFixed(2)}
                 </td>
-                <td className="py-3 px-3 text-right font-mono text-amber-600 dark:text-amber-400">
+                <td className={`py-3 px-3 text-right font-mono ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}`}>
                   {monthMarginPct}%
                 </td>
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* 6. Staff Shift Session Reconciliation & Cash Drawer Audit Ledger */}
+      {viewMode === 'shifts' && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+                <Coins className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className={`text-sm font-black uppercase tracking-wide ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                  Staff Shift Session & Blind Cash Drawer Reconciliation Register
+                </h3>
+                <p className={`text-xs font-mono ${theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'}`}>
+                  Prevent unrecorded cash drain and track cashier-wise physical drawer count variance
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 text-xs font-mono">
+              <span className={`px-3 py-1 rounded border font-bold ${
+                theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-300' : 'bg-slate-100 border-slate-300 text-slate-800'
+              }`}>
+                {shiftHistory.length} Shifts Recorded
+              </span>
+            </div>
+          </div>
+
+          {/* Shift Audit Summary KPIs */}
+          <div className="grid grid-cols-4 gap-3 font-mono">
+            <div className={`p-3 rounded-xl border ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-50 border-slate-300'
+            }`}>
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Total Shifts Audited</span>
+              <span className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                {shiftHistory.length} Sessions
+              </span>
+            </div>
+
+            <div className={`p-3 rounded-xl border ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-50 border-slate-300'
+            }`}>
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">100% Balanced Shifts</span>
+              <span className="text-lg font-black text-emerald-600">
+                {shiftHistory.filter(s => (s.variance || 0) === 0).length} / {shiftHistory.length}
+              </span>
+            </div>
+
+            <div className={`p-3 rounded-xl border ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-50 border-slate-300'
+            }`}>
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Shifts With Shortage</span>
+              <span className="text-lg font-black text-rose-600">
+                {shiftHistory.filter(s => (s.variance || 0) < 0).length} Sessions
+              </span>
+            </div>
+
+            <div className={`p-3 rounded-xl border ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-50 border-slate-300'
+            }`}>
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Net Store Cash Variance</span>
+              <span className={`text-lg font-black ${
+                shiftHistory.reduce((acc, s) => acc + (s.variance || 0), 0) < 0 ? 'text-rose-600' : 'text-emerald-600'
+              }`}>
+                ₹{shiftHistory.reduce((acc, s) => acc + (s.variance || 0), 0).toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Shifts Audit Ledger Table */}
+          <div className={`border rounded-xl overflow-hidden font-mono text-xs ${
+            theme === 'dark' ? 'border-zinc-800' : 'border-slate-300'
+          }`}>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className={`border-b text-[11px] uppercase tracking-wider font-extrabold ${
+                  theme === 'dark' ? 'bg-zinc-900 border-zinc-800 text-zinc-300' : 'bg-slate-200 border-slate-300 text-slate-900'
+                }`}>
+                  <th className="py-2.5 px-3 border-r border-inherit">Shift ID</th>
+                  <th className="py-2.5 px-3 border-r border-inherit">Date & Time</th>
+                  <th className="py-2.5 px-3 border-r border-inherit">Cashier On Duty</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-center">Bills</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-right">Opening Float ₹</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-right">Cash Sales ₹</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-right">Expected Drawer ₹</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-right">Actual Counted ₹</th>
+                  <th className="py-2.5 px-3 border-r border-inherit text-center">Variance / Audit Result</th>
+                  <th className="py-2.5 px-3 border-r border-inherit">Next Handover To</th>
+                  <th className="py-2.5 px-3 text-center">Denominations</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-inherit">
+                {shiftHistory.map((s, idx) => {
+                  const variance = s.variance !== undefined ? s.variance : (s.countedPhysicalCash - s.expectedCash);
+                  const isShortage = variance < 0;
+                  const isBalanced = variance === 0;
+
+                  return (
+                    <tr key={s.shiftId || idx} className={`border-b ${theme === 'dark' ? 'hover:bg-zinc-900/80' : 'hover:bg-slate-50'}`}>
+                      <td className={`py-2 px-3 font-bold border-r border-inherit ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                        {s.shiftId}
+                      </td>
+                      <td className="py-2 px-3 border-r border-inherit text-[11px]">
+                        <div>{s.date}</div>
+                        <div className="text-slate-500 text-[10px]">{s.startTime} - {s.endTime || 'Ongoing'}</div>
+                      </td>
+                      <td className={`py-2 px-3 font-black font-sans border-r border-inherit ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                        {s.staffName}
+                      </td>
+                      <td className="py-2 px-3 text-center font-bold border-r border-inherit text-sky-700">
+                        {s.totalBills || s.billsCount || 0}
+                      </td>
+                      <td className="py-2 px-3 text-right border-r border-inherit">
+                        ₹{(s.openingFloat || 2000).toFixed(2)}
+                      </td>
+                      <td className="py-2 px-3 text-right border-r border-inherit font-black text-emerald-600">
+                        ₹{(s.cashSales || 0).toFixed(2)}
+                      </td>
+                      <td className="py-2 px-3 text-right border-r border-inherit font-bold">
+                        ₹{(s.expectedCash || 0).toFixed(2)}
+                      </td>
+                      <td className={`py-2 px-3 text-right border-r border-inherit font-black ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                        ₹{(s.countedPhysicalCash || 0).toFixed(2)}
+                      </td>
+                      <td className="py-2 px-3 text-center border-r border-inherit">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${
+                          isShortage
+                            ? (theme === 'dark' ? 'bg-rose-950 text-rose-300 border-rose-700' : 'bg-rose-100 text-rose-950 border-rose-300')
+                            : isBalanced
+                              ? (theme === 'dark' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-950 border-emerald-300')
+                              : (theme === 'dark' ? 'bg-sky-950 text-sky-300 border-sky-700' : 'bg-sky-100 text-sky-950 border-sky-300')
+                        }`}>
+                          {isShortage && `SHORTAGE (-₹${Math.abs(variance).toFixed(2)})`}
+                          {isBalanced && `BALANCED (₹0.00)`}
+                          {!isShortage && !isBalanced && `OVERAGE (+₹${variance.toFixed(2)})`}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 border-r border-inherit font-sans text-slate-500 font-bold">
+                        {s.nextStaffName || 'Next Shift'}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedShiftForDetail(selectedShiftForDetail === s ? null : s)}
+                          className={`p-1 rounded transition ${
+                            theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-slate-200 text-slate-700'
+                          }`}
+                          title="Inspect Physical Denomination Breakdown"
+                        >
+                          <Eye className="w-4 h-4 text-sky-600" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Selected Shift Denominations Drawer Inspector */}
+          {selectedShiftForDetail && (
+            <div className={`p-4 rounded-xl border space-y-3 font-mono text-xs ${
+              theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-sky-50 border-sky-300 text-slate-950'
+            }`}>
+              <div className="flex items-center justify-between border-b pb-2">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span className="font-black text-sm uppercase">
+                    Denominations Breakdown for {selectedShiftForDetail.shiftId} ({selectedShiftForDetail.staffName})
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedShiftForDetail(null)}
+                  className="font-bold text-slate-500 hover:text-slate-900"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-2 text-center text-xs">
+                {selectedShiftForDetail.denominations && Object.entries(selectedShiftForDetail.denominations).map(([denom, count]) => (
+                  <div key={denom} className={`p-2 rounded-lg border ${
+                    theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-slate-300'
+                  }`}>
+                    <span className="text-[10px] text-slate-500 font-bold block">
+                      {denom === 'coins' ? 'Coins' : `₹${denom} ×`}
+                    </span>
+                    <span className="font-black text-sm">
+                      {denom === 'coins' ? `₹${parseFloat(count).toFixed(2)}` : `${count} pcs`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {selectedShiftForDetail.managerNotes && (
+                <div className="text-[11px] font-sans italic opacity-85 pt-1">
+                  Manager Verification Notes: <strong>"{selectedShiftForDetail.managerNotes}"</strong>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

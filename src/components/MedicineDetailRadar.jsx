@@ -1,6 +1,7 @@
 import React from 'react';
+import { Sparkles } from 'lucide-react';
 
-export default function MedicineDetailRadar({ selectedMed, theme }) {
+export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitutes }) {
   const isDark = theme === 'dark';
 
   if (!selectedMed) {
@@ -17,13 +18,14 @@ export default function MedicineDetailRadar({ selectedMed, theme }) {
           </span>
         </div>
         <div className="text-slate-500 font-mono text-[11px] font-bold">
-          Type medicine name above (e.g. PAC, AUG, EQCEF)
+          Type medicine name above (e.g. PAC, AUG, EQCEF) • Press F3 for Active Salt Substitutes
         </div>
       </div>
     );
   }
 
   const currentStock = selectedMed.stock_shop1 || 0;
+  const isOut = currentStock <= 0;
 
   return (
     <div className={`border-t p-2.5 select-none text-xs transition-colors ${
@@ -84,13 +86,10 @@ export default function MedicineDetailRadar({ selectedMed, theme }) {
           </div>
         </div>
 
-        {/* Right: Multi-Store Cross Stock Radar */}
+        {/* Right: Multi-Store Cross Stock Radar & Substitute Button */}
         <div className={`col-span-4 p-2 rounded-lg border flex items-center justify-between font-mono text-xs ${
           isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-slate-300 shadow-sm'
         }`}>
-          <div className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-            Stock Radar:
-          </div>
           <div className="flex items-center space-x-3 text-[11px]">
             <div className="text-center">
               <span className="text-[9px] text-slate-500 font-bold block">This Shop</span>
@@ -113,6 +112,23 @@ export default function MedicineDetailRadar({ selectedMed, theme }) {
               </span>
             </div>
           </div>
+
+          {/* Quick Substitutes Launcher */}
+          {onOpenSubstitutes && (
+            <button
+              type="button"
+              onClick={() => onOpenSubstitutes(selectedMed)}
+              className={`px-2 py-1 rounded text-[11px] font-black flex items-center space-x-1 transition shadow-xs border ${
+                isOut 
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
+                  : (isDark ? 'bg-sky-950 text-sky-300 border-sky-700 hover:bg-sky-900' : 'bg-sky-50 text-sky-900 border-sky-300 hover:bg-sky-100')
+              }`}
+              title="Find generic & therapeutic substitutes (F3)"
+            >
+              <Sparkles className="w-3 h-3 text-amber-200" />
+              <span>{isOut ? 'Subs (F3)' : 'Substitutes'}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

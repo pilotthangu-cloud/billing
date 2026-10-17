@@ -184,7 +184,7 @@ export default function DotMatrixReceiptModal({
               </div>
               <div className="flex justify-between text-[10px] mb-1">
                 <span>Doctor: <strong className="uppercase">{doctorName || 'GENERAL OTC'}</strong></span>
-                <span>Bill No: <strong>#{billNo}</strong></span>
+                <span>Bill: <strong>#{billNo}</strong> • Cashier: <strong>{billData.staffName || 'Counter Staff 1'}</strong></span>
               </div>
 
               {/* Monospace Separator */}
