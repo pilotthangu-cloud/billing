@@ -281,6 +281,15 @@ export default function ShiftReconciliationModal({
                     placeholder="Enter new employee / cashier name..."
                     value={newStaffInput}
                     onChange={(e) => setNewStaffInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSaveNewStaff(e);
+                      } else if (e.key === 'Escape') {
+                        setIsAddingStaff(false);
+                      }
+                    }}
                     className={`flex-1 px-3 py-1.5 rounded-lg border text-xs font-bold ${
                       isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
                     }`}
@@ -310,7 +319,7 @@ export default function ShiftReconciliationModal({
                       isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
                     }`}
                   >
-                    {staffList.map((name, idx) => (
+                    {Array.from(new Set([...staffList, outgoingStaff].filter(Boolean))).map((name, idx) => (
                       <option key={idx} value={name}>
                         {name} (Off Duty)
                       </option>
@@ -331,7 +340,7 @@ export default function ShiftReconciliationModal({
                       isDark ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-white border-slate-300 text-sky-900'
                     }`}
                   >
-                    {staffList.map((name, idx) => (
+                    {Array.from(new Set([...staffList, incomingStaff, targetIncomingStaff].filter(Boolean))).map((name, idx) => (
                       <option key={idx} value={name}>
                         {name} (Next Shift)
                       </option>

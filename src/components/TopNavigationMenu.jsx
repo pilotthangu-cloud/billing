@@ -406,7 +406,7 @@ export default function TopNavigationMenu({
                 }`}
                 title="Active Cashier • Select another name to initiate shift handover"
               >
-                {staffList.map((s, idx) => (
+                {Array.from(new Set([...staffList, activeShift?.staffName].filter(Boolean))).map((s, idx) => (
                   <option key={idx} value={s} className={isDark ? 'bg-zinc-900 text-white' : 'bg-white text-slate-950'}>
                     {s}
                   </option>

@@ -554,7 +554,7 @@ export default function ProductCatalogPage({
                 </div>
 
                 {/* Pricing: MRP & PTR */}
-                <div className="col-span-2">
+                <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1">M.R.P. (₹) *</label>
                   <input
                     type="number"
@@ -567,7 +567,7 @@ export default function ProductCatalogPage({
                   />
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1">P.T.R. Cost (₹) *</label>
                   <input
                     type="number"
@@ -578,18 +578,6 @@ export default function ProductCatalogPage({
                       isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950'
                     }`}
                   />
-                </div>
-
-                {/* Live Margin & Tax Calculation Strip */}
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-500 mb-1">Live Profit Margin</label>
-                  <div className={`p-1.5 rounded-lg border text-center font-mono text-xs font-black ${
-                    marginAmt >= 0
-                      ? (isDark ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300' : 'bg-emerald-50 border-emerald-300 text-emerald-900')
-                      : (isDark ? 'bg-rose-950/60 border-rose-700 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-900')
-                  }`}>
-                    ₹{marginAmt.toFixed(2)} ({marginPct}%)
-                  </div>
                 </div>
 
                 {/* Tax Breakdown Strip */}

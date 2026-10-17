@@ -57,7 +57,10 @@ export default function FastBillingTerminal({
   const [newCashierInput, setNewCashierInput] = useState('');
 
   const handleSaveNewCashierDirect = (e) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const clean = newCashierInput.trim();
     if (!clean) return;
     if (onAddStaff) onAddStaff(clean);
@@ -433,31 +436,48 @@ export default function FastBillingTerminal({
           {/* Cashier Selector with Mandatory Handover Enforcement */}
           <div className="flex items-center space-x-1 font-mono">
             {isAddingCashier ? (
-              <form onSubmit={handleSaveNewCashierDirect} className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 font-mono">
                 <input
                   type="text"
                   autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  spellCheck={false}
+                  data-lpignore="true"
+                  data-form-type="other"
                   value={newCashierInput}
                   onChange={(e) => setNewCashierInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSaveNewCashierDirect(e);
+                    } else if (e.key === 'Escape') {
+                      setIsAddingCashier(false);
+                    }
+                  }}
                   placeholder="Cashier Name..."
-                  className={`px-2 py-0.5 rounded border text-xs font-bold w-28 ${
+                  className={`px-2 py-1 rounded border text-xs font-bold w-32 focus:ring-2 focus:ring-sky-500 focus:outline-none ${
                     theme === 'dark' ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
                   }`}
                 />
                 <button
-                  type="submit"
-                  className="px-2 py-0.5 rounded bg-sky-600 text-white text-[10px] font-bold cursor-pointer"
+                  type="button"
+                  onClick={handleSaveNewCashierDirect}
+                  className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-black cursor-pointer shadow-xs transition"
                 >
                   Save
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsAddingCashier(false)}
-                  className="px-1 text-[10px] text-slate-500 cursor-pointer"
+                  className="px-1.5 py-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+                  title="Cancel"
                 >
                   ✕
                 </button>
-              </form>
+              </div>
             ) : (
               <div className={`flex items-center border rounded px-2 py-1 ${
                 theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-xs'
