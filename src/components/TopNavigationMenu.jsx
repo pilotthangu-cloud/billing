@@ -224,7 +224,7 @@ export default function TopNavigationMenu({
                     className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between"
                   >
                     <span>Purchase Inward Entry</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
+                    <span className="text-[10px] font-mono opacity-70">INWARD</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('due-bills')} 
@@ -303,7 +303,7 @@ export default function TopNavigationMenu({
                     className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold"
                   >
                     <span>Daily Sales Register & Margins</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
+                    <span className="text-[10px] font-mono opacity-70">SALES</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('admin')} 
@@ -312,7 +312,7 @@ export default function TopNavigationMenu({
                     }`}
                   >
                     <span>Owner Admin HQ Portal</span>
-                    <Lock className="w-3 h-3 opacity-70 text-amber-500" />
+                    <span className="text-[10px] font-mono opacity-80 text-purple-400 font-bold">HQ</span>
                   </button>
                 </div>
               )}
@@ -430,7 +430,6 @@ export default function TopNavigationMenu({
           >
             <Building2 className={`w-3.5 h-3.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
             <span>ADMIN HQ</span>
-            {!authenticatedRole && <Lock className="w-2.5 h-2.5 text-amber-500 opacity-80" />}
           </button>
 
           {/* Security Status Badge */}

@@ -29,7 +29,8 @@ import {
   Lock,
   AlertOctagon,
   Activity,
-  RefreshCw
+  RefreshCw,
+  ChevronDown
 } from 'lucide-react';
 import supplierList from '../data/suppliers.json';
 // Daily OCR Token Quota Limit: 245,000 Tokens/Day Hardcap (Strictly gpt-4o-mini)
@@ -229,8 +230,31 @@ export default function PurchaseEntryPage({
     (m.code && m.code.toLowerCase().includes(mq))
   ).slice(0, 20);
 
-  // Selected supplier details
+  // Selected supplier details & Instant Search Combobox
+  const [supplierSearchQuery, setSupplierSearchQuery] = useState('');
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
+  const supplierDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (supplierDropdownRef.current && !supplierDropdownRef.current.contains(e.target)) {
+        setIsSupplierDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const currentSupplier = allSuppliers.find(s => s.code === supplierCode) || allSuppliers[0];
+
+  const sq = supplierSearchQuery.trim().toLowerCase();
+  const filteredSuppliers = sq.length === 0
+    ? allSuppliers.slice(0, 35)
+    : allSuppliers.filter(s =>
+        (s.name && s.name.toLowerCase().includes(sq)) ||
+        (s.code && s.code.toLowerCase().includes(sq)) ||
+        (s.address && s.address.toLowerCase().includes(sq))
+      ).slice(0, 35);
 
   // Handle supplier change: Clear invoice number so user enters the new distributor bill
   const handleSupplierChange = (newCode) => {
@@ -729,23 +753,16 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
         </div>
 
         <div className="flex items-center space-x-2.5">
-          {/* Upload / OCR Distributor Invoice Button */}
-          {/* Upload / OCR Distributor Invoice Button (Protected by Admin Password) */}
+          {/* Upload / OCR Distributor Invoice Button (Open directly without password gate) */}
           {activeTab === 'entry' && (
             <button
               onClick={() => {
-                if (isAdminAuthenticated) {
-                  setIsUploadModalOpen(true);
-                  setExtractedReviewData(null);
-                  setIsScanning(false);
-                } else {
-                  setAdminPasswordInput('');
-                  setAdminAuthError('');
-                  setIsAdminAuthModalOpen(true);
-                }
+                setIsUploadModalOpen(true);
+                setExtractedReviewData(null);
+                setIsScanning(false);
               }}
               className="py-1.5 px-3 rounded-lg border text-xs font-bold font-mono transition flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-600 shadow-sm cursor-pointer"
-              title="Upload Distributor Invoice PDF or Photo to auto-extract details (Admin authorization required)"
+              title="Upload Distributor Invoice PDF or Photo to auto-extract details"
             >
               <Camera className="w-4 h-4 text-slate-950" />
               <span>Upload Bill / Photo (Auto-Extract)</span>
@@ -788,26 +805,95 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
           <div className={`p-3 border-b grid grid-cols-12 gap-3 text-xs font-mono ${
             isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-slate-50 border-slate-200'
           }`}>
-            {/* Supplier Selector */}
-            <div className="col-span-4">
-              <label className={`block text-[10px] font-black uppercase mb-1 ${
-                isDark ? 'text-zinc-300' : 'text-slate-900'
-              }`}>
-                Supplier [SUPP_CD / SUPPMAST]
-              </label>
-              <select
-                value={supplierCode}
-                onChange={(e) => handleSupplierChange(e.target.value)}
-                className={`w-full py-1.5 px-2 rounded border font-bold text-xs focus:ring-2 focus:ring-sky-500 ${
-                  isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950 shadow-sm'
-                }`}
-              >
-                {allSuppliers.map((s, idx) => (
-                  <option key={idx} value={s.code}>
-                    {s.code} - {s.name} ({s.address || 'KANNUR / THALASSERY'})
-                  </option>
-                ))}
-              </select>
+            {/* Searchable Supplier Selector */}
+            <div className="col-span-4 relative" ref={supplierDropdownRef}>
+              <div className="flex items-center justify-between mb-1">
+                <label className={`block text-[10px] font-black uppercase ${
+                  isDark ? 'text-zinc-300' : 'text-slate-900'
+                }`}>
+                  Supplier / Distributor [SUPPMAST]
+                </label>
+                <span className="text-[10px] text-slate-400 font-mono font-bold">
+                  {allSuppliers.length} on file
+                </span>
+              </div>
+
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={isSupplierDropdownOpen ? supplierSearchQuery : `${currentSupplier.code} - ${currentSupplier.name}`}
+                  onFocus={() => {
+                    setIsSupplierDropdownOpen(true);
+                    setSupplierSearchQuery('');
+                  }}
+                  onChange={(e) => {
+                    setSupplierSearchQuery(e.target.value);
+                    if (!isSupplierDropdownOpen) setIsSupplierDropdownOpen(true);
+                  }}
+                  placeholder="Type distributor name or code to search..."
+                  className={`w-full py-1.5 pl-8 pr-7 rounded border font-bold text-xs focus:ring-2 focus:ring-sky-500 font-mono ${
+                    isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950 shadow-sm'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  title="Toggle suppliers list"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Searchable Dropdown List */}
+              {isSupplierDropdownOpen && (
+                <div className={`absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-lg border shadow-2xl z-50 py-1 font-mono text-xs ${
+                  isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900'
+                }`}>
+                  <div className={`px-2 py-1 text-[10px] font-bold border-b uppercase ${
+                    isDark ? 'bg-zinc-950 border-zinc-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}>
+                    Showing {filteredSuppliers.length} of {allSuppliers.length} distributors (Type to filter)
+                  </div>
+                  {filteredSuppliers.map((s, idx) => {
+                    const isSelected = s.code === supplierCode;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          handleSupplierChange(s.code);
+                          setIsSupplierDropdownOpen(false);
+                          setSupplierSearchQuery('');
+                        }}
+                        className={`px-3 py-1.5 cursor-pointer flex items-center justify-between border-b border-inherit last:border-b-0 transition ${
+                          isSelected
+                            ? 'bg-sky-600 text-white font-black'
+                            : (isDark ? 'hover:bg-zinc-800' : 'hover:bg-sky-50')
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <span className={`font-mono font-bold mr-2 ${isSelected ? 'text-white' : 'text-amber-500'}`}>
+                            {s.code}
+                          </span>
+                          <span className="font-bold">{s.name}</span>
+                          {s.address && (
+                            <span className={`text-[10px] ml-2 block truncate ${isSelected ? 'text-sky-100' : 'text-slate-400'}`}>
+                              {s.address}
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      </div>
+                    );
+                  })}
+                  {filteredSuppliers.length === 0 && (
+                    <div className="p-3 text-center text-slate-400 text-xs">
+                      No matching distributor found for "{supplierSearchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Distributor Bill Number */}

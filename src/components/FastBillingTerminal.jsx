@@ -534,7 +534,10 @@ export default function FastBillingTerminal({
           )}
 
           {/* Quantity Input */}
-          <div className="w-24">
+          <div className="w-28 relative flex items-center">
+            <span className="absolute left-2.5 text-[10px] font-mono font-bold text-slate-400 select-none pointer-events-none">
+              QTY:
+            </span>
             <input
               ref={qtyInputRef}
               type="number"
@@ -546,8 +549,9 @@ export default function FastBillingTerminal({
                   handleAddLineItem(e);
                 }
               }}
+              title="Quantity to add (e.g. 10 for standard strip)"
               placeholder="Qty"
-              className={`w-full py-2 px-2 text-center rounded-lg border font-mono font-black text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+              className={`w-full py-2 pl-9 pr-2 text-center rounded-lg border font-mono font-black text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                 theme === 'dark'
                   ? 'bg-zinc-950 border-zinc-700 text-white'
                   : 'bg-white border-slate-400 text-slate-950 shadow-sm'

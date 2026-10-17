@@ -353,30 +353,8 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Guard navigation to password-protected operations
+  // Navigation to pages (Password gates removed as requested)
   const handleNavigatePage = (page) => {
-    // Sales & Margins is restricted to Admin
-    if (page === 'sales-register' && authenticatedRole !== 'MANAGER') {
-      setPendingPage(page);
-      setPasswordModalInfo({
-        title: 'Admin Authorization: Sales & Margins',
-        description: 'Sales totals, gross margins, and cash drawer tallies are restricted to Administrator.'
-      });
-      setIsPasswordModalOpen(true);
-      return;
-    }
-
-    // Owner Admin HQ Portal is strictly Admin only
-    if (page === 'admin' && authenticatedRole !== 'MANAGER') {
-      setPendingPage(page);
-      setPasswordModalInfo({
-        title: 'Owner Admin HQ Authorization',
-        description: 'Multi-Store Consolidated Analytics, profit margins, and system settings are restricted to Administrator.'
-      });
-      setIsPasswordModalOpen(true);
-      return;
-    }
-
     setActivePage(page);
     try {
       if (page === 'admin') {
