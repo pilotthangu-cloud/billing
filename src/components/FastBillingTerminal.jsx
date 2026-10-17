@@ -17,6 +17,7 @@ import SubstituteRadarModal from './SubstituteRadarModal';
 
 export default function FastBillingTerminal({
   theme,
+  activeBranch,
   items,
   setItems,
   medicines,
@@ -38,6 +39,9 @@ export default function FastBillingTerminal({
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedMedIndex, setSelectedMedIndex] = useState(0);
+
+  // Active Shop Branch Stock Key (Configured per physical machine)
+  const stockKey = activeBranch?.stockKey || 'stock_shop1';
 
   // Selected Medicine for current entry
   const [activeMedicine, setActiveMedicine] = useState(null);
@@ -86,8 +90,9 @@ export default function FastBillingTerminal({
       }
 
       if (score > 0) {
-        // Bonus for available stock
-        if (m.stock_shop1 > 0) score += 20;
+        // Bonus for available stock in this shop branch
+        const shopStock = m[stockKey] !== undefined ? m[stockKey] : (m.stock_shop1 || 0);
+        if (shopStock > 0) score += 20;
         scored.push({ med: m, score });
       }
     }
@@ -404,7 +409,7 @@ export default function FastBillingTerminal({
                 ) : (
                   filtered.map((med, idx) => {
                     const isSelected = idx === selectedMedIndex;
-                    const stock = med.stock_shop1;
+                    const stock = med[stockKey] !== undefined ? med[stockKey] : (med.stock_shop1 || 0);
                     const isOut = stock <= 0;
 
                     return (
@@ -755,6 +760,7 @@ export default function FastBillingTerminal({
       <MedicineDetailRadar
         selectedMed={inspectedMed}
         theme={theme}
+        activeBranch={activeBranch}
         onOpenSubstitutes={(med) => setSubstituteModalMed(med)}
       />
 

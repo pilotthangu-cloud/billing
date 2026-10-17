@@ -1,8 +1,9 @@
 import React from 'react';
 import { Repeat } from 'lucide-react';
 
-export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitutes }) {
+export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitutes, activeBranch }) {
   const isDark = theme === 'dark';
+  const stockKey = activeBranch?.stockKey || 'stock_shop1';
 
   if (!selectedMed) {
     return (
@@ -24,7 +25,7 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
     );
   }
 
-  const currentStock = selectedMed.stock_shop1 || 0;
+  const currentStock = selectedMed[stockKey] !== undefined ? selectedMed[stockKey] : (selectedMed.stock_shop1 || 0);
   const isOut = currentStock <= 0;
 
   return (
@@ -92,23 +93,27 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
         }`}>
           <div className="flex items-center space-x-3 text-[11px]">
             <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">This Shop</span>
+              <span className="text-[9px] text-slate-500 font-bold block">{activeBranch?.short || 'This Shop'}</span>
               <span className={`font-black ${currentStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {currentStock} strips
               </span>
             </div>
             <span className={isDark ? 'text-zinc-700' : 'text-slate-300'}>|</span>
             <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">Branch B</span>
+              <span className="text-[9px] text-slate-500 font-bold block">
+                {activeBranch?.id === 'TOWN' ? 'Main' : 'Town'}
+              </span>
               <span className={`font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
-                {selectedMed.stock_shop2 || 0}
+                {activeBranch?.id === 'TOWN' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop2 || 0)}
               </span>
             </div>
             <span className={isDark ? 'text-zinc-700' : 'text-slate-300'}>|</span>
             <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">Branch C</span>
+              <span className="text-[9px] text-slate-500 font-bold block">
+                {activeBranch?.id === 'KANNUR' ? 'Main' : 'Kannur'}
+              </span>
               <span className={`font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
-                {selectedMed.stock_shop3 || 0}
+                {activeBranch?.id === 'KANNUR' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop3 || 0)}
               </span>
             </div>
           </div>

@@ -100,6 +100,24 @@ function getInitialBillNo() {
   return '025316';
 }
 
+// Multi-Shop Branch Machine Identifiers (Configured per physical shop counter)
+export const AVAILABLE_BRANCHES = [
+  { id: 'MAIN', name: 'Beta Pharmacy (Main Branch)', location: 'Chirakkara, Thalassery', short: 'Main Chirakkara', prefix: 'CHI', stockKey: 'stock_shop1' },
+  { id: 'TOWN', name: 'Beta Pharmacy (Town Branch)', location: 'Near Old Bus Stand, Thalassery', short: 'Town Branch', prefix: 'TWN', stockKey: 'stock_shop2' },
+  { id: 'KANNUR', name: 'Beta Pharmacy (Kannur Clinic)', location: 'Fort Road, Kannur', short: 'Kannur Clinic', prefix: 'KNR', stockKey: 'stock_shop3' }
+];
+
+function getInitialBranch() {
+  try {
+    const saved = localStorage.getItem('beta_pharma_branch_id');
+    if (saved) {
+      const found = AVAILABLE_BRANCHES.find(b => b.id === saved);
+      if (found) return found;
+    }
+  } catch (e) {}
+  return AVAILABLE_BRANCHES[0];
+}
+
 // Persistent storage loader for staff roster
 function getInitialStaffList() {
   try {
@@ -134,6 +152,18 @@ export default function App() {
   const [activePage, setActivePage] = useState(initialRoute);
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  // Multi-Shop Branch Machine Identity
+  const [activeBranch, setActiveBranch] = useState(getInitialBranch);
+
+  const handleSelectBranch = (branchId) => {
+    const found = AVAILABLE_BRANCHES.find(b => b.id === branchId);
+    if (!found) return;
+    setActiveBranch(found);
+    try {
+      localStorage.setItem('beta_pharma_branch_id', found.id);
+    } catch (e) {}
+  };
 
   // Staff Shift Session & Reconciliation State
   const [staffList, setStaffList] = useState(getInitialStaffList);
@@ -438,17 +468,20 @@ export default function App() {
       items: [...items],
       grossTotal: gross,
       netPayable: net,
-      store: 'Beta Pharmacy (Thalassery)',
+      store: activeBranch.name,
+      branchId: activeBranch.id,
+      location: activeBranch.location,
       staffName: activeShift?.staffName || 'Rahul C',
       shiftId: activeShift?.shiftId || 'SHIFT-001'
     };
 
     setCompletedBillData(billPayload);
 
-    // 1. Deduct sold medicine stock from live inventory and persist
+    // 1. Deduct sold medicine stock from live inventory for THIS specific shop branch
     setMedicines(prev => {
       const updated = [...prev];
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const targetStockKey = activeBranch.stockKey || 'stock_shop1';
 
       for (const line of items) {
         const itemCode = line.medicine ? line.medicine.code : line.code;
@@ -458,7 +491,7 @@ export default function App() {
         const idx = updated.findIndex(m => m.code === itemCode || m.name.toLowerCase() === (itemName || '').toLowerCase());
         if (idx !== -1) {
           const med = { ...updated[idx] };
-          med.stock_shop1 = Math.max(0, (med.stock_shop1 || 0) - qtySold);
+          med[targetStockKey] = Math.max(0, (med[targetStockKey] || 0) - qtySold);
           updated[idx] = med;
           const key = med.code || med.name.toLowerCase();
           overrides[key] = med;
@@ -549,6 +582,9 @@ export default function App() {
           staffList={staffList}
           onSelectActiveStaff={handleSelectActiveStaff}
           onOpenShiftModal={() => setIsShiftModalOpen(true)}
+          activeBranch={activeBranch}
+          onSelectBranch={handleSelectBranch}
+          availableBranches={AVAILABLE_BRANCHES}
         />
       )}
 
@@ -556,6 +592,7 @@ export default function App() {
       {activePage === 'billing' && (
         <FastBillingTerminal
           theme={theme}
+          activeBranch={activeBranch}
           items={items}
           setItems={setItems}
           medicines={medicines}
