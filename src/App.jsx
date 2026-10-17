@@ -115,34 +115,23 @@ export default function App() {
 
   // Guard navigation to password-protected operations
   const handleNavigatePage = (page) => {
-    // Sales & Margins is STRICTLY ADMIN/MANAGER (CC) only!
+    // Sales & Margins is restricted to Admin
     if (page === 'sales-register' && authenticatedRole !== 'MANAGER') {
       setPendingPage(page);
       setPasswordModalInfo({
-        title: 'Admin Authorization: Sales & Margins [REP023]',
-        description: 'Sales totals, gross margins, and cash drawer tallies are restricted strictly to Admin/Manager (Code CC).'
+        title: 'Admin Authorization: Sales & Margins',
+        description: 'Sales totals, gross margins, and cash drawer tallies are restricted to Administrator.'
       });
       setIsPasswordModalOpen(true);
       return;
     }
 
-    // Purchases requires Manager authorization
-    if (page === 'purchases' && authenticatedRole !== 'MANAGER') {
-      setPendingPage(page);
-      setPasswordModalInfo({
-        title: 'Purchase Inward Entry [TRN001]',
-        description: 'Access to distributor purchase bills and cost rates requires Manager authorization (Code CC).'
-      });
-      setIsPasswordModalOpen(true);
-      return;
-    }
-
-    // Owner Admin HQ Portal is strictly Admin/Manager (CC) only!
+    // Owner Admin HQ Portal is strictly Admin only
     if (page === 'admin' && authenticatedRole !== 'MANAGER') {
       setPendingPage(page);
       setPasswordModalInfo({
-        title: 'Owner Admin HQ Authorization [SYS001 / CC]',
-        description: 'Multi-Store Consolidated Analytics, profit margins, dead capital analysis, and cloud settings are restricted strictly to Admin/Manager (Code CC).'
+        title: 'Owner Admin HQ Authorization',
+        description: 'Multi-Store Consolidated Analytics, profit margins, and system settings are restricted to Administrator.'
       });
       setIsPasswordModalOpen(true);
       return;

@@ -145,386 +145,6 @@ export async function convertFileToImageDataUrl(file) {
   });
 }
 
-// Specialized Client-Side Indian Pharma Invoice Text Parser
-export function parsePharmaInvoiceText(rawText, medicines = [], suppliers = []) {
-  const upper = (rawText || '').toUpperCase();
-  const lines = (rawText || '')
-    .split(/\r?\n/)
-    .map(l => l.trim())
-    .filter(l => l.length > 0);
-
-  // 1. Detect Supplier
-  let detectedSupplier = null;
-  for (const s of suppliers) {
-    const key = s.name.toUpperCase().split(' ')[0];
-    if (key.length >= 3 && upper.includes(key)) {
-      detectedSupplier = s;
-      break;
-    }
-  }
-  if (!detectedSupplier) {
-    if (upper.includes('SABARI') || upper.includes('EMBASSY') || upper.includes('THALASSERY')) {
-      detectedSupplier = suppliers.find(s => s.code === 'S077') || { code: 'S077', name: 'SABARI ENTERPRISES' };
-    } else if (upper.includes('CAN DRUG') || upper.includes('CAN')) {
-      detectedSupplier = suppliers.find(s => s.code === 'S076') || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
-    } else {
-      detectedSupplier = suppliers[0] || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
-    }
-  }
-
-  // 2. Detect Invoice Number
-  let invoiceNo = '';
-  if (upper.includes('21096')) {
-    invoiceNo = '21096';
-  } else {
-    const invMatch = upper.match(/(?:INV|INVOICE|BILL|MEMO|NO)[.:\s#-]+([A-Z0-9-]{4,12})/);
-    if (invMatch && invMatch[1]) {
-      invoiceNo = invMatch[1];
-    } else {
-      const numMatch = upper.match(/\b([1-9][0-9]{4,7})\b/);
-      invoiceNo = numMatch ? numMatch[1] : 'DB-' + Math.floor(10000 + Math.random() * 90000);
-    }
-  }
-
-  // 3. Detect Invoice Date
-  let invoiceDate = '15/10/2026';
-  const dateMatch = upper.match(/(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/);
-  if (dateMatch) {
-    invoiceDate = dateMatch[1].replace(/-/g, '/');
-  }
-
-  // 4. Detect Cash vs Credit
-  const isCash = upper.includes('CASH') || !upper.includes('CREDIT');
-
-  // 5. High-fidelity recognition for Sabari Enterprises Bill #21096
-  const isSabariBill = upper.includes('FUCIS') || upper.includes('MOMSAFE') || (upper.includes('SABARI') && upper.includes('21096'));
-
-  const extractedItems = [];
-
-  if (isSabariBill) {
-    extractedItems.push({
-      name: 'FUCISVALID CREAM 10GM',
-      generic: 'Fusidic Acid 2% + Betamethasone 0.1%',
-      batch: '2222419',
-      exp: '05/26',
-      wQty: 10,
-      freeQty: 3,
-      packSize: 1,
-      ptr: 57.96,
-      mrp: 89.00,
-      taxPercent: 5,
-      confidence: 100
-    });
-    extractedItems.push({
-      name: 'MOMSAFE CREAM 20GM',
-      generic: 'Mometasone Furoate 0.1%',
-      batch: 'ED2303',
-      exp: '04/26',
-      wQty: 10,
-      freeQty: 3,
-      packSize: 1,
-      ptr: 92.15,
-      mrp: 135.00,
-      taxPercent: 5,
-      confidence: 100
-    });
-  } else {
-    // Dynamic extraction across OCR lines
-    for (const line of lines) {
-      const lineUp = line.toUpperCase();
-      let matchedMed = medicines.find(m => {
-        const mKey = m.name.split(' ')[0].toUpperCase();
-        return mKey.length >= 4 && lineUp.includes(mKey);
-      });
-
-      const hasPharmaKeyword = /(?:TAB|CAP|CREAM|OINT|SYRUP|SUSP|INJ|GEL|DROPS|LOTION|MG|GM|ML)/.test(lineUp);
-
-      if (matchedMed || hasPharmaKeyword) {
-        const batchMatch = lineUp.match(/\b([A-Z0-9]{4,10})\b/);
-        const batch = batchMatch ? batchMatch[1] : 'BT' + Math.floor(1000 + Math.random() * 9000);
-
-        const expMatch = lineUp.match(/\b(0[1-9]|1[0-2])[/.-](\d{2,4})\b/);
-        const exp = expMatch ? `${expMatch[1]}/${expMatch[2].slice(-2)}` : '12/28';
-
-        const schemeMatch = lineUp.match(/(\d+)\s*\+\s*(\d+)/);
-        let wQty = 10;
-        let freeQty = 0;
-        if (schemeMatch) {
-          wQty = parseInt(schemeMatch[1]) || 10;
-          freeQty = parseInt(schemeMatch[2]) || 0;
-        } else {
-          const qtyMatches = lineUp.match(/\b(\d{1,3})\b/g);
-          if (qtyMatches && qtyMatches.length >= 1) {
-            wQty = parseInt(qtyMatches[0]) || 10;
-          }
-        }
-
-        const decimalMatches = lineUp.match(/\b\d+\.\d{2}\b/g);
-        let ptr = matchedMed ? (matchedMed.ptr || +(matchedMed.mrp * 0.76).toFixed(2)) : 65.00;
-        let mrp = matchedMed ? matchedMed.mrp : 95.00;
-        if (decimalMatches && decimalMatches.length >= 2) {
-          ptr = parseFloat(decimalMatches[0]) || ptr;
-          mrp = parseFloat(decimalMatches[1]) || mrp;
-        } else if (decimalMatches && decimalMatches.length === 1) {
-          ptr = parseFloat(decimalMatches[0]) || ptr;
-          mrp = +(ptr * 1.35).toFixed(2);
-        }
-
-        const name = matchedMed 
-          ? matchedMed.name 
-          : (line.replace(/[^A-Za-z0-9\s-]/g, '').trim().slice(0, 30) || 'INWARD MEDICINE');
-
-        extractedItems.push({
-          name: name.toUpperCase(),
-          generic: matchedMed ? (matchedMed.generic || 'Active Salt') : 'Pharmaceutical Compound',
-          batch,
-          exp,
-          wQty,
-          freeQty,
-          packSize: matchedMed ? (matchedMed.per || 1) : 1,
-          ptr,
-          mrp,
-          taxPercent: 12,
-          confidence: 92
-        });
-      }
-    }
-  }
-
-  // Graceful fallback if lines are not cleanly resolved
-  if (extractedItems.length === 0) {
-    const sample = medicines.slice(0, 2);
-    sample.forEach((m, idx) => {
-      extractedItems.push({
-        name: m.name,
-        generic: m.generic || 'Active Salt',
-        batch: 'BT' + Math.floor(1000 + Math.random() * 9000),
-        exp: '12/28',
-        wQty: 10 * (idx + 1),
-        freeQty: idx === 0 ? 1 : 0,
-        packSize: m.per || 10,
-        ptr: m.ptr || +(m.mrp * 0.76).toFixed(2),
-        mrp: m.mrp,
-        taxPercent: 12,
-        confidence: 85
-      });
-    });
-  }
-
-  return {
-    supplierCode: detectedSupplier.code,
-    supplierName: detectedSupplier.name,
-    invoiceNo: invoiceNo || '21096',
-    invoiceDate,
-    isCash,
-    items: extractedItems
-  };
-}
-
-// Seeded realistic distributor invoice OCR templates for instant 1-click test or document scanning
-const DEMO_DISTRIBUTOR_INVOICES = [
-  {
-    id: 'demo-sabari',
-    title: 'Sabari Enterprises (Bill #21096 - Fucisvalid & Momsafe Cream, Scheme 10+3)',
-    supplierCode: 'S077',
-    supplierName: 'SABARI ENTERPRISES',
-    invoiceNo: '21096',
-    invoiceDate: '15/10/2026',
-    isCash: true,
-    items: [
-      {
-        name: 'FUCISVALID CREAM 10GM',
-        generic: 'Fusidic Acid 2% + Betamethasone 0.1%',
-        batch: '2222419',
-        exp: '05/26',
-        wQty: 10,
-        freeQty: 3,
-        packSize: 1,
-        ptr: 57.96,
-        mrp: 89.00,
-        taxPercent: 5,
-        confidence: 100
-      },
-      {
-        name: 'MOMSAFE CREAM 20GM',
-        generic: 'Mometasone Furoate 0.1%',
-        batch: 'ED2303',
-        exp: '04/26',
-        wQty: 10,
-        freeQty: 3,
-        packSize: 1,
-        ptr: 92.15,
-        mrp: 135.00,
-        taxPercent: 5,
-        confidence: 100
-      }
-    ]
-  },
-  {
-    id: 'demo-1',
-    title: 'The Can Drug House (Bill #020459 - Augmentin, Dolo, Pan 40, Azithral)',
-    supplierCode: 'T010',
-    supplierName: 'THE CAN DRUG HOUSE',
-    invoiceNo: '020459',
-    invoiceDate: '16/10/2026',
-    isCash: false,
-    items: [
-      {
-        name: 'AUGMENTIN 625 DUO TAB',
-        generic: 'Amoxicillin 500mg + Clavulanic Acid 125mg',
-        batch: 'AG9102',
-        exp: '09/28',
-        wQty: 20,
-        freeQty: 2,
-        packSize: 10,
-        ptr: 142.50,
-        mrp: 204.00,
-        taxPercent: 12,
-        confidence: 99
-      },
-      {
-        name: 'PAN 40MG TAB',
-        generic: 'Pantoprazole 40mg',
-        batch: 'PN4201',
-        exp: '11/28',
-        wQty: 30,
-        freeQty: 3,
-        packSize: 15,
-        ptr: 98.20,
-        mrp: 155.00,
-        taxPercent: 12,
-        confidence: 98
-      },
-      {
-        name: 'DOLO 650MG TAB',
-        generic: 'Paracetamol 650mg',
-        batch: 'DL8891',
-        exp: '03/29',
-        wQty: 50,
-        freeQty: 5,
-        packSize: 15,
-        ptr: 22.40,
-        mrp: 34.15,
-        taxPercent: 12,
-        confidence: 100
-      },
-      {
-        name: 'AZITHRAL 500MG TAB',
-        generic: 'Azithromycin 500mg',
-        batch: 'AZ5521',
-        exp: '05/28',
-        wQty: 15,
-        freeQty: 1,
-        packSize: 5,
-        ptr: 79.50,
-        mrp: 119.50,
-        taxPercent: 12,
-        confidence: 97
-      }
-    ]
-  },
-  {
-    id: 'demo-2',
-    title: 'Malabar Drug Distributors (Bill #MD-88412 - Telma 40, Glycomet GP2, Rosuvas 10)',
-    supplierCode: 'M005',
-    supplierName: 'MALABAR DRUG DISTRIBUTORS',
-    invoiceNo: 'MD-88412',
-    invoiceDate: '15/10/2026',
-    isCash: false,
-    items: [
-      {
-        name: 'TELMA 40MG TAB',
-        generic: 'Telmisartan 40mg',
-        batch: 'TL6041',
-        exp: '12/28',
-        wQty: 40,
-        freeQty: 4,
-        packSize: 15,
-        ptr: 125.00,
-        mrp: 189.00,
-        taxPercent: 12,
-        confidence: 99
-      },
-      {
-        name: 'GLYCOMET GP 2MG TAB',
-        generic: 'Metformin 500mg + Glimepiride 2mg',
-        batch: 'GLP330',
-        exp: '07/28',
-        wQty: 35,
-        freeQty: 0,
-        packSize: 15,
-        ptr: 148.00,
-        mrp: 215.00,
-        taxPercent: 12,
-        confidence: 98
-      },
-      {
-        name: 'ROSUVAS 10MG TAB',
-        generic: 'Rosuvastatin 10mg',
-        batch: 'RS7712',
-        exp: '02/29',
-        wQty: 25,
-        freeQty: 2,
-        packSize: 10,
-        ptr: 165.50,
-        mrp: 242.00,
-        taxPercent: 12,
-        confidence: 96
-      }
-    ]
-  },
-  {
-    id: 'demo-3',
-    title: 'Thalassery Pharma Syndicate (Bill #TPS-3091 - Azee 500, Pantocid 40, Montair LC)',
-    supplierCode: 'T012',
-    supplierName: 'THALASSERY PHARMA SYNDICATE',
-    invoiceNo: 'TPS-3091',
-    invoiceDate: '14/10/2026',
-    isCash: true,
-    items: [
-      {
-        name: 'AZEE 500MG TAB',
-        generic: 'Azithromycin 500mg',
-        batch: 'AZ9901',
-        exp: '06/28',
-        wQty: 20,
-        freeQty: 2,
-        packSize: 5,
-        ptr: 82.00,
-        mrp: 124.50,
-        taxPercent: 12,
-        confidence: 99
-      },
-      {
-        name: 'MONTAIR LC TAB',
-        generic: 'Montelukast 10mg + Levocetirizine 5mg',
-        batch: 'MNT441',
-        exp: '10/28',
-        wQty: 30,
-        freeQty: 3,
-        packSize: 10,
-        ptr: 180.00,
-        mrp: 268.00,
-        taxPercent: 12,
-        confidence: 98
-      },
-      {
-        name: 'PANTOCID 40MG TAB',
-        generic: 'Pantoprazole 40mg',
-        batch: 'PTC812',
-        exp: '01/29',
-        wQty: 25,
-        freeQty: 0,
-        packSize: 15,
-        ptr: 110.00,
-        mrp: 162.00,
-        taxPercent: 12,
-        confidence: 97
-      }
-    ]
-  }
-];
-
 export default function PurchaseEntryPage({ 
   theme, 
   medicines, 
@@ -606,52 +226,34 @@ export default function PurchaseEntryPage({
     setInvoiceNo(''); // Reset bill number for new supplier
   };
 
-  // AI Vision OCR Document Inward Parser (Strictly gpt-4o-mini, 245k Daily Token Hardcap)
-  const handleStartOCRScan = async (demoItem = null, customFile = null) => {
+  // Invoice Auto-Extract Document Parser (245k Daily Token Hardcap)
+  const handleStartOCRScan = async (file) => {
+    if (!file) return;
     setOcrError('');
     setIsScanning(true);
-    setScanStatusText('Preparing document for AI Vision analysis...');
+    setUploadedFileName(file.name);
+    setScanStatusText('Preparing document...');
 
     try {
-      if (demoItem) {
-        setScanStatusText('Loading distributor invoice preset...');
-        await new Promise(r => setTimeout(r, 400));
+      // 1. Quota & Hardcap Enforcement (245,000 Tokens/Day)
+      const currentQuota = getDailyTokenUsage();
+      if ((currentQuota.tokensUsed || 0) >= DAILY_TOKEN_CAP) {
         setIsScanning(false);
-        setUploadedFileName(demoItem.title);
-        setExtractedReviewData({
-          supplierCode: demoItem.supplierCode,
-          supplierName: demoItem.supplierName,
-          invoiceNo: demoItem.invoiceNo,
-          invoiceDate: demoItem.invoiceDate,
-          isCash: demoItem.isCash,
-          items: demoItem.items.map(it => ({ ...it }))
-        });
+        setOcrError(
+          'Daily invoice auto-scan limit reached for today. Limit resets at 00:00 midnight. Please enter invoices manually.'
+        );
         return;
       }
 
-      if (customFile) {
-        setUploadedFileName(customFile.name);
+      // 2. Prepare optimized base64 image data URL
+      setScanStatusText('Preparing document image...');
+      const imageDataUrl = await convertFileToImageDataUrl(file);
 
-        // 1. Quota & Hardcap Enforcement (245,000 Tokens/Day)
-        const currentQuota = getDailyTokenUsage();
-        if ((currentQuota.tokensUsed || 0) >= DAILY_TOKEN_CAP) {
-          setIsScanning(false);
-          setOcrError(
-            `Daily OCR Hardcap Reached: ${currentQuota.tokensUsed.toLocaleString()} / ${DAILY_TOKEN_CAP.toLocaleString()} tokens used today. ` +
-            `Hardcap is locked at 245,000 tokens/day on gpt-4o-mini to protect billing. Limit resets at 00:00 midnight. Please enter invoices manually.`
-          );
-          return;
-        }
-
-        // 2. Prepare optimized base64 image data URL
-        setScanStatusText('Optimizing document resolution for high-accuracy vision...');
-        const imageDataUrl = await convertFileToImageDataUrl(customFile);
-
-        // 3. Connect to OpenAI gpt-4o-mini Vision
-        setScanStatusText('Connecting to OpenAI Vision (gpt-4o-mini)...');
+        // 3. Connect to Document Extraction Engine
+        setScanStatusText('Analyzing invoice & extracting line items...');
         const apiKey = OPENAI_API_KEY;
         if (!apiKey || !apiKey.startsWith('sk-')) {
-          throw new Error('OpenAI API Key is missing or invalid. Please check VITE_OPENAI_API_KEY.');
+          throw new Error('Invoice extraction key is missing or invalid. Please check VITE_OPENAI_API_KEY.');
         }
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -712,7 +314,7 @@ Special Indian Pharma Rules:
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `OpenAI Vision API error (${response.status})`);
+          throw new Error(errData?.error?.message || `Invoice extraction service error (${response.status})`);
         }
 
         const data = await response.json();
@@ -794,18 +396,17 @@ Special Indian Pharma Rules:
             }
           ]
         });
-      }
     } catch (err) {
-      console.error('AI Vision OCR Error:', err);
+      console.error('Invoice Extract Error:', err);
       setIsScanning(false);
-      setOcrError(`AI Vision Error: ${err.message}. You can enter invoice manually.`);
+      setOcrError(`Extraction error: ${err.message}. You can enter invoice manually.`);
     }
   };
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleStartOCRScan(null, file);
+      handleStartOCRScan(file);
     }
   };
 
@@ -1096,7 +697,7 @@ Special Indian Pharma Rules:
               title="Upload Distributor Invoice PDF or Photo to auto-extract details (Admin authorization required)"
             >
               <Camera className="w-4 h-4 text-slate-950" />
-              <span>Upload PDF / Photo (AI Vision OCR)</span>
+              <span>Upload Bill / Photo (Auto-Extract)</span>
             </button>
           )}
 
@@ -1698,18 +1299,13 @@ Special Indian Pharma Rules:
                 </div>
                 <div>
                   <h3 className={`text-sm font-black flex items-center space-x-2 ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    <span>Distributor Invoice Optical Inward (AI Vision OCR)</span>
+                    <span>Distributor Invoice Auto-Inward</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                       🔒 Admin Authorized
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-500/20 text-sky-500 border border-sky-500/30">
-                      gpt-4o-mini (Vision)
-                    </span>
                   </h3>
-                  <p className={`text-xs font-mono flex items-center space-x-2 mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                    <span>Daily Quota: {(quotaData.tokensUsed || 0).toLocaleString()} / {DAILY_TOKEN_CAP.toLocaleString()} tokens ({Math.round(((quotaData.tokensUsed || 0) / DAILY_TOKEN_CAP) * 100)}%)</span>
-                    <span>•</span>
-                    <span>{quotaData.billsCount || 0} Bills Today</span>
+                  <p className={`text-xs font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                    Auto-extracts medicines, batches, expiries, quantities, schemes & rates for manual review
                   </p>
                 </div>
               </div>
@@ -1729,67 +1325,17 @@ Special Indian Pharma Rules:
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
-              {/* Daily OCR Quota Hardcap Status Bar */}
-              <div className={`p-3 rounded-xl border text-xs font-mono ${
-                (quotaData.tokensUsed || 0) >= DAILY_TOKEN_CAP
-                  ? (isDark ? 'bg-rose-950/40 border-rose-800 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-900')
-                  : (isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-slate-50 border-slate-200 text-slate-800')
-              }`}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold uppercase tracking-wider text-[11px]">Daily AI Vision Quota:</span>
-                    <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-500 font-bold text-[10px] border border-sky-500/30">
-                      gpt-4o-mini (245k Hardcap)
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-3 text-[11px]">
-                    <span className="font-bold">
-                      {(quotaData.tokensUsed || 0).toLocaleString()} / {DAILY_TOKEN_CAP.toLocaleString()} Tokens
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const today = new Date().toISOString().slice(0, 10);
-                        const reset = {
-                          date: today,
-                          tokensUsed: 0,
-                          billsCount: 0,
-                          dailyLimit: DAILY_TOKEN_CAP,
-                          model: HARDCAPPED_MODEL
-                        };
-                        localStorage.setItem('pharma_pos_ocr_quota', JSON.stringify(reset));
-                        setQuotaData(reset);
-                        setOcrError('');
-                      }}
-                      className={`text-[10px] px-2 py-0.5 rounded border flex items-center space-x-1 ${
-                        isDark ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-400' : 'border-slate-300 hover:bg-slate-200 text-slate-600'
-                      }`}
-                      title="Reset counter for testing today"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Reset Quota (Test)</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-slate-200'}`}>
-                  <div 
-                    className={`h-full transition-all duration-500 ${
-                      (quotaData.tokensUsed || 0) >= DAILY_TOKEN_CAP 
-                        ? 'bg-rose-500' 
-                        : (quotaData.tokensUsed || 0) > DAILY_TOKEN_CAP * 0.8 ? 'bg-amber-500' : 'bg-sky-500'
-                    }`}
-                    style={{ width: `${Math.min(100, Math.round(((quotaData.tokensUsed || 0) / DAILY_TOKEN_CAP) * 100))}%` }}
-                  />
-                </div>
-
-                {(quotaData.tokensUsed || 0) >= DAILY_TOKEN_CAP && (
-                  <p className="mt-2 text-[11px] text-rose-500 font-bold flex items-center space-x-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Daily hardcap reached (245,000 / 245,000 tokens). Limit active to protect billing. Reset above to test more.</span>
+              {/* Daily Limit Reached Warning if hardcap reached */}
+              {(quotaData.tokensUsed || 0) >= DAILY_TOKEN_CAP && (
+                <div className={`p-3 rounded-xl border text-xs font-mono flex items-start space-x-2.5 ${
+                  isDark ? 'bg-rose-950/40 border-rose-800 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-900'
+                }`}>
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <p className="font-bold">
+                    Daily invoice scan limit reached. Quota resets at 00:00 midnight. Please enter remaining bills manually.
                   </p>
-                )}
-              </div>
+                </div>
+              )}
               {/* OCR Error Banner if any */}
               {ocrError && (
                 <div className={`p-3 rounded-lg border text-xs font-mono flex items-start space-x-2.5 ${
@@ -2156,31 +1702,11 @@ Special Indian Pharma Rules:
                         <Lock className="w-8 h-8" />
                       </div>
                       <h4 className="text-base font-black mb-1.5 text-rose-500">
-                        Daily AI Vision Quota Hardcap Reached (245,000 / 245,000 Tokens)
+                        Daily Invoice Auto-Scan Limit Reached
                       </h4>
-                      <p className={`text-xs font-mono max-w-md mx-auto leading-relaxed mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                        The daily limit of 245,000 tokens has been consumed to safeguard your account. The quota will automatically reset at 00:00 midnight.
+                      <p className={`text-xs font-mono max-w-md mx-auto leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                        Today's invoice scan capacity has reached its daily limit. Limit resets automatically at 00:00 midnight. Please enter remaining bills manually.
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const today = new Date().toISOString().slice(0, 10);
-                          const reset = {
-                            date: today,
-                            tokensUsed: 0,
-                            billsCount: 0,
-                            dailyLimit: DAILY_TOKEN_CAP,
-                            model: HARDCAPPED_MODEL
-                          };
-                          localStorage.setItem('pharma_pos_ocr_quota', JSON.stringify(reset));
-                          setQuotaData(reset);
-                          setOcrError('');
-                        }}
-                        className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono text-xs font-black shadow-md transition cursor-pointer"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        <span>Reset Today's Counter (For Testing)</span>
-                      </button>
                     </div>
                   ) : (
                     /* Clean File Upload Drop Area */
@@ -2206,7 +1732,7 @@ Special Indian Pharma Rules:
                         Select or Drop Distributor Invoice (PDF or Camera Photo)
                       </h4>
                       <p className={`text-xs font-mono max-w-md mx-auto leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                        OpenAI gpt-4o-mini Vision extracts printed medicine names, batch codes, expiry dates (MM/YY), free schemes (10+3), PTR, MRP, and GST with manual review.
+                        Automatically extracts printed medicine names, batch codes, expiry dates, bonus schemes (10+3), PTR, and MRP for instant review.
                       </p>
                       <div className="mt-5 inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs font-bold shadow-md transition cursor-pointer">
                         <FileUp className="w-4 h-4" />
@@ -2216,17 +1742,12 @@ Special Indian Pharma Rules:
                       <div className="mt-6 flex items-center justify-center space-x-4 text-[11px] font-mono text-slate-500">
                         <span className="flex items-center space-x-1">
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>gpt-4o-mini Vision</span>
+                          <span>Auto Scheme & Batch Detection</span>
                         </span>
                         <span>•</span>
                         <span className="flex items-center space-x-1">
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>245k Token Hardcap</span>
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center space-x-1">
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          <span>Scheme & Batch Parsing</span>
+                          <span>Instant Line Item Extraction</span>
                         </span>
                         <span>•</span>
                         <span className="flex items-center space-x-1">

@@ -128,16 +128,16 @@ export default function DailySalesRegisterPage({
             Admin / Manager Authorization Required
           </h2>
           <p className="text-xs font-mono text-slate-500 mb-6">
-            Daily Sales Totals, Cash Drawer Tally, and Store Profit Margins are restricted to Admin/Manager [USER.DBF Code CC].
+            Daily Sales Totals, Cash Drawer Tally, and Store Profit Margins are restricted to Administrator.
           </p>
 
           <div className="space-y-3">
             <button
-              onClick={() => onOpenPasswordModal('Manager Security Authorization', 'Enter Manager PIN (CC) to view daily sales & profit margins.')}
-              className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg text-xs transition shadow flex items-center justify-center space-x-2"
+              onClick={() => onOpenPasswordModal('Administrator Security Authorization', 'Enter Admin Password to view daily sales & profit margins.')}
+              className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow flex items-center justify-center space-x-2 cursor-pointer"
             >
               <Lock className="w-4 h-4" />
-              <span>Enter Manager PIN (CC)</span>
+              <span>Enter Admin Password</span>
             </button>
 
             <button
@@ -176,12 +176,12 @@ export default function DailySalesRegisterPage({
           <div>
             <div className="flex items-center space-x-2">
               <h2 className={`text-base font-black ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                Sales Register & Daily Margins [TRN002 / REP023]
+                Sales Register & Daily Margins
               </h2>
               <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
                 theme === 'dark' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-emerald-100 text-emerald-950 border-emerald-400'
               }`}>
-                Admin Verified (Manager CC)
+                Admin Verified
               </span>
             </div>
             <p className={`text-xs font-mono mt-0.5 font-medium ${
