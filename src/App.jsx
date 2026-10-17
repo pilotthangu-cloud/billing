@@ -278,6 +278,17 @@ export default function App() {
   const [staffList, setStaffList] = useState(getInitialStaffList);
   const [activeShift, setActiveShift] = useState(getInitialActiveShift);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [targetIncomingStaff, setTargetIncomingStaff] = useState(null);
+  const [handoverNotice, setHandoverNotice] = useState(null);
+
+  const handleOpenShiftHandover = (preselectedIncomingStaff) => {
+    if (preselectedIncomingStaff && typeof preselectedIncomingStaff === 'string' && preselectedIncomingStaff !== activeShift?.staffName && preselectedIncomingStaff !== '__add_new__') {
+      setTargetIncomingStaff(preselectedIncomingStaff);
+    } else {
+      setTargetIncomingStaff(null);
+    }
+    setIsShiftModalOpen(true);
+  };
 
   const handleAddStaff = (newStaffName) => {
     const clean = (newStaffName || '').trim();
@@ -292,16 +303,10 @@ export default function App() {
 
   const handleSelectActiveStaff = (staffName) => {
     if (!staffName) return;
-    setActiveShift(prev => {
-      const updated = {
-        ...prev,
-        staffName
-      };
-      try {
-        localStorage.setItem('beta_pharma_active_shift', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    if (staffName !== activeShift?.staffName) {
+      // Must perform full shift handover! Cannot bypass cashier custody!
+      handleOpenShiftHandover(staffName);
+    }
   };
 
   // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
@@ -704,6 +709,11 @@ export default function App() {
     } catch (e) {}
 
     // Ensure terminal returns immediately to billing with new cashier active and zero password prompts
+    setHandoverNotice(`Shift Handover Complete! Register handed over to ${completedShiftRecord.nextStaffName}`);
+    setTimeout(() => {
+      setHandoverNotice(null);
+    }, 8000);
+
     setActivePage('billing');
     setAuthenticatedRole('MANAGER');
   };
@@ -732,7 +742,7 @@ export default function App() {
           activeShift={activeShift}
           staffList={staffList}
           onSelectActiveStaff={handleSelectActiveStaff}
-          onOpenShiftModal={() => setIsShiftModalOpen(true)}
+          onOpenShiftModal={handleOpenShiftHandover}
           activeBranch={activeBranch}
           onSelectBranch={handleSelectBranch}
           availableBranches={AVAILABLE_BRANCHES}
@@ -773,7 +783,9 @@ export default function App() {
           staffList={staffList}
           onSelectActiveStaff={handleSelectActiveStaff}
           onAddStaff={handleAddStaff}
-          onOpenShiftModal={() => setIsShiftModalOpen(true)}
+          onOpenShiftModal={handleOpenShiftHandover}
+          handoverNotice={handoverNotice}
+          setHandoverNotice={setHandoverNotice}
         />
       )}
 
@@ -931,13 +943,17 @@ export default function App() {
       {/* Staff Shift Session Handover & Blind Cash Reconciliation Modal */}
       <ShiftReconciliationModal
         isOpen={isShiftModalOpen}
-        onClose={() => setIsShiftModalOpen(false)}
+        onClose={() => {
+          setIsShiftModalOpen(false);
+          setTargetIncomingStaff(null);
+        }}
         activeShift={activeShift}
         onSaveShiftHandover={handleSaveShiftHandover}
         recentBills={recentBills}
         theme={theme}
         staffList={staffList}
         onAddStaff={handleAddStaff}
+        targetIncomingStaff={targetIncomingStaff}
       />
 
       {/* First-Time Guided Onboarding & Terminal Setup Wizard */}

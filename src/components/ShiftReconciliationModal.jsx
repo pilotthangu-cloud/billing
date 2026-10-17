@@ -24,7 +24,8 @@ export default function ShiftReconciliationModal({
   recentBills = [],
   theme,
   staffList = ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'],
-  onAddStaff
+  onAddStaff,
+  targetIncomingStaff
 }) {
   const isDark = theme === 'dark';
 
@@ -36,6 +37,7 @@ export default function ShiftReconciliationModal({
   const [outgoingStaff, setOutgoingStaff] = useState(() => activeShift?.staffName || staffList[0] || 'Rahul C');
   const [incomingStaff, setIncomingStaff] = useState(() => {
     const current = activeShift?.staffName || staffList[0] || 'Rahul C';
+    if (targetIncomingStaff && targetIncomingStaff !== current) return targetIncomingStaff;
     return staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar';
   });
 
@@ -48,17 +50,21 @@ export default function ShiftReconciliationModal({
   const [nextOpeningFloat, setNextOpeningFloat] = useState(2000);
   const [completedRecord, setCompletedRecord] = useState(null);
 
-  // Sync with activeShift when modal opens
+  // Sync with activeShift and targetIncomingStaff when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('cashier_count');
       const current = activeShift?.staffName || staffList[0] || 'Rahul C';
       setOutgoingStaff(current);
-      setIncomingStaff(staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar');
+      if (targetIncomingStaff && targetIncomingStaff !== current) {
+        setIncomingStaff(targetIncomingStaff);
+      } else {
+        setIncomingStaff(staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar');
+      }
       setCompletedRecord(null);
       setHandoverNotes('');
     }
-  }, [isOpen, activeShift, staffList]);
+  }, [isOpen, activeShift, staffList, targetIncomingStaff]);
 
   // Cashier physical denominations count
   const [denominations, setDenominations] = useState({
@@ -470,6 +476,34 @@ export default function ShiftReconciliationModal({
         {/* STEP 2: FINALIZED SHIFT AUDIT SLIP (RECONCILIATION SUMMARY) */}
         {step === 'audit_slip' && (
           <div className="p-5 space-y-4 overflow-y-auto">
+            {/* Shift Handover Complete & Incoming Cashier Notice */}
+            <div className={`p-4 rounded-xl border flex items-center justify-between shadow-xs ${
+              isDark ? 'bg-emerald-950/80 border-emerald-700 text-emerald-200' : 'bg-emerald-50 border-emerald-300 text-emerald-950'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-black text-sm uppercase tracking-wide">
+                    Shift Handover Complete!
+                  </h4>
+                  <p className="text-xs font-mono mt-0.5">
+                    Counter custody successfully handed over to: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-black">{incomingStaff}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right font-mono text-[11px] shrink-0">
+                <span className="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold block text-[10px] uppercase">
+                  CONFIRMED
+                </span>
+                <span className="opacity-70 mt-1 block">
+                  {completedRecord?.endTime || new Date().toLocaleTimeString()}
+                </span>
+              </div>
+            </div>
+
             {/* Variance Alert Banner */}
             <div className={`p-4 rounded-xl border flex items-center justify-between ${
               shiftSales.isShortage

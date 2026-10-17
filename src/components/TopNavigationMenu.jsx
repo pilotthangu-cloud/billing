@@ -393,11 +393,18 @@ export default function TopNavigationMenu({
               <span className="text-slate-500 text-[10px]">CASHIER:</span>
               <select
                 value={activeShift?.staffName || (staffList[0] || 'Rahul C')}
-                onChange={(e) => onSelectActiveStaff && onSelectActiveStaff(e.target.value)}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  if (selected !== (activeShift?.staffName || 'Rahul C')) {
+                    if (onOpenShiftModal) {
+                      onOpenShiftModal(selected);
+                    }
+                  }
+                }}
                 className={`font-black bg-transparent border-0 cursor-pointer focus:outline-none text-[11px] ${
                   isDark ? 'text-white' : 'text-slate-950 font-black'
                 }`}
-                title="Select cashier on counter"
+                title="Active Cashier • Select another name to initiate shift handover"
               >
                 {staffList.map((s, idx) => (
                   <option key={idx} value={s} className={isDark ? 'bg-zinc-900 text-white' : 'bg-white text-slate-950'}>
