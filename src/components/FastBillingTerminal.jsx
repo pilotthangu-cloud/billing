@@ -474,8 +474,12 @@ export default function FastBillingTerminal({
 
           {/* Active Shelf Rack Tag */}
           {activeMedicine && (
-            <div className="bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-300 px-3 py-2 rounded-lg font-mono font-black text-xs border border-amber-400 flex items-center space-x-1">
-              <Layers className="w-3.5 h-3.5 text-amber-600" />
+            <div className={`px-3 py-2 rounded-lg font-mono font-black text-xs border flex items-center space-x-1 shadow-xs ${
+              theme === 'dark' 
+                ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                : 'bg-sky-50 text-sky-800 border-sky-300'
+            }`}>
+              <Layers className="w-3.5 h-3.5 text-sky-600" />
               <span>RACK {activeMedicine.rack}</span>
             </div>
           )}
@@ -618,11 +622,15 @@ export default function FastBillingTerminal({
                   {/* Shelf Rack */}
                   <td className="py-1.5 px-3 text-center border-r border-inherit">
                     {item ? (
-                      <span className="bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-300 px-1.5 py-0.5 rounded font-black text-[10px] border border-amber-300">
+                      <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
+                        theme === 'dark' 
+                          ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                          : 'bg-sky-50 text-sky-800 border-sky-300'
+                      }`}>
                         R-{item.medicine.rack}
                       </span>
                     ) : (
-                      <span className="text-slate-200 dark:text-zinc-800 select-none">-</span>
+                      <span className={`select-none ${theme === 'dark' ? 'text-zinc-800' : 'text-slate-200'}`}>-</span>
                     )}
                   </td>
 

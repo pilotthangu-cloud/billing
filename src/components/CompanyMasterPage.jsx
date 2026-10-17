@@ -191,7 +191,11 @@ export default function CompanyMasterPage({ theme, medicines, onBackToBilling })
                   </td>
                   <td className="py-2.5 px-3 text-center font-black border-r border-inherit">
                     {c.RACK ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black border shadow-xs inline-block ${
+                        isDark 
+                          ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                          : 'bg-sky-50 text-sky-800 border-sky-300'
+                      }`}>
                         RACK {c.RACK}
                       </span>
                     ) : (
@@ -203,14 +207,14 @@ export default function CompanyMasterPage({ theme, medicines, onBackToBilling })
                   </td>
                   <td className="py-2.5 px-3 font-sans text-xs border-r border-inherit">
                     {firstSupp ? (
-                      <span className="font-bold text-slate-700 dark:text-zinc-300 line-clamp-1">{firstSupp}</span>
+                      <span className={`font-bold line-clamp-1 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>{firstSupp}</span>
                     ) : (
                       <span className="text-slate-400 text-[10px]">-</span>
                     )}
                   </td>
                   <td className="py-2.5 px-3 font-sans text-xs border-r border-inherit">
                     {secondSupp ? (
-                      <span className="font-bold text-slate-700 dark:text-zinc-300 line-clamp-1">{secondSupp}</span>
+                      <span className={`font-bold line-clamp-1 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>{secondSupp}</span>
                     ) : (
                       <span className="text-slate-400 text-[10px]">-</span>
                     )}
@@ -243,7 +247,9 @@ export default function CompanyMasterPage({ theme, medicines, onBackToBilling })
           </div>
           <button
             onClick={() => setSelectedCompany(null)}
-            className="px-3 py-1 rounded bg-slate-300 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold hover:bg-slate-400"
+            className={`px-3 py-1 rounded font-bold transition ${
+              isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' : 'bg-slate-300 hover:bg-slate-400 text-slate-800'
+            }`}
           >
             Close Panel
           </button>

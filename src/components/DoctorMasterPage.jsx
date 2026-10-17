@@ -149,7 +149,9 @@ export default function DoctorMasterPage({ theme, onBackToBilling, onSelectDocto
                     <span className={isDark ? 'text-white' : 'text-slate-950'}>{d.name}</span>
                   </div>
                 </td>
-                <td className="py-2 px-3 font-sans text-xs border-r border-inherit text-slate-600 dark:text-zinc-400">
+                <td className={`py-2 px-3 font-sans text-xs border-r border-inherit ${
+                  isDark ? 'text-zinc-300' : 'text-slate-700'
+                }`}>
                   {d.address || 'Thalassery / Kannur Region'}
                 </td>
                 <td className="py-2 px-3 text-center font-mono border-r border-inherit text-slate-500">
@@ -207,7 +209,9 @@ export default function DoctorMasterPage({ theme, onBackToBilling, onSelectDocto
             <div className="mt-5 flex items-center justify-end space-x-2 font-mono text-xs">
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-3 py-1.5 rounded border border-slate-300 text-slate-700 dark:border-zinc-700 dark:text-zinc-300 font-bold"
+                className={`px-3 py-1.5 rounded border font-bold ${
+                  isDark ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800' : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
               >
                 Cancel
               </button>

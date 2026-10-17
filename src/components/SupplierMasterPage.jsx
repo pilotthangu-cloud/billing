@@ -270,7 +270,9 @@ export default function SupplierMasterPage({ theme, onBackToBilling }) {
                 <td className="py-2 px-3 text-center">
                   <button
                     onClick={(e) => handleOpenEdit(s, e)}
-                    className="p-1 rounded hover:bg-sky-100 dark:hover:bg-zinc-800 text-sky-600 transition"
+                    className={`p-1 rounded text-sky-600 transition ${
+                      theme === 'dark' ? 'hover:bg-zinc-800' : 'hover:bg-sky-100'
+                    }`}
                     title="Edit Distributor"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -299,7 +301,7 @@ export default function SupplierMasterPage({ theme, onBackToBilling }) {
               </div>
               <button 
                 onClick={() => setEditingSupplier(null)}
-                className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500"
+                className={`p-1 rounded-lg ${theme === 'dark' ? 'hover:bg-zinc-700 text-zinc-400' : 'hover:bg-slate-200 text-slate-500'}`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -321,7 +323,7 @@ export default function SupplierMasterPage({ theme, onBackToBilling }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-amber-700 dark:text-amber-400">Credit Days (C_DAYS)</label>
+                  <label className={`block text-xs font-bold mb-1 ${theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>Credit Days (C_DAYS)</label>
                   <input
                     type="number"
                     value={formData.creditDays}

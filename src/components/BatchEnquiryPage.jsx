@@ -951,7 +951,7 @@ export default function BatchEnquiryPage({
               </div>
               <button
                 onClick={() => setSelectedLotModal(null)}
-                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-500"
+                className={`p-1 rounded text-slate-500 ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-200'}`}
               >
                 ✕
               </button>
@@ -962,7 +962,7 @@ export default function BatchEnquiryPage({
                 <div className="text-[10px] text-slate-500 uppercase font-bold">Product Description</div>
                 <div className="text-base font-black font-sans">{selectedLotModal.productName}</div>
                 <div className="text-slate-500 font-mono text-[11px] mt-0.5">{selectedLotModal.salt}</div>
-                <div className="text-purple-600 dark:text-purple-400 font-bold mt-0.5">Manufactured by: {selectedLotModal.company}</div>
+                <div className={`font-bold mt-0.5 ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>Manufactured by: {selectedLotModal.company}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-inherit">

@@ -410,6 +410,7 @@ export default function App() {
           theme={theme}
           medicines={medicines}
           onBackToBilling={() => setActivePage('billing')}
+          onUpdateMedicine={handleUpdateMedicine}
         />
       )}
 

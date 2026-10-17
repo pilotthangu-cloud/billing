@@ -196,8 +196,12 @@ export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) 
                     )}
                   </td>
                   <td className="py-2.5 px-3 text-center border-r border-inherit">
-                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 font-black px-2 py-0.5 rounded text-xs border border-amber-400">
-                      RACK {item.rack}
+                    <span className={`px-2.5 py-0.5 rounded font-black text-xs border shadow-xs inline-block ${
+                      theme === 'dark' 
+                        ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                        : 'bg-sky-50 text-sky-800 border-sky-300'
+                    }`}>
+                      R-{item.rack || 'GN'}
                     </span>
                   </td>
                   <td className={`py-2.5 px-3 font-black border-r border-inherit font-mono ${

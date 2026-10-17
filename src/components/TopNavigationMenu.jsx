@@ -112,17 +112,23 @@ export default function TopNavigationMenu({
                   </button>
                   <button 
                     onClick={() => navigateTo('company-master')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold text-purple-600 dark:text-purple-400"
+                    className={`w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold ${
+                      isDark ? 'text-purple-300' : 'text-purple-700'
+                    }`}
                   >
                     <span>Company / Pharma Master [MAS003]</span>
                     <span className="text-[10px] font-mono opacity-70">923</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('tax-master')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400"
+                    className={`w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold ${
+                      isDark ? 'text-emerald-300' : 'text-emerald-700'
+                    }`}
                   >
                     <span>Tax & GST Master [MAS010]</span>
-                    <span className="text-[10px] font-mono px-1 rounded bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">GST/HSN</span>
+                    <span className={`text-[10px] font-mono px-1 rounded ${
+                      isDark ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-emerald-100 text-emerald-950 border border-emerald-300'
+                    }`}>GST/HSN</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('doctor-master')} 
