@@ -14,6 +14,7 @@ import DotMatrixReceiptModal from './components/DotMatrixReceiptModal';
 import NewMedicineModal from './components/NewMedicineModal';
 import PasswordAuthModal from './components/PasswordAuthModal';
 import AdminDashboardApp from './components/AdminDashboardApp';
+import ErrorBoundary from './components/ErrorBoundary';
 import BatchEnquiryPage from './components/BatchEnquiryPage';
 import TaxMasterPage from './components/TaxMasterPage';
 import CompanyMasterPage from './components/CompanyMasterPage';
@@ -1102,17 +1103,19 @@ export default function App() {
       )}
 
       {activePage === 'admin' && (
-        <AdminDashboardApp
-          theme={theme}
-          onBackToCounter={() => setActivePage('billing')}
-          onSwitchTheme={setTheme}
-          medicines={medicines}
-          recentBills={recentBills}
-          availableBranches={AVAILABLE_BRANCHES}
-          activeShift={activeShift}
-          billDate={billDate}
-          onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
-        />
+        <ErrorBoundary fallbackTitle="Beta Pharmacy HQ Admin" theme={theme}>
+          <AdminDashboardApp
+            theme={theme}
+            onBackToCounter={() => setActivePage('billing')}
+            onSwitchTheme={setTheme}
+            medicines={medicines}
+            recentBills={recentBills}
+            availableBranches={AVAILABLE_BRANCHES}
+            activeShift={activeShift}
+            billDate={billDate}
+            onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Password Authentication Modal (Clipper Security CC / DD) */}
