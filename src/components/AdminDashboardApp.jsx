@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Building2, 
   BarChart3, 
@@ -40,12 +40,20 @@ import { testSupabaseConnection } from '../utils/supabaseClient';
 export default function AdminDashboardApp({ 
   theme, 
   onBackToCounter, 
-  onSwitchTheme 
+  onSwitchTheme,
+  medicines = initialMedicines,
+  recentBills = [],
+  availableBranches = [
+    { id: 'MAIN', name: 'Beta Pharmacy', location: 'Main Pharmacy', short: 'Beta Pharmacy', prefix: 'BP', stockKey: 'stock_shop1' },
+    { id: 'POLYCLINIC', name: 'Beta Polyclinic', location: 'Polyclinic Division', short: 'Beta Polyclinic', prefix: 'BPC', stockKey: 'stock_shop2' }
+  ],
+  activeShift,
+  billDate = '16/10/2026'
 }) {
   const isDark = theme === 'dark';
 
   // 1. Store Branch Selection
-  const [selectedBranch, setSelectedBranch] = useState('ALL'); // 'ALL', 'MAIN', 'TOWN', 'KANNUR'
+  const [selectedBranch, setSelectedBranch] = useState('ALL'); // 'ALL' or specific branch id
   
   // 2. Active Tab
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'reorder', 'overstock', 'expiry', 'multistore', 'payables', 'doctors', 'cloud'
@@ -56,7 +64,7 @@ export default function AdminDashboardApp({
   const [selectedMonth, setSelectedMonth] = useState('2026-10');
 
   // Search & Filter queries
-  const [reorderScope, setReorderScope] = useState('shelf'); // 'shelf' (476 active low stock) | 'catalog' (all stock <= ro_level)
+  const [reorderScope, setReorderScope] = useState('shelf');
   const [reorderSearch, setReorderSearch] = useState('');
   const [reorderSupplierFilter, setReorderSupplierFilter] = useState('ALL');
   
@@ -76,42 +84,32 @@ export default function AdminDashboardApp({
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [selectedSupplierForPO, setSelectedSupplierForPO] = useState(null);
 
-  // Stock Transfer Modal
+  // Stock Transfer Modal (Real state backed by localStorage)
   const [transferModalItem, setTransferModalItem] = useState(null);
-  const [transferTargetBranch, setTransferTargetBranch] = useState('TOWN');
+  const [transferTargetBranch, setTransferTargetBranch] = useState(() => availableBranches[1]?.id || 'POLYCLINIC');
   const [transferQty, setTransferQty] = useState(10);
-  const [transferLogs, setTransferLogs] = useState([
-    {
-      id: 'TR-1082',
-      date: '15/10/2026 16:45',
-      medicine: 'AUGMENTIN 625MG DUO',
-      from: 'Main Chirakkara',
-      to: 'Town Branch',
-      qty: 15,
-      status: 'RECEIVED'
-    },
-    {
-      id: 'TR-1081',
-      date: '14/10/2026 11:20',
-      medicine: 'PANTOCID 40MG',
-      from: 'Main Chirakkara',
-      to: 'Kannur Clinic',
-      qty: 20,
-      status: 'RECEIVED'
-    }
-  ]);
+  const [transferLogs, setTransferLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_stock_transfers');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
 
-  // Payment Recording Modal
+  // Payment Recording Modal (Real payables from purchase inward entries)
   const [paymentModalItem, setPaymentModalItem] = useState(null);
   const [paymentChequeNo, setPaymentChequeNo] = useState('');
   const [paymentBank, setPaymentBank] = useState('Federal Bank Thalassery');
-  const [pendingPayables, setPendingPayables] = useState([
-    { code: 'K043', name: 'KERALA TRADE WINGS', billNo: 'INV-88912', billDate: '10/09/2026', cDays: 30, due: '10/10/2026', amount: 12450.00, status: 'OVERDUE' },
-    { code: 'T010', name: 'THE CAN DRUG HOUSE', billNo: '020456', billDate: '16/09/2026', cDays: 30, due: '16/10/2026', amount: 4789.50, status: 'DUE TODAY' },
-    { code: 'C013', name: 'CENTREL AGENCIES', billNo: 'CG-4412', billDate: '05/10/2026', cDays: 30, due: '05/11/2026', amount: 5320.00, status: 'DUE' },
-    { code: 'G041', name: 'GEETHA AGENCIES', billNo: 'GT-9011', billDate: '20/09/2026', cDays: 30, due: '20/10/2026', amount: 3200.00, status: 'DUE' },
-    { code: 'M005', name: 'MALABAR PHARMA DISTRIBUTORS', billNo: 'MP-1102', billDate: '28/09/2026', cDays: 21, due: '19/10/2026', amount: 8900.00, status: 'DUE' }
-  ]);
+  const [pendingPayables, setPendingPayables] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_purchase_bills');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
 
   // Cloud Sync (Supabase PostgreSQL)
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
@@ -127,63 +125,72 @@ export default function AdminDashboardApp({
     });
   }, []);
 
-  // Available Branches
-  const branches = [
-    { id: 'ALL', name: 'All Branches (Consolidated HQ)', short: 'Consolidated HQ', location: 'Thalassery & Kannur' },
-    { id: 'MAIN', name: 'Beta Pharmacy (Main Branch)', short: 'Main Chirakkara', location: 'Chirakkara, Thalassery' },
-    { id: 'TOWN', name: 'Beta Pharmacy (Town Branch)', short: 'Town Branch', location: 'Near Old Bus Stand' },
-    { id: 'KANNUR', name: 'Beta Pharmacy (Kannur Clinic)', short: 'Kannur Clinic', location: 'Fort Road, Kannur' }
-  ];
+  // Available Branches (Configured branches only)
+  const branches = useMemo(() => [
+    { id: 'ALL', name: 'All Branches (Consolidated HQ)', short: 'Consolidated HQ', location: 'Beta Group' },
+    ...availableBranches
+  ], [availableBranches]);
 
-  // Financial Telemetry (Aggregated by Branch)
-  const salesTelemetry = {
-    ALL: {
-      todayGross: 34850.00,
-      todayProfit: 7318.50,
-      marginPct: '21.0%',
-      billCount: 142,
-      cash: 18450.00,
-      upi: 16400.00,
-      growth: '+12.4%',
-      avgBill: 245.42,
-      staffOnDuty: 6
-    },
-    MAIN: {
-      todayGross: 21500.00,
-      todayProfit: 4515.00,
-      marginPct: '21.0%',
-      billCount: 88,
-      cash: 11200.00,
-      upi: 10300.00,
-      growth: '+9.8%',
-      avgBill: 244.31,
-      staffOnDuty: 3
-    },
-    TOWN: {
-      todayGross: 8950.00,
-      todayProfit: 1879.50,
-      marginPct: '21.0%',
-      billCount: 36,
-      cash: 4900.00,
-      upi: 4050.00,
-      growth: '+15.2%',
-      avgBill: 248.61,
-      staffOnDuty: 2
-    },
-    KANNUR: {
-      todayGross: 4400.00,
-      todayProfit: 924.00,
-      marginPct: '21.0%',
-      billCount: 18,
-      cash: 2350.00,
-      upi: 2050.00,
-      growth: '+6.5%',
-      avgBill: 244.44,
-      staffOnDuty: 1
-    }
+  // Live Financial Telemetry (Aggregated strictly from actual bills)
+  const branchTelemetry = useMemo(() => {
+    const map = {};
+    const allBranchesList = ['ALL', ...availableBranches.map(b => b.id)];
+    
+    allBranchesList.forEach(branchId => {
+      map[branchId] = {
+        todayGross: 0,
+        billCount: 0,
+        cash: 0,
+        upi: 0,
+        avgBill: 0
+      };
+    });
+
+    (recentBills || []).forEach(bill => {
+      const amt = parseFloat(bill.netPayable || bill.grossTotal) || 0;
+      const isCash = (bill.paymentMode || '').toLowerCase() === 'cash';
+      const isUpi = (bill.paymentMode || '').toLowerCase() === 'upi';
+
+      // Match branch
+      const billStore = (bill.store || '').toLowerCase();
+      let matchedBranchId = availableBranches[0]?.id || 'MAIN';
+      for (const b of availableBranches) {
+        if (billStore.includes(b.name.toLowerCase()) || billStore.includes(b.id.toLowerCase())) {
+          matchedBranchId = b.id;
+          break;
+        }
+      }
+
+      // Add to ALL
+      map.ALL.todayGross += amt;
+      map.ALL.billCount += 1;
+      if (isCash) map.ALL.cash += amt;
+      else if (isUpi) map.ALL.upi += amt;
+
+      // Add to matched branch
+      if (map[matchedBranchId]) {
+        map[matchedBranchId].todayGross += amt;
+        map[matchedBranchId].billCount += 1;
+        if (isCash) map[matchedBranchId].cash += amt;
+        else if (isUpi) map[matchedBranchId].upi += amt;
+      }
+    });
+
+    allBranchesList.forEach(branchId => {
+      const stats = map[branchId];
+      stats.avgBill = stats.billCount > 0 ? +(stats.todayGross / stats.billCount).toFixed(2) : 0;
+    });
+
+    return map;
+  }, [recentBills, availableBranches]);
+
+  const currentStats = branchTelemetry[selectedBranch] || branchTelemetry.ALL || {
+    todayGross: 0,
+    billCount: 0,
+    cash: 0,
+    upi: 0,
+    avgBill: 0
   };
-
-  const currentStats = salesTelemetry[selectedBranch] || salesTelemetry.ALL;
 
   // Day navigation helpers
   const handlePrevDay = () => {
@@ -211,130 +218,189 @@ export default function AdminDashboardApp({
 📅 *Date:* ${currentDate}
 ------------------------------------
 💰 *Total Revenue:* ₹${currentStats.todayGross.toFixed(2)}
-📈 *Net Profit:* ₹${currentStats.todayProfit.toFixed(2)} (${currentStats.marginPct})
 🧾 *Invoices Issued:* ${currentStats.billCount} bills
 💵 *Cash:* ₹${currentStats.cash.toFixed(2)} | 📱 *UPI:* ₹${currentStats.upi.toFixed(2)}
 🎯 *Avg Ticket:* ₹${currentStats.avgBill.toFixed(2)}
 ------------------------------------
 ⚠️ *Live Telemetry:*
 • ${reorderItems.length} items below reorder level
-• Near-expiry batches monitored
+• ${nearExpiryList.length} near-expiry batches monitored
 _Generated by Beta Pharmacy HQ Admin Portal_`;
 
     const encoded = encodeURIComponent(summaryText);
-    const targetPhone = '9497172662'; // Owner / Dad Mobile
+    const targetPhone = '9497172662'; // Owner Mobile
     const waUrl = `https://wa.me/91${targetPhone}?text=${encoded}`;
     window.open(waUrl, '_blank');
   };
 
-  // 1. REORDER RADAR: Items where stock < RO_LEVEL
-  // 'shelf': low stock on shelf (stock 1-5); 'catalog': includes full catalog stock-outs
-  const reorderItems = initialMedicines.filter(m => {
-    const stock = m.stock_shop1 || 0;
-    const reorderLevel = m.ro_level || 5;
-    if (reorderScope === 'shelf') {
-      return stock > 0 && stock <= reorderLevel;
-    }
-    return stock <= reorderLevel;
-  }).map(m => ({
-    ...m,
-    deficit: Math.max(1, (m.ro_qty || 15) - (m.stock_shop1 || 0)),
-    supplier: supplierList.find(s => s.code === m.supplier_code) || supplierList[0]
-  }));
-
-  const filteredReorderItems = reorderItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(reorderSearch.toLowerCase()) ||
-                          (item.generic && item.generic.toLowerCase().includes(reorderSearch.toLowerCase())) ||
-                          (item.rack && item.rack.toString().includes(reorderSearch));
-    const matchesSupplier = reorderSupplierFilter === 'ALL' || item.supplier.code === reorderSupplierFilter;
-    return matchesSearch && matchesSupplier;
-  });
-
-  const totalReorderEstCost = filteredReorderItems.reduce((acc, it) => acc + (it.deficit * (it.ptr || it.mrp * 0.78)), 0);
-
-  // 2. OVERSTOCKED & DEAD CAPITAL RADAR (REP009 / REP018)
-  const overstockedItems = initialMedicines.filter(m => {
-    const stock = (m.stock_shop1 || 0) + (m.stock_shop2 || 0);
-    return stock >= 40 && (m.mrp || 0) > 50;
-  }).map(m => {
-    const stock = (m.stock_shop1 || 0) + (m.stock_shop2 || 0);
-    const cost = m.ptr || +(m.mrp * 0.78).toFixed(2);
-    const lockedCapital = +(stock * cost).toFixed(2);
-    const daysStagnant = 30 + ((m.name.charCodeAt(0) * 7) % 75);
-    return {
+  // 1. REORDER RADAR: Real items where current stock <= RO_LEVEL
+  const reorderItems = useMemo(() => {
+    return (medicines || []).filter(m => {
+      const stock = m.stock_shop1 || 0;
+      const reorderLevel = m.ro_level || 5;
+      if (reorderScope === 'shelf') {
+        return stock > 0 && stock <= reorderLevel;
+      }
+      return stock <= reorderLevel;
+    }).map(m => ({
       ...m,
-      totalStock: stock,
-      lockedCapital,
-      daysNoSale: daysStagnant,
-      recommendation: daysStagnant > 70 ? 'Return to Agency' : 'Transfer to Branch'
-    };
-  }).sort((a, b) => b.lockedCapital - a.lockedCapital);
+      deficit: Math.max(1, (m.ro_qty || 15) - (m.stock_shop1 || 0)),
+      supplier: supplierList.find(s => s.code === m.supplier_code) || supplierList[0]
+    }));
+  }, [medicines, reorderScope]);
 
-  const filteredOverstockedItems = overstockedItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(overstockSearch.toLowerCase()) ||
-                          (item.generic && item.generic.toLowerCase().includes(overstockSearch.toLowerCase()));
-    const matchesFilter = stagnantFilter === 'ALL' || 
-                          (stagnantFilter === '30' && item.daysNoSale >= 30) ||
-                          (stagnantFilter === '60' && item.daysNoSale >= 60) ||
-                          (stagnantFilter === '90' && item.daysNoSale >= 90);
-    return matchesSearch && matchesFilter;
-  });
+  const filteredReorderItems = useMemo(() => {
+    return reorderItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(reorderSearch.toLowerCase()) ||
+                            (item.generic && item.generic.toLowerCase().includes(reorderSearch.toLowerCase())) ||
+                            (item.rack && item.rack.toString().includes(reorderSearch));
+      const matchesSupplier = reorderSupplierFilter === 'ALL' || item.supplier.code === reorderSupplierFilter;
+      return matchesSearch && matchesSupplier;
+    });
+  }, [reorderItems, reorderSearch, reorderSupplierFilter]);
 
-  const totalLockedCapital = overstockedItems.reduce((acc, it) => acc + it.lockedCapital, 0);
+  const totalReorderEstCost = useMemo(() => {
+    return filteredReorderItems.reduce((acc, it) => acc + (it.deficit * (it.ptr || (it.mrp || 0) * 0.78)), 0);
+  }, [filteredReorderItems]);
 
-  // 3. NEAR-EXPIRY ANALYSIS
-  const nearExpiryList = [
-    { name: 'AUGMENTIN 625MG DUO', batch: 'AUG9912', exp: '11/26', packs: 12, ptr: 159.00, lossValue: 1908.00, urgency: '30', supplier: 'THE CAN DRUG HOUSE' },
-    { name: 'CEFTUM 500MG TAB', batch: 'CF4410', exp: '11/26', packs: 8, ptr: 380.00, lossValue: 3040.00, urgency: '30', supplier: 'KERALA TRADE WINGS' },
-    { name: 'PAN D CAPSULE', batch: 'PD8801', exp: '12/26', packs: 18, ptr: 145.00, lossValue: 2610.00, urgency: '60', supplier: 'CENTREL AGENCIES' },
-    { name: 'TELMA AM TAB', batch: 'TL102', exp: '12/26', packs: 15, ptr: 180.00, lossValue: 2700.00, urgency: '60', supplier: 'GEETHA AGENCIES' },
-    { name: 'MONTEK LC TAB', batch: 'ML772', exp: '01/27', packs: 25, ptr: 165.00, lossValue: 4125.00, urgency: '90', supplier: 'THE CAN DRUG HOUSE' },
-    { name: 'GLYCOMET GP 2MG', batch: 'GL331', exp: '01/27', packs: 30, ptr: 110.00, lossValue: 3300.00, urgency: '90', supplier: 'MALABAR PHARMA' }
-  ];
+  // 2. OVERSTOCKED INVENTORY RADAR (Real excess stock above safety reorder thresholds)
+  const overstockedItems = useMemo(() => {
+    return (medicines || []).filter(m => {
+      const stock = (m.stock_shop1 || 0) + (m.stock_shop2 || 0);
+      const roLevel = m.ro_level || 5;
+      return stock >= 30 && stock > roLevel * 3;
+    }).map(m => {
+      const stock = (m.stock_shop1 || 0) + (m.stock_shop2 || 0);
+      const cost = m.ptr || +((m.mrp || 0) * 0.78).toFixed(2);
+      const lockedCapital = +(stock * cost).toFixed(2);
+      return {
+        ...m,
+        totalStock: stock,
+        lockedCapital,
+        daysNoSale: stock > roLevel * 5 ? 'Critical Surplus' : 'Moderate Surplus',
+        recommendation: stock > roLevel * 5 ? 'High Surplus' : 'Moderate Surplus'
+      };
+    }).sort((a, b) => b.lockedCapital - a.lockedCapital);
+  }, [medicines]);
 
-  const filteredExpiryList = nearExpiryList.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(expirySearch.toLowerCase()) || item.batch.toLowerCase().includes(expirySearch.toLowerCase());
-    const matchesFilter = expiryFilter === 'ALL' || item.urgency === expiryFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredOverstockedItems = useMemo(() => {
+    return overstockedItems.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(overstockSearch.toLowerCase()) ||
+                            (item.generic && item.generic.toLowerCase().includes(overstockSearch.toLowerCase()));
+      return matchesSearch;
+    });
+  }, [overstockedItems, overstockSearch]);
 
-  const totalExpiryRiskValue = nearExpiryList.reduce((acc, it) => acc + it.lossValue, 0);
+  const totalLockedCapital = useMemo(() => {
+    return overstockedItems.reduce((acc, it) => acc + it.lockedCapital, 0);
+  }, [overstockedItems]);
 
-  // 4. DOCTOR PRESCRIPTION TELEMETRY (DOCTOR.DBF)
-  const doctorAnalytics = [
-    { name: 'Dr. Madhusoodanan T', specialty: 'General Medicine', bills: 48, revenue: 11840.00, avgBasket: 246.66, topDrug: 'PACIMOL 650, PANTOCID 40' },
-    { name: 'Dr. Manojan', specialty: 'Pediatrics', bills: 34, revenue: 8420.00, avgBasket: 247.64, topDrug: 'AUGMENTIN DUO SYP, CALPOL 250' },
-    { name: 'Dr. Deepa Manojan', specialty: 'Gynecology', bills: 26, revenue: 6510.00, avgBasket: 250.38, topDrug: 'FOLVITE 5MG, AUTRIN CAP' },
-    { name: 'Dr. Saurabh Manojan', specialty: 'Orthopedics', bills: 19, revenue: 4980.00, avgBasket: 262.10, topDrug: 'CHYMORAL FORTE, TRAMACIP' },
-    { name: 'Dr. Lakshmi Saurabh', specialty: 'Dermatology', bills: 15, revenue: 3100.00, avgBasket: 206.66, topDrug: 'CANDID B, BILASURE 20' }
-  ];
+  // 3. NEAR-EXPIRY ANALYSIS (Real batches expiring within 90 days)
+  const nearExpiryList = useMemo(() => {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+    const list = [];
 
-  // 5. MONTHLY SALES REPORT DATA
-  const monthlyDays = Array.from({ length: 16 }, (_, i) => {
-    const day = 16 - i;
-    const dateStr = `${day.toString().padStart(2, '0')}/10/2026`;
-    const baseRev = 28000 + ((day * 997) % 8000);
-    const gross = +(baseRev).toFixed(2);
-    const cost = +(gross * 0.79).toFixed(2);
-    const profit = +(gross - cost).toFixed(2);
-    const cash = +(gross * 0.53).toFixed(2);
-    const upi = +(gross - cash).toFixed(2);
-    const bills = Math.round(gross / 245);
-    return {
-      day,
-      date: dateStr,
-      bills,
-      gross,
-      cash,
-      upi,
-      cost,
-      profit,
-      margin: '21.0%'
-    };
-  });
+    (medicines || []).forEach(m => {
+      (m.batches || []).forEach(b => {
+        if (!b.exp_date) return;
+        const parts = b.exp_date.split('/');
+        if (parts.length === 2) {
+          const expM = parseInt(parts[0], 10);
+          let expY = parseInt(parts[1], 10);
+          if (expY < 100) expY += 2000;
+          const monthsLeft = (expY - curYear) * 12 + (expM - curMonth);
 
-  const monthTotalGross = monthlyDays.reduce((acc, d) => acc + d.gross, 0);
-  const monthTotalProfit = monthlyDays.reduce((acc, d) => acc + d.profit, 0);
+          if (monthsLeft <= 3 && monthsLeft >= 0) {
+            const stock = b.stock !== undefined ? b.stock : (m.stock_shop1 || 0);
+            const cost = m.ptr || +((m.mrp || 0) * 0.78).toFixed(2);
+            list.push({
+              name: m.name,
+              batch: b.batch_no || 'Standard',
+              exp: b.exp_date,
+              packs: stock,
+              ptr: cost,
+              lossValue: +(stock * cost).toFixed(2),
+              urgency: monthsLeft <= 1 ? '30' : monthsLeft <= 2 ? '60' : '90',
+              supplier: m.supplier || 'Main Distributor'
+            });
+          }
+        }
+      });
+    });
+
+    return list.sort((a, b) => b.lossValue - a.lossValue);
+  }, [medicines]);
+
+  const filteredExpiryList = useMemo(() => {
+    return nearExpiryList.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(expirySearch.toLowerCase()) || item.batch.toLowerCase().includes(expirySearch.toLowerCase());
+      const matchesFilter = expiryFilter === 'ALL' || item.urgency === expiryFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [nearExpiryList, expirySearch, expiryFilter]);
+
+  const totalExpiryRiskValue = useMemo(() => {
+    return nearExpiryList.reduce((acc, it) => acc + it.lossValue, 0);
+  }, [nearExpiryList]);
+
+  // 4. DOCTOR PRESCRIPTION TELEMETRY (Aggregated strictly from real sales bills)
+  const doctorAnalytics = useMemo(() => {
+    const docMap = {};
+    (recentBills || []).forEach(b => {
+      const doc = (b.doctorName || '').trim();
+      if (!doc || doc.toLowerCase().includes('self') || doc.toLowerCase() === 'none') return;
+      if (!docMap[doc]) {
+        docMap[doc] = { name: doc, bills: 0, revenue: 0, drugs: new Set() };
+      }
+      docMap[doc].bills += 1;
+      docMap[doc].revenue += (parseFloat(b.netPayable || b.grossTotal) || 0);
+      (b.items || []).forEach(it => {
+        if (it.name) docMap[doc].drugs.add(it.name);
+      });
+    });
+
+    return Object.values(docMap).map(d => ({
+      name: d.name,
+      specialty: 'Practitioner',
+      bills: d.bills,
+      revenue: d.revenue,
+      avgBasket: d.bills > 0 ? +(d.revenue / d.bills).toFixed(2) : 0,
+      topDrug: Array.from(d.drugs).slice(0, 2).join(', ') || 'Prescribed Meds'
+    })).sort((a, b) => b.revenue - a.revenue);
+  }, [recentBills]);
+
+  // 5. MONTHLY SALES REPORT DATA (Real aggregation of recentBills by date)
+  const monthlyDays = useMemo(() => {
+    const dateMap = {};
+    (recentBills || []).forEach(b => {
+      const d = b.date || 'Today';
+      if (!dateMap[d]) {
+        dateMap[d] = {
+          date: d,
+          bills: 0,
+          gross: 0,
+          cash: 0,
+          upi: 0
+        };
+      }
+      const amt = parseFloat(b.netPayable || b.grossTotal) || 0;
+      dateMap[d].bills += 1;
+      dateMap[d].gross += amt;
+      if ((b.paymentMode || '').toLowerCase() === 'cash') {
+        dateMap[d].cash += amt;
+      } else {
+        dateMap[d].upi += amt;
+      }
+    });
+
+    return Object.values(dateMap);
+  }, [recentBills]);
+
+  const monthTotalGross = useMemo(() => {
+    return monthlyDays.reduce((acc, d) => acc + d.gross, 0);
+  }, [monthlyDays]);
 
   // Actions
   const handleOpenWhatsAppModal = (supplier) => {
@@ -369,12 +435,15 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
     e.preventDefault();
     if (!transferModalItem) return;
     
+    const toBranchName = transferTargetBranch === 'POLYCLINIC' ? 'Beta Polyclinic' : 'Beta Pharmacy';
+    const fromBranchName = transferTargetBranch === 'POLYCLINIC' ? 'Beta Pharmacy' : 'Beta Polyclinic';
+
     const newLog = {
       id: `TR-${Date.now().toString().slice(-4)}`,
       date: new Date().toLocaleDateString('en-GB') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       medicine: transferModalItem.name,
-      from: 'Main Chirakkara',
-      to: transferTargetBranch === 'TOWN' ? 'Town Branch' : 'Kannur Clinic',
+      from: fromBranchName,
+      to: toBranchName,
       qty: transferQty,
       status: 'IN-TRANSIT'
     };
@@ -619,7 +688,7 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
           <div className="space-y-6 max-w-7xl mx-auto">
             {viewMode === 'daily' ? (
               <>
-                {/* 4 Executive Metric Hero Cards */}
+                {/* 4 Executive Metric Hero Cards (100% Real Live Computed Telemetry) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Revenue Card */}
                   <div className={`p-5 rounded-2xl border transition hover:shadow-md ${
@@ -633,41 +702,38 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                         <IndianRupee className="w-5 h-5" />
                       </div>
                     </div>
-                    {/* Explicitly colored amount - NEVER invisible! */}
                     <div className={`mt-3 text-3xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       ₹{currentStats.todayGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                     <div className={`flex items-center justify-between text-xs mt-3 pt-3 border-t ${
                       isDark ? 'border-zinc-800 text-zinc-400' : 'border-slate-100 text-slate-600'
                     }`}>
-                      <span>{currentStats.billCount} Bills Dispensed</span>
-                      <span className="text-emerald-700 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md">
-                        {currentStats.growth}
-                      </span>
+                      <span>{currentStats.billCount} Invoices Issued</span>
+                      <span className="font-mono text-[11px] text-slate-500 font-bold">{currentDate}</span>
                     </div>
                   </div>
 
-                  {/* Profit Card */}
+                  {/* Invoices Card */}
                   <div className={`p-5 rounded-2xl border transition hover:shadow-md ${
                     isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
                   }`}>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                        Gross Profit
+                        Invoices Dispensed
                       </span>
                       <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-black">
-                        <TrendingUp className="w-5 h-5" />
+                        <FileText className="w-5 h-5" />
                       </div>
                     </div>
                     <div className="mt-3 text-3xl font-black text-sky-600 tracking-tight">
-                      ₹{currentStats.todayProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {currentStats.billCount} <span className="text-sm font-bold text-slate-500">Bills</span>
                     </div>
                     <div className={`flex items-center justify-between text-xs mt-3 pt-3 border-t ${
                       isDark ? 'border-zinc-800 text-zinc-400' : 'border-slate-100 text-slate-600'
                     }`}>
-                      <span>Store Margin</span>
+                      <span>Average Ticket</span>
                       <span className="text-sky-800 font-extrabold bg-sky-100 px-2 py-0.5 rounded-md">
-                        {currentStats.marginPct} Margin
+                        ₹{currentStats.avgBill.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -687,49 +753,55 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center justify-between text-xs font-bold">
                         <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Cash:</span>
-                        <span className="text-emerald-700 font-black">₹{currentStats.cash.toLocaleString()}</span>
+                        <span className="text-emerald-700 font-black">₹{currentStats.cash.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs font-bold">
-                        <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>UPI (GooglePay):</span>
-                        <span className="text-sky-600 font-black">₹{currentStats.upi.toLocaleString()}</span>
+                        <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>UPI:</span>
+                        <span className="text-sky-600 font-black">₹{currentStats.upi.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden flex border border-slate-200">
-                        <div style={{ width: '53%' }} className="bg-emerald-500 h-full" title="Cash 53%" />
-                        <div style={{ width: '47%' }} className="bg-sky-500 h-full" title="UPI 47%" />
-                      </div>
+                      {(() => {
+                        const cashPct = currentStats.todayGross > 0 ? Math.round((currentStats.cash / currentStats.todayGross) * 100) : 0;
+                        const upiPct = currentStats.todayGross > 0 ? (100 - cashPct) : 0;
+                        return (
+                          <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden flex border border-slate-200">
+                            <div style={{ width: `${cashPct}%` }} className="bg-emerald-500 h-full" title={`Cash ${cashPct}%`} />
+                            <div style={{ width: `${upiPct}%` }} className="bg-sky-500 h-full" title={`UPI ${upiPct}%`} />
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className={`text-[11px] mt-2 text-right ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                      Avg Bill Size: ₹{currentStats.avgBill}
+                      Avg Bill Size: ₹{currentStats.avgBill.toFixed(2)}
                     </div>
                   </div>
 
-                    {/* Capital & Shortages Card */}
-                    <div className={`p-5 rounded-2xl border transition hover:shadow-md ${
-                      isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                          Shortages & Dead Stock
-                        </span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-black">
-                          <Package className="w-5 h-5" />
-                        </div>
-                      </div>
-                      <div className="mt-3 text-3xl font-black text-amber-600 tracking-tight">
-                        {reorderItems.length} <span className="text-sm font-bold text-slate-500">{reorderScope === 'shelf' ? 'Active on Shelf' : 'Catalog Items'}</span>
-                      </div>
-                      <div className={`flex items-center justify-between text-xs mt-3 pt-3 border-t ${
-                        isDark ? 'border-zinc-800 text-zinc-400' : 'border-slate-100 text-slate-600'
-                      }`}>
-                        <span>Dead Capital Trap</span>
-                        <span className="text-purple-800 font-extrabold bg-purple-100 px-2 py-0.5 rounded-md">
-                          ₹{(totalLockedCapital / 100000).toFixed(1)} Lakhs
-                        </span>
+                  {/* Reorder Alerts Card */}
+                  <div className={`p-5 rounded-2xl border transition hover:shadow-md ${
+                    isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                        Reorder & Shortages
+                      </span>
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-black">
+                        <Package className="w-5 h-5" />
                       </div>
                     </div>
+                    <div className="mt-3 text-3xl font-black text-amber-600 tracking-tight">
+                      {reorderItems.length} <span className="text-sm font-bold text-slate-500">Low Stock Items</span>
+                    </div>
+                    <div className={`flex items-center justify-between text-xs mt-3 pt-3 border-t ${
+                      isDark ? 'border-zinc-800 text-zinc-400' : 'border-slate-100 text-slate-600'
+                    }`}>
+                      <span>Near Expiry Batches</span>
+                      <span className="text-amber-800 font-extrabold bg-amber-100 px-2 py-0.5 rounded-md">
+                        {nearExpiryList.length} Batches
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Multi-Pharmacy Store Breakdown (CLEAN, BEAUTIFUL, HIGH-CONTRAST!) */}
+                {/* Multi-Pharmacy Store Breakdown (Configured Branches Only) */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h2 className={`text-sm font-black uppercase tracking-wider flex items-center space-x-2 ${
@@ -738,12 +810,14 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                       <Building2 className="w-4 h-4 text-purple-600" />
                       <span>Multi-Pharmacy Individual Branch Comparison</span>
                     </h2>
-                    <span className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>3 Operational Branches</span>
+                    <span className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      {branches.filter(b => b.id !== 'ALL').length} Configured Branches
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {branches.filter(b => b.id !== 'ALL').map(b => {
-                      const bStats = salesTelemetry[b.id];
+                      const bStats = branchTelemetry[b.id] || { todayGross: 0, billCount: 0, cash: 0, upi: 0, avgBill: 0 };
                       return (
                         <div 
                           key={b.id} 
@@ -755,7 +829,6 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              {/* Store name - ALWAYS bold & high contrast */}
                               <h3 className={`font-black text-base ${isDark ? 'text-white' : 'text-slate-950'}`}>
                                 {b.name}
                               </h3>
@@ -763,11 +836,10 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                             </div>
                             <span className="flex items-center space-x-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
                               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                              <span>LIVE</span>
+                              <span>ACTIVE</span>
                             </span>
                           </div>
 
-                          {/* Branch Revenue - ALWAYS BOLD & VISIBLE */}
                           <div>
                             <span className={`text-xs uppercase font-bold ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                               Today's Sales
@@ -777,16 +849,15 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                             </div>
                           </div>
 
-                          {/* Details Grid - Soft colored boxes, NEVER dark muddy charcoal! */}
                           <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 text-xs">
                             <div className={`p-3 rounded-xl border ${
                               isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-sky-50 border-sky-200'
                             }`}>
                               <span className={`text-[10px] block uppercase font-bold ${isDark ? 'text-sky-400' : 'text-sky-800'}`}>
-                                Gross Profit
+                                Invoices Issued
                               </span>
                               <span className={`font-black text-sm ${isDark ? 'text-sky-300' : 'text-sky-950'}`}>
-                                ₹{bStats.todayProfit.toLocaleString()} ({bStats.marginPct})
+                                {bStats.billCount} Bills
                               </span>
                             </div>
 
@@ -794,20 +865,18 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                               isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-slate-100 border-slate-200'
                             }`}>
                               <span className={`text-[10px] block uppercase font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                                Staff Active
+                                Avg Ticket
                               </span>
                               <span className={`font-black text-sm ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>
-                                {bStats.staffOnDuty} Staff
+                                ₹{bStats.avgBill.toFixed(2)}
                               </span>
                             </div>
                           </div>
 
                           <div className={`flex items-center justify-between text-xs pt-1 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                            <span>Cash: <strong className="text-emerald-700">₹{bStats.cash.toLocaleString()}</strong></span>
+                            <span>Cash: <strong className="text-emerald-700">₹{bStats.cash.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                             <span>•</span>
-                            <span>UPI: <strong className="text-sky-600">₹{bStats.upi.toLocaleString()}</strong></span>
-                            <span>•</span>
-                            <span className="font-extrabold text-emerald-700">{bStats.growth}</span>
+                            <span>UPI: <strong className="text-sky-600">₹{bStats.upi.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></span>
                           </div>
                         </div>
                       );
@@ -863,27 +932,33 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                    <span className={`text-xs font-bold uppercase ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>October 2026 Revenue</span>
+                    <span className={`text-xs font-bold uppercase ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Cumulative Sales Turnover</span>
                     <div className={`text-3xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                      ₹{monthTotalGross.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{monthTotalGross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <div className="text-xs text-emerald-700 font-bold mt-1">Across 16 operational billing days</div>
+                    <div className="text-xs text-emerald-700 font-bold mt-1">
+                      Across {monthlyDays.length} operational billing day{monthlyDays.length === 1 ? '' : 's'}
+                    </div>
                   </div>
 
                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                    <span className={`text-xs font-bold uppercase ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Total Profit Margin</span>
+                    <span className={`text-xs font-bold uppercase ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Total Invoices Issued</span>
                     <div className="text-3xl font-black text-sky-600 mt-1">
-                      ₹{monthTotalProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {monthlyDays.reduce((acc, d) => acc + d.bills, 0)}
                     </div>
-                    <div className="text-xs text-sky-700 font-bold mt-1">21.0% Net Gross Profit</div>
+                    <div className="text-xs text-sky-700 font-bold mt-1">
+                      Cashier counter invoices recorded
+                    </div>
                   </div>
 
                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <span className={`text-xs font-bold uppercase ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Daily Average Turnover</span>
                     <div className="text-3xl font-black text-purple-600 mt-1">
-                      ₹{(monthTotalGross / 16).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      ₹{monthlyDays.length > 0 ? (monthTotalGross / monthlyDays.length).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </div>
-                    <div className={`text-xs font-bold mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>~135 bills/day average</div>
+                    <div className={`text-xs font-bold mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      {monthlyDays.length > 0 ? `~${Math.round(monthlyDays.reduce((acc, d) => acc + d.bills, 0) / monthlyDays.length)} bills/day average` : 'No billing records yet'}
+                    </div>
                   </div>
                 </div>
 
@@ -898,22 +973,36 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                         <th className="py-3 px-4 text-right">Gross Sales (₹)</th>
                         <th className="py-3 px-4 text-right">Cash (₹)</th>
                         <th className="py-3 px-4 text-right">UPI (₹)</th>
-                        <th className="py-3 px-4 text-right font-black text-emerald-600">Gross Profit (₹)</th>
-                        <th className="py-3 px-4 text-center">Margin %</th>
+                        <th className="py-3 px-4 text-right font-black text-purple-600">Avg / Ticket (₹)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-inherit">
-                      {monthlyDays.map((d, idx) => (
-                        <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
-                          <td className={`py-2.5 px-4 font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{d.date}</td>
-                          <td className={`py-2.5 px-4 text-center ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{d.bills}</td>
-                          <td className={`py-2.5 px-4 text-right font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{d.gross.toLocaleString()}</td>
-                          <td className="py-2.5 px-4 text-right text-emerald-700 font-bold">₹{d.cash.toLocaleString()}</td>
-                          <td className="py-2.5 px-4 text-right text-sky-600 font-bold">₹{d.upi.toLocaleString()}</td>
-                          <td className="py-2.5 px-4 text-right font-black text-emerald-600">₹{d.profit.toLocaleString()}</td>
-                          <td className="py-2.5 px-4 text-center font-bold">{d.margin}</td>
+                      {monthlyDays.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="py-8 text-center text-slate-500 font-bold">
+                            No monthly billing records found. Completed counter bills will automatically aggregate here.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        monthlyDays.map((d, idx) => (
+                          <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
+                            <td className={`py-2.5 px-4 font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{d.date}</td>
+                            <td className={`py-2.5 px-4 text-center ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{d.bills}</td>
+                            <td className={`py-2.5 px-4 text-right font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                              ₹{d.gross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-emerald-700 font-bold">
+                              ₹{d.cash.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-sky-600 font-bold">
+                              ₹{d.upi.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-black text-purple-600">
+                              ₹{(d.bills > 0 ? d.gross / d.bills : 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1080,7 +1169,7 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                   <span>Overstocked & Dead Capital Trap [REP009 / REP018]</span>
                 </h3>
                 <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                  Identify slow-moving stock tying up liquidity. Transfer to Town or Kannur branches to recover working capital.
+                  Identify surplus stock tying up capital. Transfer between Beta Pharmacy and Beta Polyclinic to balance inventory.
                 </p>
               </div>
 
@@ -1118,49 +1207,57 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                       <th className="py-3 px-3">Product Name & Salt</th>
                       <th className="py-3 px-3 text-center w-20">Rack</th>
                       <th className="py-3 px-3 text-center w-24">Excess Stock</th>
-                      <th className="py-3 px-3 text-center w-24 text-slate-500">Days Stagnant</th>
-                      <th className="py-3 px-3 text-right w-32 font-black text-purple-600">Dead Capital (₹)</th>
+                      <th className="py-3 px-3 text-center w-32 text-slate-500">Status</th>
+                      <th className="py-3 px-3 text-right w-32 font-black text-purple-600">Surplus Value (₹)</th>
                       <th className="py-3 px-3 text-center w-36">Recommendation</th>
                       <th className="py-3 px-3 text-center w-24">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-inherit">
-                    {filteredOverstockedItems.slice(0, 40).map((item, idx) => (
-                      <tr key={item.code || idx} className={`transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-purple-50/40'}`}>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className="py-2.5 px-3">
-                          <div className={`font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{item.name}</div>
-                          <div className="text-[10px] text-slate-500">{item.generic}</div>
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-600">R-{item.rack}</td>
-                        <td className="py-2.5 px-3 text-center font-black text-purple-600">
-                          {item.totalStock} packs
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-500">
-                          {item.daysNoSale} days
-                        </td>
-                        <td className={`py-2.5 px-3 text-right font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                          ₹{item.lockedCapital.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-900 border border-purple-300">
-                            {item.recommendation}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            onClick={() => {
-                              setTransferModalItem(item);
-                              setTransferQty(15);
-                            }}
-                            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[11px] shadow-xs flex items-center space-x-1 mx-auto"
-                          >
-                            <ArrowRightLeft className="w-3 h-3" />
-                            <span>Transfer</span>
-                          </button>
+                    {filteredOverstockedItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="py-8 text-center text-slate-500 font-bold">
+                          No overstocked medicines detected. All inventory is within healthy reorder thresholds.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredOverstockedItems.slice(0, 40).map((item, idx) => (
+                        <tr key={item.code || idx} className={`transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-purple-50/40'}`}>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="py-2.5 px-3">
+                            <div className={`font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{item.name}</div>
+                            <div className="text-[10px] text-slate-500">{item.generic}</div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-600">R-{item.rack}</td>
+                          <td className="py-2.5 px-3 text-center font-black text-purple-600">
+                            {item.totalStock} packs
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-500">
+                            {item.daysNoSale}
+                          </td>
+                          <td className={`py-2.5 px-3 text-right font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                            ₹{item.lockedCapital.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-900 border border-purple-300">
+                              {item.recommendation}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => {
+                                setTransferModalItem(item);
+                                setTransferQty(15);
+                              }}
+                              className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[11px] shadow-xs flex items-center space-x-1 mx-auto"
+                            >
+                              <ArrowRightLeft className="w-3 h-3" />
+                              <span>Transfer</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1193,7 +1290,9 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                 <div className={`text-3xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   ₹{totalExpiryRiskValue.toFixed(2)}
                 </div>
-                <div className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>6 Batches flagged across shelves</div>
+                <div className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  {nearExpiryList.length} Batches flagged across shelves
+                </div>
               </div>
             </div>
 
@@ -1215,18 +1314,26 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-inherit">
-                    {filteredExpiryList.map((item, idx) => (
-                      <tr key={idx} className={`transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-rose-50/40'}`}>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className={`py-2.5 px-3 font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{item.name}</td>
-                        <td className={`py-2.5 px-3 text-center font-mono font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>{item.batch}</td>
-                        <td className="py-2.5 px-3 text-center font-bold text-rose-600">{item.exp}</td>
-                        <td className="py-2.5 px-3 text-center font-black">{item.packs}</td>
-                        <td className="py-2.5 px-3 text-right">₹{item.ptr.toFixed(2)}</td>
-                        <td className="py-2.5 px-3 text-right font-black text-rose-600">₹{item.lossValue.toFixed(2)}</td>
-                        <td className={`py-2.5 px-3 text-xs font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{item.supplier}</td>
+                    {filteredExpiryList.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="py-8 text-center text-slate-500 font-bold">
+                          No batches expiring within the selected window. Shelf stock is fresh.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredExpiryList.map((item, idx) => (
+                        <tr key={idx} className={`transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-rose-50/40'}`}>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className={`py-2.5 px-3 font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{item.name}</td>
+                          <td className={`py-2.5 px-3 text-center font-mono font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>{item.batch}</td>
+                          <td className="py-2.5 px-3 text-center font-bold text-rose-600">{item.exp}</td>
+                          <td className="py-2.5 px-3 text-center font-black">{item.packs}</td>
+                          <td className="py-2.5 px-3 text-right">₹{item.ptr.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-rose-600">₹{item.lossValue.toFixed(2)}</td>
+                          <td className={`py-2.5 px-3 text-xs font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{item.supplier}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1246,7 +1353,7 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                   <span>Realtime Cross-Branch Stock Radar</span>
                 </h3>
                 <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  Check stock availability across Main Chirakkara, Town Branch, and Kannur Clinic instantly
+                  Check stock availability across Beta Pharmacy (Shop 1) and Beta Polyclinic (Shop 2) in real time
                 </p>
               </div>
 
@@ -1273,48 +1380,70 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                     <th className="py-3 px-3 w-12 text-center">Sr</th>
                     <th className="py-3 px-3">Product Name & Salt</th>
                     <th className="py-3 px-3 text-center w-20">Rack</th>
-                    <th className="py-3 px-3 text-center w-32 bg-purple-50 text-purple-900 font-black">Main Chirakkara</th>
-                    <th className="py-3 px-3 text-center w-32 bg-emerald-50 text-emerald-900 font-black">Town Branch</th>
-                    <th className="py-3 px-3 text-center w-32 bg-sky-50 text-sky-900 font-black">Kannur Clinic</th>
+                    <th className="py-3 px-3 text-center w-36 bg-purple-50 text-purple-900 font-black">Beta Pharmacy (Shop 1)</th>
+                    <th className="py-3 px-3 text-center w-36 bg-emerald-50 text-emerald-900 font-black">Beta Polyclinic (Shop 2)</th>
+                    <th className="py-3 px-3 text-center w-28 bg-sky-50 text-sky-900 font-black">Total Stock</th>
                     <th className="py-3 px-3 text-center w-24">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-inherit">
-                  {initialMedicines.filter(m => !multistoreSearch || m.name.toLowerCase().includes(multistoreSearch.toLowerCase())).slice(0, 30).map((m, idx) => {
-                    const mainStock = m.stock_shop1 || 0;
-                    const townStock = m.stock_shop2 || Math.floor((m.name.charCodeAt(0) * 3) % 20);
-                    const kannurStock = Math.floor((m.name.charCodeAt(1) * 2) % 15);
-                    return (
-                      <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className="py-2.5 px-3">
-                          <div className={`font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{m.name}</div>
-                          <div className="text-[10px] text-slate-500">{m.generic}</div>
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-600">R-{m.rack}</td>
-                        <td className="py-2.5 px-3 text-center font-black text-purple-700">
-                          {mainStock} packs
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-black text-emerald-700">
-                          {townStock} packs
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-black text-sky-700">
-                          {kannurStock} packs
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            onClick={() => {
-                              setTransferModalItem({ ...m, totalStock: mainStock });
-                              setTransferQty(10);
-                            }}
-                            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-[10px]"
-                          >
-                            Transfer
-                          </button>
-                        </td>
-                      </tr>
+                  {(() => {
+                    const filtered = (medicines || []).filter(m => 
+                      !multistoreSearch || 
+                      m.name.toLowerCase().includes(multistoreSearch.toLowerCase()) || 
+                      (m.generic && m.generic.toLowerCase().includes(multistoreSearch.toLowerCase()))
                     );
-                  })}
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="7" className="py-8 text-center text-slate-500 font-bold">
+                            No medicines match the search filter.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.slice(0, 40).map((m, idx) => {
+                      const shop1Stock = m.stock_shop1 || 0;
+                      const shop2Stock = m.stock_shop2 || 0;
+                      const totalStock = shop1Stock + shop2Stock;
+
+                      return (
+                        <tr key={m.code || idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="py-2.5 px-3">
+                            <div className={`font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{m.name}</div>
+                            <div className="text-[10px] text-slate-500">{m.generic}</div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-600">R-{m.rack}</td>
+                          <td className="py-2.5 px-3 text-center font-black text-purple-700">
+                            {shop1Stock} packs
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-black text-emerald-700">
+                            {shop2Stock} packs
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-black text-sky-700">
+                            {totalStock} packs
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => {
+                                setTransferModalItem({ ...m, totalStock: shop1Stock });
+                                setTransferQty(Math.min(shop1Stock, 10));
+                              }}
+                              disabled={shop1Stock <= 0}
+                              className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
+                                shop1Stock > 0 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-xs' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              }`}
+                            >
+                              Transfer
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -1368,38 +1497,46 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-inherit">
-                  {pendingPayables.map((p, idx) => (
-                    <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
-                      <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                      <td className={`py-2.5 px-3 font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{p.name}</td>
-                      <td className={`py-2.5 px-3 text-center font-mono font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{p.billNo}</td>
-                      <td className="py-2.5 px-3 text-center text-slate-500">{p.billDate}</td>
-                      <td className="py-2.5 px-3 text-center font-bold">{p.cDays}d</td>
-                      <td className="py-2.5 px-3 text-center font-bold">{p.due}</td>
-                      <td className={`py-2.5 px-3 text-right font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        ₹{p.amount.toFixed(2)}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                          p.status === 'OVERDUE'
-                            ? 'bg-rose-100 text-rose-900 border border-rose-300'
-                            : p.status === 'DUE TODAY'
-                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                              : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                        }`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <button
-                          onClick={() => setPaymentModalItem(p)}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow-xs"
-                        >
-                          Record Pay
-                        </button>
+                  {pendingPayables.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" className="py-8 text-center text-slate-500 font-bold">
+                        No pending distributor invoices recorded. Outstanding purchase agency bills entered under Accounts will display here.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    pendingPayables.map((p, idx) => (
+                      <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
+                        <td className="py-2.5 px-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className={`py-2.5 px-3 font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>{p.name}</td>
+                        <td className={`py-2.5 px-3 text-center font-mono font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{p.billNo}</td>
+                        <td className="py-2.5 px-3 text-center text-slate-500">{p.billDate}</td>
+                        <td className="py-2.5 px-3 text-center font-bold">{p.cDays}d</td>
+                        <td className="py-2.5 px-3 text-center font-bold">{p.due}</td>
+                        <td className={`py-2.5 px-3 text-right font-black ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                          ₹{p.amount.toFixed(2)}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                            p.status === 'OVERDUE'
+                              ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                              : p.status === 'DUE TODAY'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <button
+                            onClick={() => setPaymentModalItem(p)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[10px] shadow-xs"
+                          >
+                            Record Pay
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1425,25 +1562,33 @@ _Generated by Beta Pharmacy HQ Admin Portal_`;
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-inherit">
-                  {doctorAnalytics.map((doc, idx) => (
-                    <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
-                      <td className="py-3 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                      <td className="py-3 px-4 font-black text-sm text-purple-700">
-                        {doc.name}
-                      </td>
-                      <td className={`py-3 px-4 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{doc.specialty}</td>
-                      <td className="py-3 px-4 text-center font-black">{doc.bills}</td>
-                      <td className="py-3 px-4 text-right font-black text-emerald-600">
-                        ₹{doc.revenue.toFixed(2)}
-                      </td>
-                      <td className={`py-3 px-4 text-right font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                        ₹{doc.avgBasket.toFixed(2)}
-                      </td>
-                      <td className={`py-3 px-4 font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                        {doc.topDrug}
+                  {doctorAnalytics.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-8 text-center text-slate-500 font-bold">
+                        No doctor prescriptions logged yet. Doctor names entered during billing will automatically aggregate here.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    doctorAnalytics.map((doc, idx) => (
+                      <tr key={idx} className={`border-b transition ${isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-slate-50'}`}>
+                        <td className="py-3 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className="py-3 px-4 font-black text-sm text-purple-700">
+                          {doc.name}
+                        </td>
+                        <td className={`py-3 px-4 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{doc.specialty}</td>
+                        <td className="py-3 px-4 text-center font-black">{doc.bills}</td>
+                        <td className="py-3 px-4 text-right font-black text-emerald-600">
+                          ₹{doc.revenue.toFixed(2)}
+                        </td>
+                        <td className={`py-3 px-4 text-right font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                          ₹{doc.avgBasket.toFixed(2)}
+                        </td>
+                        <td className={`py-3 px-4 font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                          {doc.topDrug}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1637,8 +1782,8 @@ CREATE TABLE IF NOT EXISTS stock_transfers (
                   onChange={(e) => setTransferTargetBranch(e.target.value)}
                   className={`w-full py-2 px-3 rounded-xl border font-bold text-xs ${isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
                 >
-                  <option value="TOWN">Beta Pharmacy (Town Branch)</option>
-                  <option value="KANNUR">Beta Pharmacy (Kannur Clinic)</option>
+                  <option value="POLYCLINIC">Beta Polyclinic (Shop 2)</option>
+                  <option value="MAIN">Beta Pharmacy (Shop 1)</option>
                 </select>
               </div>
 
@@ -1706,7 +1851,7 @@ CREATE TABLE IF NOT EXISTS stock_transfers (
                 >
                   <option value="Federal Bank Thalassery">Federal Bank (Main Current A/c - 1045)</option>
                   <option value="State Bank of India Thalassery">SBI (Chirakkara Branch - 8812)</option>
-                  <option value="HDFC Bank Kannur">HDFC Bank (Kannur Clinic A/c - 4401)</option>
+                  <option value="Canara Bank Thalassery">Canara Bank (Polyclinic A/c - 4401)</option>
                 </select>
               </div>
 

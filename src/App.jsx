@@ -911,6 +911,11 @@ export default function App() {
           theme={theme}
           onBackToCounter={() => setActivePage('billing')}
           onSwitchTheme={setTheme}
+          medicines={medicines}
+          recentBills={recentBills}
+          availableBranches={AVAILABLE_BRANCHES}
+          activeShift={activeShift}
+          billDate={billDate}
         />
       )}
 
