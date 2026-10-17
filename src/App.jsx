@@ -104,9 +104,8 @@ function getInitialBillNo() {
 
 // Multi-Shop Branch Machine Identifiers (Configured per physical shop counter)
 export const AVAILABLE_BRANCHES = [
-  { id: 'MAIN', name: 'Beta Pharmacy', location: 'Main Pharmacy Branch', short: 'Beta Pharmacy', prefix: 'BP', stockKey: 'stock_shop1' },
-  { id: 'POLYCLINIC', name: 'Beta Polyclinic', location: 'Polyclinic Division', short: 'Beta Polyclinic', prefix: 'BPC', stockKey: 'stock_shop2' },
-  { id: 'FN', name: 'FN Branch', location: 'FN Counter', short: 'FN Branch', prefix: 'BFN', stockKey: 'stock_shop3' }
+  { id: 'MAIN', name: 'Beta Pharmacy', location: 'Main Pharmacy', short: 'Beta Pharmacy', prefix: 'BP', stockKey: 'stock_shop1' },
+  { id: 'POLYCLINIC', name: 'Beta Polyclinic', location: 'Polyclinic Division', short: 'Beta Polyclinic', prefix: 'BPC', stockKey: 'stock_shop2' }
 ];
 
 function getInitialBranch() {

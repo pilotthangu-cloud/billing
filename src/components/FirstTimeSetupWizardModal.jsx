@@ -202,8 +202,8 @@ export default function FirstTimeSetupWizardModal({
                 </p>
               </div>
 
-              {/* Branch Selection Cards: Beta Pharmacy, Beta Polyclinic, FN */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Branch Selection Cards: Beta Pharmacy & Beta Polyclinic */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {availableBranches.map((b) => {
                   const isSelected = selectedBranchId === b.id;
                   return (

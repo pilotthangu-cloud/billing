@@ -93,14 +93,11 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
               <th className="py-2.5 px-3 border-r border-inherit">Product Name & Salt</th>
               <th className="py-2.5 px-3 text-center border-r border-inherit w-24">Rack</th>
               <th className="py-2.5 px-3 text-right border-r border-inherit w-24">M.R.P.</th>
-              <th className="py-2.5 px-3 text-center border-r border-inherit w-44 font-black">
-                Beta Pharmacy (Chirakkara)
+              <th className="py-2.5 px-3 text-center border-r border-inherit w-48 font-black">
+                Beta Pharmacy (Main)
               </th>
-              <th className="py-2.5 px-3 text-center border-r border-inherit w-36 font-black">
-                Branch B
-              </th>
-              <th className="py-2.5 px-3 text-center border-r border-inherit w-36 font-black">
-                Branch C
+              <th className="py-2.5 px-3 text-center border-r border-inherit w-48 font-black">
+                Beta Polyclinic
               </th>
               <th className="py-2.5 px-3 text-center w-36">Inter-Store Action</th>
             </tr>
@@ -136,7 +133,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
                   ₹{med.mrp.toFixed(2)}
                 </td>
 
-                {/* Chirakkara (This Store) */}
+                {/* Beta Pharmacy (Shop 1) */}
                 <td className="py-2.5 px-3 text-center border-r border-inherit">
                   <span className={`px-2.5 py-0.5 rounded font-black text-xs ${
                     med.stock_shop1 > 0 
@@ -147,7 +144,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
                   </span>
                 </td>
 
-                {/* Branch B */}
+                {/* Beta Polyclinic (Shop 2) */}
                 <td className="py-2.5 px-3 text-center border-r border-inherit">
                   <span className={`px-2 py-0.5 rounded font-black text-xs ${
                     med.stock_shop2 > 0 
@@ -158,26 +155,23 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
                   </span>
                 </td>
 
-                {/* Branch C */}
-                <td className="py-2.5 px-3 text-center border-r border-inherit">
-                  <span className={`px-2 py-0.5 rounded font-black text-xs ${
-                    med.stock_shop3 > 0 
-                      ? 'bg-emerald-100 text-emerald-950 border border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300' 
-                      : 'text-slate-400 font-bold'
-                  }`}>
-                    {med.stock_shop3} strips
-                  </span>
-                </td>
-
                 {/* Action */}
                 <td className="py-2.5 px-3 text-center">
-                  {med.stock_shop1 <= 0 && (med.stock_shop2 > 0 || med.stock_shop3 > 0) ? (
+                  {med.stock_shop1 <= 0 && med.stock_shop2 > 0 ? (
                     <button
-                      onClick={() => handleTransfer(med, med.stock_shop2 > 0 ? 'Branch B' : 'Branch C', 'Chirakkara Main', 5)}
+                      onClick={() => handleTransfer(med, 'Beta Polyclinic', 'Beta Pharmacy', 5)}
                       className="py-1 px-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded text-xs flex items-center space-x-1 mx-auto shadow"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5" />
                       <span>Pull Stock</span>
+                    </button>
+                  ) : med.stock_shop2 <= 0 && med.stock_shop1 > 0 ? (
+                    <button
+                      onClick={() => handleTransfer(med, 'Beta Pharmacy', 'Beta Polyclinic', 5)}
+                      className="py-1 px-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded text-xs flex items-center space-x-1 mx-auto shadow"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                      <span>Push Stock</span>
                     </button>
                   ) : (
                     <span className="text-slate-400 text-[11px] font-bold">Balanced</span>

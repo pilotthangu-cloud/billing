@@ -93,7 +93,7 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
         }`}>
           <div className="flex items-center space-x-3 text-[11px]">
             <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">{activeBranch?.short || 'This Shop'}</span>
+              <span className="text-[9px] text-slate-500 font-bold block">{activeBranch?.id === 'POLYCLINIC' ? 'Polyclinic' : 'Beta Pharma'}</span>
               <span className={`font-black ${currentStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {currentStock} strips
               </span>
@@ -101,19 +101,14 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
             <span className={isDark ? 'text-zinc-700' : 'text-slate-300'}>|</span>
             <div className="text-center">
               <span className="text-[9px] text-slate-500 font-bold block">
-                {activeBranch?.id === 'TOWN' ? 'Main' : 'Town'}
+                {activeBranch?.id === 'POLYCLINIC' ? 'Beta Pharma' : 'Polyclinic'}
               </span>
-              <span className={`font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
-                {activeBranch?.id === 'TOWN' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop2 || 0)}
-              </span>
-            </div>
-            <span className={isDark ? 'text-zinc-700' : 'text-slate-300'}>|</span>
-            <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">
-                {activeBranch?.id === 'KANNUR' ? 'Main' : 'Kannur'}
-              </span>
-              <span className={`font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
-                {activeBranch?.id === 'KANNUR' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop3 || 0)}
+              <span className={`font-bold ${
+                (activeBranch?.id === 'POLYCLINIC' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop2 || 0)) > 0
+                  ? 'text-emerald-600'
+                  : 'text-slate-400'
+              }`}>
+                {activeBranch?.id === 'POLYCLINIC' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop2 || 0)} strips
               </span>
             </div>
           </div>
