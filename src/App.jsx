@@ -21,6 +21,8 @@ import DoctorMasterPage from './components/DoctorMasterPage';
 import ShiftReconciliationModal from './components/ShiftReconciliationModal';
 import FirstTimeSetupWizardModal from './components/FirstTimeSetupWizardModal';
 import DatabaseImportModal from './components/DatabaseImportModal';
+import PrintableReceipt from './components/PrintableReceipt';
+import CustomerHistoryModal from './components/CustomerHistoryModal';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -306,9 +308,8 @@ export default function App() {
   const [medicines, setMedicines] = useState(getInitialMedicines);
   const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
 
-  // Security & Password Authorization Subsystem (Clipper USER.DBF)
-  // MANAGER: CC, STAFF: DD. If owner opens direct /admin URL, auto-authorize as MANAGER!
-  const [authenticatedRole, setAuthenticatedRole] = useState(initialRoute === 'admin' ? 'MANAGER' : null);
+  // Security & Password Authorization Subsystem (Password prompts removed per request)
+  const [authenticatedRole, setAuthenticatedRole] = useState('MANAGER');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordModalInfo, setPasswordModalInfo] = useState({
     title: 'Manager Authorization',
@@ -320,6 +321,8 @@ export default function App() {
   const [billNo, setBillNo] = useState(getInitialBillNo);
   const [billDate, setBillDate] = useState('16/10/2026');
   const [patientName, setPatientName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [isCustomerHistoryOpen, setIsCustomerHistoryOpen] = useState(false);
   const [doctorName, setDoctorName] = useState(''); // Optional by default
   const [paymentMode, setPaymentMode] = useState('cash');
 
@@ -536,7 +539,7 @@ export default function App() {
     setActivePage('billing');
   };
 
-  // Complete and Open Dot Matrix Preview (Deducts stock & persists bill)
+  // Complete and Print Bill (Zero redundant preview modal! Direct dot-matrix print & stock deduction)
   const handleCompleteBill = () => {
     if (items.length === 0) return;
 
@@ -548,6 +551,7 @@ export default function App() {
       date: billDate,
       time: currentTime,
       patientName: patientName || 'CUSTOMER',
+      customerPhone: customerPhone ? customerPhone.trim() : '',
       doctorName: doctorName || 'GENERAL OTC',
       paymentMode,
       items: [...items],
@@ -599,11 +603,42 @@ export default function App() {
       return updatedBills;
     });
 
+    // 3. Save to Customer Prescription History if phone number was entered
+    if (customerPhone && customerPhone.trim().length >= 4) {
+      try {
+        const cleanPhone = customerPhone.trim();
+        const stored = JSON.parse(localStorage.getItem('beta_pharma_customer_history') || '{}');
+        const existing = stored[cleanPhone] || {
+          phone: cleanPhone,
+          name: patientName || 'CUSTOMER',
+          preferredDoctor: doctorName || 'GENERAL OTC',
+          totalVisits: 0,
+          totalSpent: 0,
+          bills: []
+        };
+        if (patientName) existing.name = patientName;
+        if (doctorName) existing.preferredDoctor = doctorName;
+        existing.totalVisits = (existing.totalVisits || 0) + 1;
+        existing.totalSpent = (existing.totalSpent || 0) + net;
+        existing.bills = [billPayload, ...(existing.bills || []).slice(0, 20)];
+        stored[cleanPhone] = existing;
+        localStorage.setItem('beta_pharma_customer_history', JSON.stringify(stored));
+      } catch (e) {
+        console.warn('Error saving customer history to localStorage', e);
+      }
+    }
+
     setIsReprintMode(false);
     // Background async sync to Supabase (does not block counter or dot-matrix printing!)
     pushSalesBillToSupabase(billPayload);
 
-    setIsReceiptOpen(true);
+    // 4. DIRECT PRINT: Trigger native Windows printer immediately without any blocking preview popup
+    setTimeout(() => {
+      window.print();
+    }, 50);
+
+    // 5. Instantly advance bill counter & clear terminal ready for next patient
+    handleNewBill();
   };
 
   const handleNewBill = () => {
@@ -615,6 +650,33 @@ export default function App() {
     } catch (e) {}
     setItems([]);
     setPatientName('');
+    setCustomerPhone('');
+  };
+
+  // 1-Click Repeat Prescription Loader from Customer History
+  const handleRepeatBill = (repeatItems, docName, patName) => {
+    if (!repeatItems || repeatItems.length === 0) return;
+
+    const formatted = repeatItems.map(it => {
+      const found = medicines.find(m => m.code === it.code || m.name.toLowerCase() === it.name.toLowerCase());
+      const batchObj = found?.batches?.[0] || {
+        batch_no: it.batch || 'BN001',
+        exp_date: it.exp || '12/28',
+        mrp: it.mrp || 30,
+        per: 10
+      };
+      return {
+        medicine: found || { name: it.name, code: it.code || 'M9999', company: 'GEN', rack: 1 },
+        batch: batchObj,
+        qty: it.qty || 10,
+        totalValue: it.totalValue || ((batchObj.mrp / (batchObj.per || 10)) * (it.qty || 10))
+      };
+    });
+
+    setItems(formatted);
+    if (docName) setDoctorName(docName);
+    if (patName) setPatientName(patName);
+    setActivePage('billing');
   };
 
   // Staff Shift Handover Reconciliation Handler
@@ -674,6 +736,7 @@ export default function App() {
           onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
           onInstallApp={handleTriggerInstall}
           isAppInstalled={isAppInstalled}
+          onOpenCustomerHistory={() => setIsCustomerHistoryOpen(true)}
         />
       )}
 
@@ -689,6 +752,9 @@ export default function App() {
           billDate={billDate}
           patientName={patientName}
           setPatientName={setPatientName}
+          customerPhone={customerPhone}
+          setCustomerPhone={setCustomerPhone}
+          onOpenCustomerHistory={() => setIsCustomerHistoryOpen(true)}
           doctorName={doctorName}
           setDoctorName={setDoctorName}
           paymentMode={paymentMode}
@@ -883,6 +949,21 @@ export default function App() {
         theme={theme}
         onImportMedicines={handleImportMedicines}
       />
+
+      {/* Customer Prescription & Visit History Modal (F4 / Instant 1-Click Repeat) */}
+      <CustomerHistoryModal
+        isOpen={isCustomerHistoryOpen}
+        onClose={() => setIsCustomerHistoryOpen(false)}
+        customerPhone={customerPhone}
+        customerName={patientName}
+        onSelectRepeatBill={handleRepeatBill}
+        theme={theme}
+      />
+
+      {/* Off-screen Direct Print Target (Ensures 1-Click Print Bill directly outputs 1:1 ESC/P dot-matrix receipt without opening popup) */}
+      <div className="hidden print:block">
+        <PrintableReceipt billData={completedBillData || recentBills[0]} isReprint={isReprintMode} />
+      </div>
     </div>
   );
 }

@@ -23,7 +23,8 @@ import {
   Coins,
   Download,
   Database,
-  Upload
+  Upload,
+  User
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -48,7 +49,8 @@ export default function TopNavigationMenu({
   onOpenImportModal,
   onOpenSetupWizard,
   onInstallApp,
-  isAppInstalled = false
+  isAppInstalled = false,
+  onOpenCustomerHistory
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -218,6 +220,19 @@ export default function TopNavigationMenu({
                   >
                     <span>Sale Billing (POS)</span>
                     <span className="text-[10px] font-mono opacity-80">Alt+B</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      if (onOpenCustomerHistory) onOpenCustomerHistory();
+                    }} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold flex items-center justify-between text-sky-600 dark:text-sky-400"
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <User className="w-3.5 h-3.5" />
+                      <span>Patient Rx & History</span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-1 rounded bg-sky-100 dark:bg-sky-950 text-sky-900 dark:text-sky-300">F4</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('purchases')} 
@@ -543,6 +558,19 @@ export default function TopNavigationMenu({
           >
             <ShoppingCart className="w-3.5 h-3.5" />
             <span>Sale Billing (POS)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (onOpenCustomerHistory) onOpenCustomerHistory();
+            }}
+            className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
+              isDark ? 'hover:bg-zinc-800 text-sky-400' : 'hover:bg-slate-300 text-sky-800 font-bold'
+            }`}
+            title="Inspect Patient Prescription History & 1-Click Repeat Orders (F4)"
+          >
+            <User className="w-3.5 h-3.5 text-sky-500" />
+            <span>Patient Rx History [F4]</span>
           </button>
 
           <button
