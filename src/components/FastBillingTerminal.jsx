@@ -313,6 +313,10 @@ export default function FastBillingTerminal({
   // Medicine to inspect in bottom radar
   const inspectedMed = activeMedicine || (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || null;
 
+  // Always show at least 12 grid rows like classic pharmacy software.
+  // When user adds 12 items, it dynamically expands to 13, 14, 15... automatically!
+  const DISPLAY_ROWS = Math.max(12, items.length + 2);
+
   // Focus search input helper
   const focusSearchInput = () => {
     searchInputRef.current?.focus();
@@ -759,164 +763,146 @@ export default function FastBillingTerminal({
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 ? (
-              <tr 
-                onClick={focusSearchInput}
-                className="cursor-pointer hover:bg-sky-50/40 dark:hover:bg-zinc-900/40 transition"
-              >
-                <td colSpan="10" className="py-16 text-center select-none">
-                  <div className="max-w-md mx-auto space-y-2">
-                    <div className="w-10 h-10 mx-auto rounded-full bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600">
-                      <Search className="w-5 h-5" />
-                    </div>
-                    <div className="text-sm font-black text-slate-800 dark:text-zinc-200">
-                      Bill Table is Ready • Unlimited Rows
-                    </div>
-                    <div className="text-xs text-slate-500 font-normal">
-                      Click the search bar above or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 font-mono text-[11px] font-bold">F2</kbd> (Patient) or <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 font-mono text-[11px] font-bold">F4</kbd> (History). Every medicine added creates the next row automatically with no limit.
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              <>
-                {items.map((item, idx) => {
-                  const isEven = idx % 2 === 0;
-                  const isRowSelected = selectedRowIndex === idx;
+            {[...Array(DISPLAY_ROWS)].map((_, idx) => {
+              const item = items[idx];
+              const isEven = idx % 2 === 0;
+              const isRowSelected = selectedRowIndex === idx;
 
-                  return (
-                    <tr 
-                      key={idx}
-                      onClick={() => setSelectedRowIndex(idx)}
-                      className={`border-b transition-colors cursor-pointer ${
-                        isRowSelected
-                          ? (theme === 'dark' ? 'bg-sky-950/40 border-sky-600' : 'bg-sky-100/70 border-sky-400')
-                          : (theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50/60')
-                      } ${
-                        theme === 'dark' 
-                          ? (isEven ? 'bg-zinc-950' : 'bg-zinc-900/40') + ' border-zinc-800' 
-                          : (isEven ? 'bg-white' : 'bg-slate-50/60') + ' border-slate-300'
-                      }`}
-                      style={{ height: '36px' }}
-                    >
-                      {/* Sr */}
-                      <td className="py-1.5 px-3 text-center font-bold border-r border-inherit text-slate-600 dark:text-zinc-400">
-                        {idx + 1}
-                      </td>
-
-                      {/* Product Description */}
-                      <td 
-                        className="py-1.5 px-3 font-sans border-r border-inherit"
-                        onClick={focusSearchInput}
-                      >
-                        <div>
-                          <div className={`font-black text-xs ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
-                            {item.medicine.name}
-                          </div>
-                          {item.medicine.generic && (
-                            <div className={`text-[10px] font-mono font-bold mt-0.5 ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
-                              {item.medicine.generic}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Shelf Rack */}
-                      <td className="py-1.5 px-3 text-center border-r border-inherit">
-                        <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
-                          theme === 'dark' 
-                            ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
-                            : 'bg-sky-50 text-sky-800 border-sky-300'
-                        }`}>
-                          R-{item.medicine.rack}
-                        </span>
-                      </td>
-
-                      {/* Batch */}
-                      <td className={`py-1.5 px-3 font-bold border-r border-inherit ${
-                        theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                      }`}>
-                        {item.batch.batch_no}
-                      </td>
-
-                      {/* Expiry */}
-                      <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                        theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
-                      }`}>
-                        {item.batch.exp_date}
-                      </td>
-
-                      {/* MRP */}
-                      <td className={`py-1.5 px-3 text-right font-bold border-r border-inherit ${
-                        theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
-                      }`}>
-                        {item.batch.mrp.toFixed(2)}
-                      </td>
-
-                      {/* Pack */}
-                      <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
-                        theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'
-                      }`}>
-                        {item.batch.per || 10}s
-                      </td>
-
-                      {/* Qty (Directly Editable) */}
-                      <td className="py-1 px-2 text-center border-r border-inherit">
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.qty}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
-                          className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
-                            theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
-                          }`}
-                        />
-                      </td>
-
-                      {/* Amount */}
-                      <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
-                        theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
-                      }`}>
-                        ₹{item.totalValue.toFixed(2)}
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-1.5 px-3 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveItem(idx);
-                          }}
-                          className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                          title="Delete Item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {/* Dynamic Next Row Prompt */}
+              return (
                 <tr 
-                  onClick={focusSearchInput}
-                  className={`border-b border-dashed transition cursor-pointer select-none ${
+                  key={idx}
+                  onClick={() => {
+                    if (item) {
+                      setSelectedRowIndex(idx);
+                    } else {
+                      focusSearchInput();
+                    }
+                  }}
+                  className={`border-b transition-colors cursor-pointer ${
+                    isRowSelected
+                      ? (theme === 'dark' ? 'bg-sky-950/40 border-sky-600' : 'bg-sky-100/70 border-sky-400')
+                      : item
+                      ? (theme === 'dark' ? 'hover:bg-zinc-900' : 'hover:bg-sky-50/60')
+                      : (theme === 'dark' ? 'hover:bg-zinc-900/40' : 'hover:bg-slate-100/60')
+                  } ${
                     theme === 'dark' 
-                      ? 'border-zinc-800 hover:bg-zinc-900/50 text-zinc-500' 
-                      : 'border-slate-300 hover:bg-slate-50 text-slate-400'
+                      ? (isEven ? 'bg-zinc-950' : 'bg-zinc-900/40') + ' border-zinc-800' 
+                      : (isEven ? 'bg-white' : 'bg-slate-50/60') + ' border-slate-300'
                   }`}
-                  style={{ height: '36px' }}
+                  style={{ height: '34px' }}
                 >
-                  <td className="py-1.5 px-3 text-center font-bold border-r border-inherit">
-                    {items.length + 1}
+                  {/* Sr */}
+                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                    item ? 'text-slate-600 dark:text-zinc-400' : 'text-slate-300 dark:text-zinc-700'
+                  }`}>
+                    {idx + 1}
                   </td>
-                  <td colSpan="9" className="py-1.5 px-3 text-left italic text-[11px] font-sans">
-                    + Click or type medicine above to add item #{items.length + 1}...
+
+                  {/* Product Description */}
+                  <td 
+                    className="py-1.5 px-3 font-sans border-r border-inherit"
+                    onClick={focusSearchInput}
+                  >
+                    {item ? (
+                      <div>
+                        <div className={`font-black text-xs ${theme === 'dark' ? 'text-white' : 'text-slate-950'}`}>
+                          {item.medicine.name}
+                        </div>
+                        {item.medicine.generic && (
+                          <div className={`text-[10px] font-mono font-bold mt-0.5 ${theme === 'dark' ? 'text-sky-300' : 'text-sky-800'}`}>
+                            {item.medicine.generic}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={theme === 'dark' ? 'text-zinc-800 select-none' : 'text-slate-200 select-none'}>-</span>
+                    )}
+                  </td>
+
+                  {/* Shelf Rack */}
+                  <td className="py-1.5 px-3 text-center border-r border-inherit">
+                    {item ? (
+                      <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
+                        theme === 'dark' 
+                          ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
+                          : 'bg-sky-50 text-sky-800 border-sky-300'
+                      }`}>
+                        R-{item.medicine.rack}
+                      </span>
+                    ) : (
+                      <span className={`select-none ${theme === 'dark' ? 'text-zinc-800' : 'text-slate-200'}`}>-</span>
+                    )}
+                  </td>
+
+                  {/* Batch */}
+                  <td className={`py-1.5 px-3 font-bold border-r border-inherit ${
+                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
+                  }`}>
+                    {item ? item.batch.batch_no : ''}
+                  </td>
+
+                  {/* Expiry */}
+                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                    theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
+                  }`}>
+                    {item ? item.batch.exp_date : ''}
+                  </td>
+
+                  {/* MRP */}
+                  <td className={`py-1.5 px-3 text-right font-bold border-r border-inherit ${
+                    theme === 'dark' ? 'text-zinc-100' : 'text-slate-950'
+                  }`}>
+                    {item ? item.batch.mrp.toFixed(2) : ''}
+                  </td>
+
+                  {/* Pack */}
+                  <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
+                    theme === 'dark' ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    {item ? `${item.batch.per || 10}s` : ''}
+                  </td>
+
+                  {/* Qty (Directly Editable) */}
+                  <td className="py-1 px-2 text-center border-r border-inherit">
+                    {item ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.qty}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                        className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
+                          theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
+                        }`}
+                      />
+                    ) : ''}
+                  </td>
+
+                  {/* Amount */}
+                  <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
+                    theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
+                  }`}>
+                    {item ? `₹${item.totalValue.toFixed(2)}` : ''}
+                  </td>
+
+                  {/* Action */}
+                  <td className="py-1.5 px-3 text-center">
+                    {item && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveItem(idx);
+                        }}
+                        className="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
-              </>
-            )}
+              );
+            })}
           </tbody>
         </table>
       </div>
