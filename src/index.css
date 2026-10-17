@@ -83,20 +83,26 @@
   border-radius: 2px;
 }
 
-/* Dot-Matrix Printer Output Styles */
+/* Print Output Styles (Both Dot-Matrix Invoice & Master Reports) */
 @media print {
   @page {
-    margin: 0;
+    margin: 5mm;
     size: auto;
   }
   body {
     background: white !important;
     color: black !important;
   }
-  body * {
+  .no-print, header, nav, .btn-no-print {
+    display: none !important;
+  }
+
+  /* When Dot-Matrix Tractor Receipt modal is active, isolate only the receipt */
+  body:has(#printable-receipt) * {
     visibility: hidden;
   }
-  #printable-receipt, #printable-receipt * {
+  body:has(#printable-receipt) #printable-receipt,
+  body:has(#printable-receipt) #printable-receipt * {
     visibility: visible !important;
   }
   #printable-receipt {
@@ -106,14 +112,11 @@
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 12px 24px !important;
+    padding: 8px 16px !important;
     background: white !important;
     color: black !important;
     border: none !important;
     box-shadow: none !important;
-  }
-  .no-print {
-    display: none !important;
   }
 }
 

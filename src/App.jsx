@@ -39,43 +39,39 @@ function getInitialPage() {
   return 'billing';
 }
 
-export default function App() {
-  const initialRoute = getInitialPage();
-  const [theme, setTheme] = useState('light');
-  const [activePage, setActivePage] = useState(initialRoute);
-  const [isOffline, setIsOffline] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
+// Persistent storage loader for medicines (initial base + modifications + newly added items)
+function getInitialMedicines() {
+  try {
+    const overridesRaw = localStorage.getItem('beta_pharma_med_overrides');
+    const addedRaw = localStorage.getItem('beta_pharma_added_meds');
+    const overrides = overridesRaw ? JSON.parse(overridesRaw) : {};
+    const added = addedRaw ? JSON.parse(addedRaw) : [];
 
-  // Medicines Catalog (Dynamic state so user can add new products & update stock from purchases!)
-  const [medicines, setMedicines] = useState(initialMedicines);
-  const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
+    let base = initialMedicines.map(m => {
+      const key = m.code || m.name.toLowerCase();
+      if (overrides[key]) {
+        return { ...m, ...overrides[key] };
+      }
+      return m;
+    });
 
-  // Security & Password Authorization Subsystem (Clipper USER.DBF)
-  // MANAGER: CC, STAFF: DD. If owner opens direct /admin URL, auto-authorize as MANAGER!
-  const [authenticatedRole, setAuthenticatedRole] = useState(initialRoute === 'admin' ? 'MANAGER' : null);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordModalInfo, setPasswordModalInfo] = useState({
-    title: 'Manager Authorization',
-    description: 'Enter security PIN to access protected operations.'
-  });
-  const [pendingPage, setPendingPage] = useState(null);
+    return [...added, ...base];
+  } catch (e) {
+    console.error('Error loading persistent medicines', e);
+    return initialMedicines;
+  }
+}
 
-  // Active Bill States (Starts clean & empty)
-  const [billNo, setBillNo] = useState('025316');
-  const [billDate, setBillDate] = useState('16/10/2026');
-  const [patientName, setPatientName] = useState('');
-  const [doctorName, setDoctorName] = useState(''); // Optional by default
-  const [paymentMode, setPaymentMode] = useState('cash');
-
-  // Starts with 0 items (clean slate, no auto-attached dummy medicines!)
-  const [items, setItems] = useState([]);
-  const [heldBills, setHeldBills] = useState([]);
-
-  // Dot Matrix Print Modal & F7 Recall/Reprint System
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [completedBillData, setCompletedBillData] = useState(null);
-  const [isReprintMode, setIsReprintMode] = useState(false);
-  const [recentBills, setRecentBills] = useState([
+// Persistent storage loader for recent completed bills (for F7 recall / reprint)
+function getInitialRecentBills() {
+  try {
+    const raw = localStorage.getItem('beta_pharma_recent_bills');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [
     {
       billNo: '025315',
       date: '16/10/2026',
@@ -91,7 +87,55 @@ export default function App() {
       netPayable: 456,
       store: 'Beta Pharmacy (Thalassery)'
     }
-  ]);
+  ];
+}
+
+// Persistent storage loader for next bill number sequence
+function getInitialBillNo() {
+  try {
+    const saved = localStorage.getItem('beta_pharma_next_bill_no');
+    if (saved) return saved;
+  } catch (e) {}
+  return '025316';
+}
+
+export default function App() {
+  const initialRoute = getInitialPage();
+  const [theme, setTheme] = useState('light');
+  const [activePage, setActivePage] = useState(initialRoute);
+  const [isOffline, setIsOffline] = useState(false);
+  const [currentTime, setCurrentTime] = useState('');
+
+  // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
+  const [medicines, setMedicines] = useState(getInitialMedicines);
+  const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
+
+  // Security & Password Authorization Subsystem (Clipper USER.DBF)
+  // MANAGER: CC, STAFF: DD. If owner opens direct /admin URL, auto-authorize as MANAGER!
+  const [authenticatedRole, setAuthenticatedRole] = useState(initialRoute === 'admin' ? 'MANAGER' : null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordModalInfo, setPasswordModalInfo] = useState({
+    title: 'Manager Authorization',
+    description: 'Enter security PIN to access protected operations.'
+  });
+  const [pendingPage, setPendingPage] = useState(null);
+
+  // Active Bill States (Starts clean & empty)
+  const [billNo, setBillNo] = useState(getInitialBillNo);
+  const [billDate, setBillDate] = useState('16/10/2026');
+  const [patientName, setPatientName] = useState('');
+  const [doctorName, setDoctorName] = useState(''); // Optional by default
+  const [paymentMode, setPaymentMode] = useState('cash');
+
+  // Starts with 0 items (clean slate, no auto-attached dummy medicines!)
+  const [items, setItems] = useState([]);
+  const [heldBills, setHeldBills] = useState([]);
+
+  // Dot Matrix Print Modal & F7 Recall/Reprint System
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [completedBillData, setCompletedBillData] = useState(null);
+  const [isReprintMode, setIsReprintMode] = useState(false);
+  const [recentBills, setRecentBills] = useState(getInitialRecentBills);
 
   // Sync theme with HTML class for tailwind darkMode: 'class'
   useEffect(() => {
@@ -229,21 +273,38 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePage, items, heldBills, recentBills]);
 
-  // Add new medicine to master catalog
+  // Add new medicine to master catalog with localStorage persistence
   const handleAddNewMedicine = (newMed) => {
     setMedicines(prev => [newMed, ...prev]);
+    try {
+      const added = JSON.parse(localStorage.getItem('beta_pharma_added_meds') || '[]');
+      added.unshift(newMed);
+      localStorage.setItem('beta_pharma_added_meds', JSON.stringify(added));
+    } catch (e) {
+      console.error('Error saving added medicine to localStorage', e);
+    }
     alert(`Success! "${newMed.name}" added to Product Master in RACK ${newMed.rack}. You can now search and bill it immediately.`);
   };
 
-  // Update existing medicine in master catalog
+  // Update existing medicine in master catalog with localStorage persistence
   const handleUpdateMedicine = (updatedMed) => {
     setMedicines(prev => prev.map(m => (m.code === updatedMed.code || m.name.toLowerCase() === updatedMed.name.toLowerCase()) ? updatedMed : m));
+    try {
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const key = updatedMed.code || updatedMed.name.toLowerCase();
+      overrides[key] = updatedMed;
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+    } catch (e) {
+      console.error('Error saving medicine override to localStorage', e);
+    }
   };
 
   // Update stock when Purchase Invoice is saved
   const handleUpdateCatalogStock = (purchaseItems) => {
     setMedicines(prev => {
       const updated = [...prev];
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+
       for (const item of purchaseItems) {
         const idx = updated.findIndex(m => m.code === item.medCode || m.name.toLowerCase() === item.name.toLowerCase());
         if (idx !== -1) {
@@ -267,8 +328,13 @@ export default function App() {
           }
           med.batches = existingBatches;
           updated[idx] = med;
+          const key = med.code || med.name.toLowerCase();
+          overrides[key] = med;
         }
       }
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
       return updated;
     });
   };
@@ -296,7 +362,7 @@ export default function App() {
     setActivePage('billing');
   };
 
-  // Complete and Open Dot Matrix Preview
+  // Complete and Open Dot Matrix Preview (Deducts stock & persists bill)
   const handleCompleteBill = () => {
     if (items.length === 0) return;
 
@@ -317,7 +383,43 @@ export default function App() {
     };
 
     setCompletedBillData(billPayload);
-    setRecentBills(prev => [billPayload, ...prev.slice(0, 19)]);
+
+    // 1. Deduct sold medicine stock from live inventory and persist
+    setMedicines(prev => {
+      const updated = [...prev];
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+
+      for (const line of items) {
+        const itemCode = line.medicine ? line.medicine.code : line.code;
+        const itemName = line.medicine ? line.medicine.name : line.name;
+        const qtySold = parseInt(line.qty, 10) || 1;
+
+        const idx = updated.findIndex(m => m.code === itemCode || m.name.toLowerCase() === (itemName || '').toLowerCase());
+        if (idx !== -1) {
+          const med = { ...updated[idx] };
+          med.stock_shop1 = Math.max(0, (med.stock_shop1 || 0) - qtySold);
+          updated[idx] = med;
+          const key = med.code || med.name.toLowerCase();
+          overrides[key] = med;
+        }
+      }
+
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
+
+      return updated;
+    });
+
+    // 2. Persist recent bills for F7 recall / reprint
+    setRecentBills(prev => {
+      const updatedBills = [billPayload, ...prev.slice(0, 24)];
+      try {
+        localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updatedBills));
+      } catch (e) {}
+      return updatedBills;
+    });
+
     setIsReprintMode(false);
     // Background async sync to Supabase (does not block counter or dot-matrix printing!)
     pushSalesBillToSupabase(billPayload);
@@ -326,8 +428,12 @@ export default function App() {
   };
 
   const handleNewBill = () => {
-    const num = parseInt(billNo) + 1;
-    setBillNo(num.toString().padStart(6, '0'));
+    const num = parseInt(billNo, 10) + 1;
+    const nextBill = num.toString().padStart(6, '0');
+    setBillNo(nextBill);
+    try {
+      localStorage.setItem('beta_pharma_next_bill_no', nextBill);
+    } catch (e) {}
     setItems([]);
     setPatientName('');
   };
