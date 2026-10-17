@@ -353,10 +353,10 @@ export default function TopNavigationMenu({
                       setOpenDropdown(null);
                       if (onOpenSetupWizard) onOpenSetupWizard();
                     }} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between border-t border-slate-200/40"
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between border-t border-slate-200/40 font-bold"
                   >
-                    <span>Terminal & Branch Setup</span>
-                    <span className="text-[10px] font-mono opacity-70">WIZARD</span>
+                    <span>Terminal Setup & Features Guide</span>
+                    <span className="text-[10px] font-mono opacity-80 text-emerald-500 font-bold">TOUR</span>
                   </button>
                   {!isAppInstalled && onInstallApp && (
                     <button 

@@ -104,16 +104,16 @@ function getInitialBillNo() {
 
 // Multi-Shop Branch Machine Identifiers (Configured per physical shop counter)
 export const AVAILABLE_BRANCHES = [
-  { id: 'MAIN', name: 'Beta Pharmacy (Main Branch)', location: 'Chirakkara, Thalassery', short: 'Main Chirakkara', prefix: 'CHI', stockKey: 'stock_shop1' },
-  { id: 'TOWN', name: 'Beta Pharmacy (Town Branch)', location: 'Near Old Bus Stand, Thalassery', short: 'Town Branch', prefix: 'TWN', stockKey: 'stock_shop2' },
-  { id: 'KANNUR', name: 'Beta Pharmacy (Kannur Clinic)', location: 'Fort Road, Kannur', short: 'Kannur Clinic', prefix: 'KNR', stockKey: 'stock_shop3' }
+  { id: 'MAIN', name: 'Beta Pharmacy', location: 'Main Pharmacy Branch', short: 'Beta Pharmacy', prefix: 'BP', stockKey: 'stock_shop1' },
+  { id: 'POLYCLINIC', name: 'Beta Polyclinic', location: 'Polyclinic Division', short: 'Beta Polyclinic', prefix: 'BPC', stockKey: 'stock_shop2' },
+  { id: 'FN', name: 'FN Branch', location: 'FN Counter', short: 'FN Branch', prefix: 'BFN', stockKey: 'stock_shop3' }
 ];
 
 function getInitialBranch() {
   try {
     const saved = localStorage.getItem('beta_pharma_branch_id');
     if (saved) {
-      const found = AVAILABLE_BRANCHES.find(b => b.id === saved);
+      const found = AVAILABLE_BRANCHES.find(b => b.id === saved || b.name.toLowerCase().includes(saved.toLowerCase()));
       if (found) return found;
     }
   } catch (e) {}
