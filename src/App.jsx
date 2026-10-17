@@ -168,9 +168,14 @@ export default function App() {
     } catch (e) {}
   };
 
-  // First-Time Setup & Onboarding Wizard State (Triggers on Day 1 on any new shop PC)
+  // First-Time Setup & Onboarding Wizard State (Counter Billing only; never in Admin HQ)
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(() => {
     try {
+      const path = (window.location.pathname || '').toLowerCase();
+      const hash = (window.location.hash || '').toLowerCase();
+      if (path.includes('admin') || hash.includes('admin')) {
+        return false;
+      }
       return !localStorage.getItem('beta_pharma_setup_completed');
     } catch (e) {
       return false;
@@ -364,6 +369,9 @@ export default function App() {
   // Navigation to pages (Password gates removed as requested)
   const handleNavigatePage = (page) => {
     setActivePage(page);
+    if (page === 'admin') {
+      setIsSetupWizardOpen(false);
+    }
     try {
       if (page === 'admin') {
         window.history.replaceState(null, '', '/admin');
@@ -381,6 +389,7 @@ export default function App() {
       const page = getInitialPage();
       setActivePage(page);
       if (page === 'admin') {
+        setIsSetupWizardOpen(false);
         setAuthenticatedRole('MANAGER');
       }
     };
@@ -956,16 +965,18 @@ export default function App() {
         targetIncomingStaff={targetIncomingStaff}
       />
 
-      {/* First-Time Guided Onboarding & Terminal Setup Wizard */}
-      <FirstTimeSetupWizardModal
-        isOpen={isSetupWizardOpen}
-        onClose={() => setIsSetupWizardOpen(false)}
-        theme={theme}
-        availableBranches={AVAILABLE_BRANCHES}
-        onCompleteSetup={handleCompleteSetup}
-        installPrompt={deferredInstallPrompt}
-        isAppInstalled={isAppInstalled}
-      />
+      {/* First-Time Guided Onboarding & Terminal Setup Wizard (Counter Billing only) */}
+      {activePage !== 'admin' && (
+        <FirstTimeSetupWizardModal
+          isOpen={isSetupWizardOpen && activePage !== 'admin'}
+          onClose={() => setIsSetupWizardOpen(false)}
+          theme={theme}
+          availableBranches={AVAILABLE_BRANCHES}
+          onCompleteSetup={handleCompleteSetup}
+          installPrompt={deferredInstallPrompt}
+          isAppInstalled={isAppInstalled}
+        />
+      )}
 
       {/* Standalone Database Migration / Legacy Import Modal */}
       <DatabaseImportModal

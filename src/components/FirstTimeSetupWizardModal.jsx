@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Zap,
   ArrowRightCircle,
-  Lock
+  Lock,
+  X
 } from 'lucide-react';
 import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords } from '../utils/dbfReader';
 
@@ -166,23 +167,35 @@ export default function FirstTimeSetupWizardModal({
             </div>
           </div>
 
-          {/* 4-Step Breadcrumbs */}
-          <div className="flex items-center space-x-1.5 text-xs font-mono">
-            <span className={`px-2 py-0.5 rounded-full font-bold ${
-              step === 1 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
-            }`}>1. Shop</span>
-            <span className="text-slate-400">➔</span>
-            <span className={`px-2 py-0.5 rounded-full font-bold ${
-              step === 2 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
-            }`}>2. Option B</span>
-            <span className="text-slate-400">➔</span>
-            <span className={`px-2 py-0.5 rounded-full font-bold ${
-              step === 3 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
-            }`}>3. Features</span>
-            <span className="text-slate-400">➔</span>
-            <span className={`px-2 py-0.5 rounded-full font-bold ${
-              step === 4 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
-            }`}>4. Install</span>
+          <div className="flex items-center space-x-3">
+            {/* 4-Step Breadcrumbs */}
+            <div className="flex items-center space-x-1.5 text-xs font-mono">
+              <span className={`px-2 py-0.5 rounded-full font-bold ${
+                step === 1 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
+              }`}>1. Shop</span>
+              <span className="text-slate-400">➔</span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${
+                step === 2 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
+              }`}>2. Option B</span>
+              <span className="text-slate-400">➔</span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${
+                step === 3 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
+              }`}>3. Features</span>
+              <span className="text-slate-400">➔</span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${
+                step === 4 ? 'bg-sky-600 text-white' : (isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-slate-200 text-slate-600')
+              }`}>4. Install</span>
+            </div>
+
+            <button
+              onClick={onClose}
+              className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                isDark ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-white' : 'border-slate-300 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
+              }`}
+              title="Close Onboarding"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
