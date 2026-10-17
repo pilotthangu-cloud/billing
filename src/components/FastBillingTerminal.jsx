@@ -11,7 +11,11 @@ import {
   PlusCircle,
   PauseCircle,
   CheckCircle2,
-  Repeat
+  Repeat,
+  RotateCcw,
+  AlertTriangle,
+  Zap,
+  Tag
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
@@ -40,6 +44,7 @@ export default function FastBillingTerminal({
   onRestoreHeldBill,
   onOpenNewMedModal,
   onReprintLastBill,
+  onOpenSalesReturn,
   activeShift,
   staffList = ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'],
   onSelectActiveStaff,
@@ -206,6 +211,10 @@ export default function FastBillingTerminal({
         e.preventDefault();
         if (onOpenCustomerHistory) onOpenCustomerHistory();
       }
+      if (e.key === 'F8') {
+        e.preventDefault();
+        if (onOpenSalesReturn) onOpenSalesReturn();
+      }
       if (e.key === 'Delete' && selectedRowIndex !== null && items[selectedRowIndex]) {
         e.preventDefault();
         handleRemoveItem(selectedRowIndex);
@@ -219,7 +228,7 @@ export default function FastBillingTerminal({
     };
     window.addEventListener('keydown', handleKeys);
     return () => window.removeEventListener('keydown', handleKeys);
-  }, [selectedRowIndex, items, onCompleteBill, isDropdownOpen, filtered, selectedMedIndex, activeMedicine, onOpenCustomerHistory]);
+  }, [selectedRowIndex, items, onCompleteBill, isDropdownOpen, filtered, selectedMedIndex, activeMedicine, onOpenCustomerHistory, onOpenSalesReturn]);
 
   // Scroll dropdown selection into view
   useEffect(() => {
@@ -231,14 +240,47 @@ export default function FastBillingTerminal({
     }
   }, [selectedMedIndex]);
 
-  // DIRECT ENTER: Clicking medicine immediately enters it into the bill table!
+  // FEFO (First-Expiry-First-Out) helper
+  const parseBatchExpScore = (eStr) => {
+    if (!eStr) return 9999;
+    const parts = eStr.split('/');
+    if (parts.length === 2) {
+      const m = parseInt(parts[0], 10) || 12;
+      let y = parseInt(parts[1], 10) || 28;
+      if (y < 100) y += 2000;
+      return y * 12 + m;
+    }
+    return 9999;
+  };
+
+  // DIRECT ENTER: Clicking medicine immediately enters it into the bill table with FEFO sorting!
   const handleDirectAddMedicine = (med) => {
-    const chosenBatch = med.batches && med.batches.length > 0 ? med.batches[0] : {
+    // FEFO: Sort batches by earliest expiry date first so older stock is dispensed first
+    const sortedBatches = med.batches && med.batches.length > 0 
+      ? [...med.batches].sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date))
+      : [];
+
+    const chosenBatch = sortedBatches.length > 0 ? sortedBatches[0] : {
       batch_no: 'B' + med.code.slice(-4),
       exp_date: '12/27',
       mrp: med.mrp,
       per: med.per || 10
     };
+
+    // Check if near expiry (< 60 days)
+    const isShortExpiry = (() => {
+      if (!chosenBatch.exp_date) return false;
+      const parts = chosenBatch.exp_date.split('/');
+      if (parts.length === 2) {
+        const m = parseInt(parts[0], 10);
+        let y = parseInt(parts[1], 10);
+        if (y < 100) y += 2000;
+        const now = new Date();
+        const monthsLeft = (y - now.getFullYear()) * 12 + (m - (now.getMonth() + 1));
+        return monthsLeft <= 2 && monthsLeft >= 0;
+      }
+      return false;
+    })();
 
     const qty = med.per || 10;
     const lineVal = (chosenBatch.mrp / (chosenBatch.per || 10)) * qty;
@@ -246,7 +288,9 @@ export default function FastBillingTerminal({
       medicine: med,
       batch: chosenBatch,
       qty: Number(qty),
-      totalValue: lineVal
+      totalValue: lineVal,
+      isShortExpiry,
+      hasClearanceDiscount: false
     };
 
     setItems((prev) => [...prev, newLine]);
@@ -273,7 +317,9 @@ export default function FastBillingTerminal({
       medicine: activeMedicine,
       batch: activeBatch,
       qty: Number(entryQty),
-      totalValue: lineVal
+      totalValue: lineVal,
+      isShortExpiry: false,
+      hasClearanceDiscount: false
     };
 
     setItems((prev) => [...prev, newLine]);
@@ -293,11 +339,23 @@ export default function FastBillingTerminal({
 
   // Update item quantity directly in the table
   const handleUpdateItemQty = (index, newQty) => {
-    const qtyNum = Math.max(1, parseInt(newQty) || 1);
+    const qtyNum = Math.max(1, parseInt(newQty, 10) || 1);
     setItems((prev) => prev.map((item, i) => {
       if (i !== index) return item;
-      const val = (item.batch.mrp / (item.batch.per || 10)) * qtyNum;
-      return { ...item, qty: qtyNum, totalValue: val };
+      const baseVal = (item.batch.mrp / (item.batch.per || 10)) * qtyNum;
+      const discountMult = item.hasClearanceDiscount ? 0.90 : 1;
+      return { ...item, qty: qtyNum, totalValue: +(baseVal * discountMult).toFixed(2) };
+    }));
+  };
+
+  // 1-Click Toggle 10% Clearance Discount on Short-Expiry item
+  const handleToggleClearanceDiscount = (index) => {
+    setItems((prev) => prev.map((item, i) => {
+      if (i !== index) return item;
+      const nextDiscount = !item.hasClearanceDiscount;
+      const baseVal = (item.batch.mrp / (item.batch.per || 10)) * (item.qty || 1);
+      const discountMult = nextDiscount ? 0.90 : 1;
+      return { ...item, hasClearanceDiscount: nextDiscount, totalValue: +(baseVal * discountMult).toFixed(2) };
     }));
   };
 
@@ -315,6 +373,16 @@ export default function FastBillingTerminal({
   const sgst = cgst;
   const netPayable = Math.round(grossTotal);
   const roundOff = netPayable - grossTotal;
+
+  // Statutory Schedule H1 Drug Detection
+  const isScheduleH1 = (med) => {
+    if (!med) return false;
+    if (med.schedule === 'H1' || med.schedule === 'Schedule H1' || med.schedule === 'X') return true;
+    const h1Keywords = ['alprazolam', 'clonazepam', 'zolpidem', 'tramadol', 'diazepam', 'cefixime', 'azithromycin', 'ofloxacin', 'levofloxacin', 'meropenem', 'ceftriaxone', 'moxifloxacin', 'lorazepam', 'nitrazepam', 'chlordiazepoxide', 'codeine'];
+    const text = ((med.name || '') + ' ' + (med.generic || '')).toLowerCase();
+    return h1Keywords.some(kw => text.includes(kw));
+  };
+  const hasH1Items = items.some(it => isScheduleH1(it.medicine));
 
   // Medicine to inspect in bottom radar
   const inspectedMed = activeMedicine || (selectedRowIndex !== null && items[selectedRowIndex]?.medicine) || null;
@@ -540,8 +608,38 @@ export default function FastBillingTerminal({
               </button>
             ))}
           </div>
+
+          {/* Sales Return / Credit Note (F8) */}
+          {onOpenSalesReturn && (
+            <button
+              type="button"
+              onClick={onOpenSalesReturn}
+              className={`px-2 py-1 rounded font-mono font-bold uppercase text-[10px] transition border cursor-pointer flex items-center space-x-1 ${
+                theme === 'dark'
+                  ? 'border-rose-800 bg-rose-950/60 text-rose-300 hover:bg-rose-900/60'
+                  : 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 shadow-xs'
+              }`}
+              title="Sales Return & Credit Note Voucher (F8)"
+            >
+              <RotateCcw className="w-3 h-3 text-rose-600" />
+              <span>Return (F8)</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Statutory Schedule H1 Warning Banner */}
+      {hasH1Items && (
+        <div className="bg-amber-600 text-white px-3 py-1.5 text-xs font-mono font-bold flex items-center justify-between shadow-xs select-none">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-amber-200 shrink-0" />
+            <span>⚠️ STATUTORY WARNING: Bill contains SCHEDULE H1 / RESTRICTED DRUG(S). Doctor Reg No & Customer Contact mandatory for Form 35 Drug Register audit.</span>
+          </div>
+          <span className="text-[10px] bg-amber-900/70 px-2 py-0.5 rounded border border-amber-300 uppercase font-black">
+            Form 35 Regulated
+          </span>
+        </div>
+      )}
 
       {/* 2. Fast Dedicated Medicine Entry Bar */}
       <div className={`p-3 border-b ${
@@ -652,6 +750,30 @@ export default function FastBillingTerminal({
                         </div>
 
                         <div className="text-right flex items-center space-x-3 justify-end">
+                          {/* Inter-Branch Live Stock Indicator (Zero extra queries - in memory) */}
+                          <div className="text-right hidden sm:block font-mono text-[10px]">
+                            <div>
+                              <span className={isSelected ? 'text-sky-200' : 'text-slate-500'}>Shop 1: </span>
+                              <strong className={(med.stock_shop1 || 0) > 0 ? (isSelected ? 'text-white' : 'text-emerald-700 dark:text-emerald-400') : 'text-rose-500 font-bold'}>
+                                {med.stock_shop1 || 0}
+                              </strong>
+                              <span className="text-slate-300 dark:text-zinc-700 mx-1">|</span>
+                              <span className={isSelected ? 'text-sky-200' : 'text-slate-500'}>Polyclinic: </span>
+                              <strong className={(med.stock_shop2 || 0) > 0 ? (isSelected ? 'text-white' : 'text-purple-700 dark:text-purple-400') : 'text-rose-500 font-bold'}>
+                                {med.stock_shop2 || 0}
+                              </strong>
+                            </div>
+                            {stock <= 0 && ((stockKey === 'stock_shop1' ? (med.stock_shop2 || 0) : (med.stock_shop1 || 0)) > 0) && (
+                              <div className={`text-[9px] font-bold px-1 rounded border inline-block mt-0.5 ${
+                                isSelected 
+                                  ? 'bg-purple-900 text-purple-200 border-purple-400' 
+                                  : 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950 dark:text-purple-300'
+                              }`}>
+                                ↳ In Stock at {stockKey === 'stock_shop1' ? 'Polyclinic' : 'Beta Pharmacy'}
+                              </div>
+                            )}
+                          </div>
+
                           <span className={`font-mono text-xs px-2 py-0.5 rounded font-black ${
                             isSelected 
                               ? 'bg-sky-800 text-white' 
@@ -889,7 +1011,16 @@ export default function FastBillingTerminal({
                   <td className={`py-1.5 px-3 text-center font-bold border-r border-inherit ${
                     theme === 'dark' ? 'text-zinc-300' : 'text-slate-900'
                   }`}>
-                    {item ? item.batch.exp_date : ''}
+                    {item ? (
+                      <div>
+                        <span>{item.batch.exp_date}</span>
+                        {item.isShortExpiry && (
+                          <span className="block text-[8px] font-mono font-black text-amber-600 dark:text-amber-400 uppercase tracking-tighter">
+                            EXP &lt;60d
+                          </span>
+                        )}
+                      </div>
+                    ) : ''}
                   </td>
 
                   {/* MRP */}
@@ -906,27 +1037,59 @@ export default function FastBillingTerminal({
                     {item ? `${item.batch.per || 10}s` : ''}
                   </td>
 
-                  {/* Qty (Directly Editable) */}
+                  {/* Qty (Directly Editable with Loose Dispensing Pro-Rata Math) */}
                   <td className="py-1 px-2 text-center border-r border-inherit">
                     {item ? (
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.qty}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
-                        className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
-                          theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
-                        }`}
-                      />
+                      <div className="flex flex-col items-center">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.qty}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                          className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
+                            theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
+                          }`}
+                        />
+                        {/* Loose tablet calculation display */}
+                        {item.qty % (item.batch.per || 10) !== 0 && (
+                          <span className="text-[9px] font-mono font-bold text-sky-600 dark:text-sky-400 leading-none mt-0.5" title={`Pro-rata loose rate: ₹${(item.batch.mrp / (item.batch.per || 10)).toFixed(2)}/tab`}>
+                            ₹{(item.batch.mrp / (item.batch.per || 10)).toFixed(2)}/tab
+                          </span>
+                        )}
+                      </div>
                     ) : ''}
                   </td>
 
-                  {/* Amount */}
+                  {/* Amount with Short-Expiry Clearance Discount Tag */}
                   <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
                     theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
                   }`}>
-                    {item ? `₹${item.totalValue.toFixed(2)}` : ''}
+                    {item ? (
+                      <div>
+                        <div>₹{item.totalValue.toFixed(2)}</div>
+                        {item.isShortExpiry && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleClearanceDiscount(idx);
+                            }}
+                            className={`mt-0.5 px-1 py-0.2 rounded text-[8px] font-black uppercase tracking-wider block ml-auto border cursor-pointer ${
+                              item.hasClearanceDiscount
+                                ? 'bg-amber-500 text-white border-amber-600'
+                                : (theme === 'dark' ? 'bg-amber-950/60 text-amber-300 border-amber-700 hover:bg-amber-900/60' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100')
+                            }`}
+                            title="Toggle 10% Clearance Discount on Short Expiry Stock"
+                          >
+                            <span className="flex items-center space-x-0.5">
+                              <Tag className="w-2.5 h-2.5" />
+                              <span>{item.hasClearanceDiscount ? '-10% Applied' : '10% Clearance?'}</span>
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ) : ''}
                   </td>
 
                   {/* Action */}
@@ -1096,7 +1259,14 @@ export default function FastBillingTerminal({
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
               theme === 'dark' ? 'bg-zinc-800 text-purple-400 border-zinc-700' : 'bg-white text-purple-700 border-slate-300'
             }`}>F7</kbd>
-            <span>Reprint (Torn Bill)</span>
+            <span>Reprint</span>
+          </span>
+          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
+          <span className="flex items-center space-x-1">
+            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+              theme === 'dark' ? 'bg-zinc-800 text-rose-400 border-zinc-700' : 'bg-white text-rose-700 border-slate-300'
+            }`}>F8</kbd>
+            <span className="font-bold text-rose-600">Return</span>
           </span>
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">

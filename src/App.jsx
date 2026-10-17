@@ -23,6 +23,8 @@ import FirstTimeSetupWizardModal from './components/FirstTimeSetupWizardModal';
 import DatabaseImportModal from './components/DatabaseImportModal';
 import PrintableReceipt from './components/PrintableReceipt';
 import CustomerHistoryModal from './components/CustomerHistoryModal';
+import SalesReturnModal from './components/SalesReturnModal';
+import DistributorInvoiceImportModal from './components/DistributorInvoiceImportModal';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -346,6 +348,10 @@ export default function App() {
   const [isReprintMode, setIsReprintMode] = useState(false);
   const [recentBills, setRecentBills] = useState(getInitialRecentBills);
 
+  // Sales Return (F8) & Distributor Invoice Import Modals
+  const [isSalesReturnOpen, setIsSalesReturnOpen] = useState(false);
+  const [isInvoiceImportOpen, setIsInvoiceImportOpen] = useState(false);
+
   // Sync theme with HTML class for tailwind darkMode: 'class'
   useEffect(() => {
     if (theme === 'dark') {
@@ -530,6 +536,168 @@ export default function App() {
     });
   };
 
+  // Sales Return / Credit Note Handler: Restocks medicines to current branch and issues Credit Note
+  const handleConfirmSalesReturn = (returnData) => {
+    if (!returnData || !returnData.returnedItems || returnData.returnedItems.length === 0) return;
+
+    // 1. Restock returned quantities to shelf inventory
+    setMedicines(prev => {
+      const updated = [...prev];
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+
+      returnData.returnedItems.forEach(retItem => {
+        const idx = updated.findIndex(m => m.code === retItem.code || m.name.toLowerCase() === (retItem.name || '').toLowerCase());
+        if (idx !== -1) {
+          const med = { ...updated[idx] };
+          med[targetStockKey] = (med[targetStockKey] || 0) + (retItem.returnQty || 0);
+          updated[idx] = med;
+          const key = med.code || med.name.toLowerCase();
+          overrides[key] = med;
+        }
+      });
+
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
+
+      return updated;
+    });
+
+    // 2. Record Credit Note in recent bills memory & persistent credit note log
+    const creditNoteBill = {
+      billNo: returnData.creditNoteNo,
+      date: billDate,
+      time: currentTime,
+      patientName: returnData.originalBill?.patientName || 'CUSTOMER',
+      customerPhone: returnData.originalBill?.customerPhone || '',
+      doctorName: returnData.originalBill?.doctorName || 'GENERAL OTC',
+      paymentMode: returnData.action === 'credit_note' ? 'CREDIT NOTE' : 'CASH REFUND',
+      items: returnData.returnedItems.map(it => ({
+        code: it.code,
+        name: it.name,
+        batch: it.batch,
+        exp: it.exp,
+        qty: -it.returnQty,
+        mrp: it.mrp,
+        totalValue: -(it.unitPrice * it.returnQty)
+      })),
+      grossTotal: -returnData.refundAmount,
+      netPayable: -returnData.refundAmount,
+      store: activeBranch?.name || 'Beta Pharmacy',
+      isCreditNote: true,
+      originalBillNo: returnData.originalBill?.billNo,
+      returnReason: returnData.reason
+    };
+
+    setRecentBills(prev => {
+      const updated = [creditNoteBill, ...prev.slice(0, 24)];
+      try {
+        localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    try {
+      const cnHistory = JSON.parse(localStorage.getItem('beta_pharma_credit_notes') || '[]');
+      cnHistory.unshift(returnData);
+      localStorage.setItem('beta_pharma_credit_notes', JSON.stringify(cnHistory));
+    } catch (e) {}
+
+    alert(`✅ ${returnData.creditNoteNo} issued! ${returnData.returnedItems.length} item(s) restocked to ${activeBranch?.short || 'shelf'}. Refund/Credit Amount: ₹${returnData.refundAmount.toFixed(2)}`);
+  };
+
+  // Distributor Purchase Invoice Inward Handler: Updates shelf stock, adds batches, and logs payables
+  const handleInwardDistributorInvoice = (importedData) => {
+    if (!importedData || !importedData.items || importedData.items.length === 0) return;
+
+    // 1. Inward items into catalog
+    setMedicines(prev => {
+      const updated = [...prev];
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+
+      importedData.items.forEach(item => {
+        const idx = updated.findIndex(m => m.code === item.code || m.name.toLowerCase() === item.name.toLowerCase());
+        if (idx !== -1) {
+          const med = { ...updated[idx] };
+          med[targetStockKey] = (med[targetStockKey] || 0) + (item.qty || 0);
+          const batches = med.batches ? [...med.batches] : [];
+          const bIdx = batches.findIndex(b => b.batch_no === item.batch);
+          if (bIdx !== -1) {
+            batches[bIdx] = {
+              ...batches[bIdx],
+              exp_date: item.exp || batches[bIdx].exp_date,
+              mrp: item.mrp || batches[bIdx].mrp,
+              stock: (batches[bIdx].stock || 0) + item.qty
+            };
+          } else {
+            batches.unshift({
+              batch_no: item.batch || 'BN-' + Date.now().toString().slice(-4),
+              exp_date: item.exp || '12/28',
+              mrp: item.mrp || med.mrp,
+              per: item.per || med.per || 10,
+              stock: item.qty
+            });
+          }
+          med.batches = batches;
+          if (item.ptr) med.ptr = item.ptr;
+          if (item.mrp) med.mrp = item.mrp;
+          updated[idx] = med;
+          const key = med.code || med.name.toLowerCase();
+          overrides[key] = med;
+        } else {
+          // New Medicine
+          const newMedObj = {
+            code: item.code || 'M' + Math.floor(10000 + Math.random() * 90000),
+            name: item.name,
+            generic: item.generic || '',
+            mrp: item.mrp || 100,
+            ptr: item.ptr || 78,
+            per: item.per || 10,
+            rack: item.rack || 'GN',
+            tax_percent: item.gstPercent || 12,
+            stock_shop1: targetStockKey === 'stock_shop1' ? item.qty : 0,
+            stock_shop2: targetStockKey === 'stock_shop2' ? item.qty : 0,
+            batches: [{
+              batch_no: item.batch || 'BN001',
+              exp_date: item.exp || '12/28',
+              mrp: item.mrp || 100,
+              per: item.per || 10,
+              stock: item.qty
+            }]
+          };
+          updated.unshift(newMedObj);
+          overrides[newMedObj.code] = newMedObj;
+        }
+      });
+
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
+
+      return updated;
+    });
+
+    // 2. Record purchase bill in payables
+    try {
+      const payables = JSON.parse(localStorage.getItem('beta_pharma_purchase_bills') || '[]');
+      const newPayable = {
+        billNo: importedData.invoiceNo || `INV-${Date.now().toString().slice(-5)}`,
+        name: importedData.distributor || 'General Pharma Distributor',
+        date: importedData.invoiceDate || billDate,
+        amount: importedData.items.reduce((acc, it) => acc + ((it.ptr || it.mrp * 0.78) * it.qty), 0),
+        itemsCount: importedData.items.length,
+        status: 'UNPAID',
+        source: 'INVOICE_IMPORT'
+      };
+      payables.unshift(newPayable);
+      localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(payables));
+    } catch (e) {}
+
+    alert(`🎉 Purchase Invoice Inwarded! ${importedData.items.length} items successfully updated into live inventory.`);
+  };
+
   // Hold Bill
   const handleHoldBill = () => {
     if (items.length === 0) return;
@@ -639,6 +807,30 @@ export default function App() {
         localStorage.setItem('beta_pharma_customer_history', JSON.stringify(stored));
       } catch (e) {
         console.warn('Error saving customer history to localStorage', e);
+      }
+    }
+
+    // 4. Save to Customer Credit Ledger (Khata / Udhaar) if paymentMode === 'credit'
+    if (paymentMode === 'credit') {
+      try {
+        const dues = JSON.parse(localStorage.getItem('beta_pharma_due_bills') || '[]');
+        const dueRecord = {
+          id: `DUE-${Date.now()}`,
+          billNo,
+          date: billDate,
+          customerName: patientName || 'CUSTOMER',
+          customerPhone: customerPhone ? customerPhone.trim() : '',
+          doctorName: doctorName || 'GENERAL OTC',
+          amount: net,
+          balance: net,
+          dueDate: '30 days',
+          status: 'UNPAID',
+          store: activeBranch?.name || 'Beta Pharmacy'
+        };
+        dues.unshift(dueRecord);
+        localStorage.setItem('beta_pharma_due_bills', JSON.stringify(dues));
+      } catch (e) {
+        console.warn('Error recording customer due bill', e);
       }
     }
 
@@ -795,6 +987,7 @@ export default function App() {
           onOpenShiftModal={handleOpenShiftHandover}
           handoverNotice={handoverNotice}
           setHandoverNotice={setHandoverNotice}
+          onOpenSalesReturn={() => setIsSalesReturnOpen(true)}
         />
       )}
 
@@ -916,6 +1109,7 @@ export default function App() {
           availableBranches={AVAILABLE_BRANCHES}
           activeShift={activeShift}
           billDate={billDate}
+          onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
         />
       )}
 
@@ -999,6 +1193,26 @@ export default function App() {
         customerName={patientName}
         onSelectRepeatBill={handleRepeatBill}
         theme={theme}
+      />
+
+      {/* Sales Return & Credit Note Modal (F8) */}
+      <SalesReturnModal
+        isOpen={isSalesReturnOpen}
+        onClose={() => setIsSalesReturnOpen(false)}
+        recentBills={recentBills}
+        onConfirmReturn={handleConfirmSalesReturn}
+        theme={theme}
+        activeBranch={activeBranch}
+      />
+
+      {/* Distributor Purchase Invoice Excel/CSV Inward Import Modal */}
+      <DistributorInvoiceImportModal
+        isOpen={isInvoiceImportOpen}
+        onClose={() => setIsInvoiceImportOpen(false)}
+        onImportSuccess={handleInwardDistributorInvoice}
+        catalogMedicines={medicines}
+        theme={theme}
+        activeBranch={activeBranch}
       />
 
       {/* Off-screen Direct Print Target (Ensures 1-Click Print Bill directly outputs 1:1 ESC/P dot-matrix receipt without opening popup) */}
