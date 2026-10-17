@@ -19,6 +19,8 @@ import TaxMasterPage from './components/TaxMasterPage';
 import CompanyMasterPage from './components/CompanyMasterPage';
 import DoctorMasterPage from './components/DoctorMasterPage';
 import ShiftReconciliationModal from './components/ShiftReconciliationModal';
+import FirstTimeSetupWizardModal from './components/FirstTimeSetupWizardModal';
+import DatabaseImportModal from './components/DatabaseImportModal';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -163,6 +165,112 @@ export default function App() {
     try {
       localStorage.setItem('beta_pharma_branch_id', found.id);
     } catch (e) {}
+  };
+
+  // First-Time Setup & Onboarding Wizard State (Triggers on Day 1 on any new shop PC)
+  const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(() => {
+    try {
+      return !localStorage.getItem('beta_pharma_setup_completed');
+    } catch (e) {
+      return false;
+    }
+  });
+
+  // Standalone Database Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // Progressive Web App (PWA) 1-Click Desktop App Installation
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      setIsAppInstalled(true);
+    }
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredInstallPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setDeferredInstallPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleTriggerInstall = async () => {
+    if (deferredInstallPrompt) {
+      try {
+        deferredInstallPrompt.prompt();
+        const choiceResult = await deferredInstallPrompt.userChoice;
+        if (choiceResult.outcome === 'accepted') {
+          setIsAppInstalled(true);
+        }
+      } catch (e) {
+        console.warn('PWA install error', e);
+      }
+    } else {
+      alert("To install as a Windows Desktop App:\n1. Click the 'Install' icon (⤓) in the right side of your Chrome/Edge address bar.\n2. Or click Browser Menu (⋮) -> 'Save and share' -> 'Install Beta Pharmacy'.");
+    }
+  };
+
+  const handleCompleteSetup = ({ branch, counter, cashier, catalogType, importedMeds }) => {
+    try {
+      localStorage.setItem('beta_pharma_setup_completed', 'true');
+    } catch (e) {}
+
+    if (branch) {
+      handleSelectBranch(branch.id);
+    }
+
+    if (cashier) {
+      handleSelectActiveStaff(cashier);
+    }
+
+    if (importedMeds && importedMeds.length > 0) {
+      handleImportMedicines(importedMeds, 'replace');
+    }
+  };
+
+  const handleImportMedicines = (newRecords, mode = 'merge') => {
+    if (!newRecords || newRecords.length === 0) return;
+
+    setMedicines(prev => {
+      let updated;
+      if (mode === 'replace') {
+        updated = newRecords;
+      } else {
+        const existingCodes = new Set(prev.map(m => m.code));
+        const toAdd = [];
+        const overrides = {};
+
+        newRecords.forEach(rec => {
+          if (existingCodes.has(rec.code)) {
+            overrides[rec.code] = rec;
+          } else {
+            toAdd.push(rec);
+          }
+        });
+
+        const baseUpdated = prev.map(m => overrides[m.code] ? { ...m, ...overrides[m.code] } : m);
+        updated = [...toAdd, ...baseUpdated];
+      }
+
+      try {
+        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(updated.slice(0, 5000)));
+      } catch (e) {}
+
+      return updated;
+    });
   };
 
   // Staff Shift Session & Reconciliation State
@@ -585,6 +693,10 @@ export default function App() {
           activeBranch={activeBranch}
           onSelectBranch={handleSelectBranch}
           availableBranches={AVAILABLE_BRANCHES}
+          onOpenImportModal={() => setIsImportModalOpen(true)}
+          onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
+          onInstallApp={handleTriggerInstall}
+          isAppInstalled={isAppInstalled}
         />
       )}
 
@@ -774,6 +886,25 @@ export default function App() {
         theme={theme}
         staffList={staffList}
         onAddStaff={handleAddStaff}
+      />
+
+      {/* First-Time Guided Onboarding & Terminal Setup Wizard */}
+      <FirstTimeSetupWizardModal
+        isOpen={isSetupWizardOpen}
+        onClose={() => setIsSetupWizardOpen(false)}
+        theme={theme}
+        availableBranches={AVAILABLE_BRANCHES}
+        onCompleteSetup={handleCompleteSetup}
+        installPrompt={deferredInstallPrompt}
+        isAppInstalled={isAppInstalled}
+      />
+
+      {/* Standalone Database Migration / Legacy Import Modal */}
+      <DatabaseImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        theme={theme}
+        onImportMedicines={handleImportMedicines}
       />
     </div>
   );

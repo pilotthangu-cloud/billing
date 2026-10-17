@@ -20,7 +20,10 @@ import {
   Banknote,
   Clock,
   History,
-  Coins
+  Coins,
+  Download,
+  Database,
+  Upload
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -41,7 +44,11 @@ export default function TopNavigationMenu({
   onSelectActiveStaff,
   activeBranch,
   onSelectBranch,
-  availableBranches = []
+  availableBranches = [],
+  onOpenImportModal,
+  onOpenSetupWizard,
+  onInstallApp,
+  isAppInstalled = false
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -167,6 +174,21 @@ export default function TopNavigationMenu({
                   >
                     <span>Shelf Rack Locations & Shortages</span>
                     <span className="text-[10px] font-mono opacity-70">MAS009</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      if (onOpenImportModal) onOpenImportModal();
+                    }} 
+                    className={`w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold border-t ${
+                      isDark ? 'border-zinc-800 text-purple-300' : 'border-slate-200 text-purple-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <Database className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Import Legacy DB (.DBF / CSV)</span>
+                    </div>
+                    <span className="text-[10px] font-mono opacity-80">IMPORT</span>
                   </button>
                 </div>
               )}
@@ -326,6 +348,28 @@ export default function TopNavigationMenu({
                   >
                     <span>Day Begin & Cash Tally</span>
                   </button>
+                  <button 
+                    onClick={() => {
+                      setOpenDropdown(null);
+                      if (onOpenSetupWizard) onOpenSetupWizard();
+                    }} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between border-t border-slate-200/40"
+                  >
+                    <span>Terminal & Branch Setup</span>
+                    <span className="text-[10px] font-mono opacity-70">WIZARD</span>
+                  </button>
+                  {!isAppInstalled && onInstallApp && (
+                    <button 
+                      onClick={() => {
+                        setOpenDropdown(null);
+                        onInstallApp();
+                      }} 
+                      className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white font-bold text-sky-500 flex items-center justify-between"
+                    >
+                      <span>Install Windows Desktop App</span>
+                      <Download className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -446,6 +490,22 @@ export default function TopNavigationMenu({
               </>
             )}
           </button>
+
+          {/* 1-Click Install App Badge (Hidden if already standalone desktop app) */}
+          {!isAppInstalled && onInstallApp && (
+            <button
+              onClick={onInstallApp}
+              className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-black cursor-pointer transition uppercase ${
+                isDark 
+                  ? 'bg-sky-950 text-sky-300 border-sky-800 hover:bg-sky-900' 
+                  : 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200 shadow-xs'
+              }`}
+              title="Install Beta POS as native Windows Desktop App"
+            >
+              <Download className="w-3 h-3 text-sky-500" />
+              <span>Install App</span>
+            </button>
+          )}
 
           {/* Theme Toggle (Sun / Moon) */}
           <button
