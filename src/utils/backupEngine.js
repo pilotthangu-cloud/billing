@@ -36,7 +36,7 @@ export async function saveDailyBackupSnapshot(medicines, recentBills, activeBran
       medicinesCount: (medicines || []).length,
       billsCount: (recentBills || []).length,
       snapshot: {
-        medicines: (medicines || []).slice(0, 5000), // Core active inventory
+        medicines: medicines || [], // Full inventory — no truncation
         overrides,
         recentBills,
         staffList

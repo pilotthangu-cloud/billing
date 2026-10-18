@@ -170,7 +170,7 @@ export default function PurchaseEntryPage({
   // Invoice Header States (PURCHASE.DBF schema)
   const [supplierCode, setSupplierCode] = useState(() => (allSuppliers[0]?.code || 'S076'));
   const [invoiceNo, setInvoiceNo] = useState(''); // Starts empty so pharmacist writes distributor bill no!
-  const [billDate, setBillDate] = useState('16/10/2026'); // Editable date
+  const [billDate, setBillDate] = useState(new Date().toLocaleDateString('en-GB')); // Editable date, defaults to today
   const [isCash, setIsCash] = useState(false); // Cash or Credit
   const [cashDiscount, setCashDiscount] = useState(0);
 

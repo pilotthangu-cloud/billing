@@ -25,7 +25,7 @@ export default function DistributorInvoiceImportModal({
 }) {
   const isDark = theme === 'dark';
   const medCatalog = (catalogMedicines && catalogMedicines.length > 0) ? catalogMedicines : allMedicines;
-  const [distributorName, setDistributorName] = useState('THE CAN DRUG HOUSE');
+  const [distributorName, setDistributorName] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('INV-' + Math.floor(10000 + Math.random() * 90000));
   const [invoiceDate, setInvoiceDate] = useState(new Date().toLocaleDateString('en-GB'));
   const [rawText, setRawText] = useState('');

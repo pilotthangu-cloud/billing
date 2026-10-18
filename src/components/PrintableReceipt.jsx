@@ -74,12 +74,12 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
         {/* Sold to & Date */}
         <div className="flex justify-between text-[10px] leading-tight">
           <span>Sold to <strong className="uppercase">{patientName || '*'}</strong></span>
-          <span>Date:{date || '16/10/2026'}</span>
+          <span>Date:{date || new Date().toLocaleDateString('en-GB')}</span>
         </div>
 
         {/* Prescribed by & Bill No */}
         <div className="flex justify-between text-[10px] leading-tight mb-1">
-          <span>Pr by <strong className="uppercase">{doctorName || 'Dr.MADHUSUDHANAN T'}</strong></span>
+          <span>Pr by <strong className="uppercase">{doctorName || 'GENERAL OTC'}</strong></span>
           <span>Bill No.<strong>{billNo}</strong></span>
         </div>
 

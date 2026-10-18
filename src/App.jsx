@@ -427,7 +427,7 @@ export default function App() {
       const trulyAdded = safeForStorage.filter(m => m.isImported && !masterMap.has(String(m.code || '').trim().toUpperCase()));
 
       try {
-        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(trulyAdded.slice(0, 2000)));
+        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(trulyAdded));
       } catch (e) {}
 
       // Cache to IndexedDB for offline resilience
@@ -1036,7 +1036,7 @@ export default function App() {
     };
 
     setRecentBills(prev => {
-      const updated = [creditNoteBill, ...prev.slice(0, 24)];
+      const updated = [creditNoteBill, ...prev.slice(0, 499)];
       try {
         localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updated));
       } catch (e) {}
@@ -1281,9 +1281,9 @@ export default function App() {
       return updated;
     });
 
-    // 2. Persist recent bills for F7 recall / reprint
+    // 2. Persist recent bills for F7 recall / reprint (up to 500 per day — safe for localStorage)
     setRecentBills(prev => {
-      const updatedBills = [billPayload, ...prev.slice(0, 24)];
+      const updatedBills = [billPayload, ...prev.slice(0, 499)];
       try {
         localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updatedBills));
       } catch (e) {}

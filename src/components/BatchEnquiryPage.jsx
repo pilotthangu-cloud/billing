@@ -21,317 +21,8 @@ import {
 } from 'lucide-react';
 import supplierList from '../data/suppliers.json';
 
-// Seeded realistic distributor inward lots history (BATCH.DBF / INWARD.DBF)
-const SEEDED_INWARD_LOTS = [
-  {
-    inwardDate: '16/10/2026',
-    billNo: '020456',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'AUGMENTIN 625 DUO TAB',
-    salt: 'Amoxicillin 500mg + Clavulanic Acid 125mg',
-    company: 'GSK (GlaxoSmithKline)',
-    packSize: 10,
-    batchNo: 'AG8921',
-    expDate: '08/29',
-    billedPacks: 25,
-    freePacks: 2,
-    totalUnits: 270,
-    ptr: 142.50,
-    mrp: 204.00,
-    gstPercent: 12,
-    rack: 'A1',
-    stockStatus: 'In Stock',
-    unitsRemaining: 270
-  },
-  {
-    inwardDate: '15/10/2026',
-    billNo: '020451',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'PAN 40MG TAB',
-    salt: 'Pantoprazole 40mg',
-    company: 'Alkem Laboratories',
-    packSize: 15,
-    batchNo: 'PN4012',
-    expDate: '11/28',
-    billedPacks: 40,
-    freePacks: 4,
-    totalUnits: 660,
-    ptr: 95.20,
-    mrp: 155.00,
-    gstPercent: 12,
-    rack: 'B2',
-    stockStatus: 'In Stock',
-    unitsRemaining: 615
-  },
-  {
-    inwardDate: '14/10/2026',
-    billNo: 'TH-9021',
-    supplier: 'THALASSERY PHARMA AGENCIES',
-    supplierCode: 'T011',
-    supplierCity: 'THALASSERY',
-    productName: 'TELMA 40MG TAB',
-    salt: 'Telmisartan 40mg',
-    company: 'Glenmark Pharmaceuticals',
-    packSize: 15,
-    batchNo: 'TL8831',
-    expDate: '05/29',
-    billedPacks: 30,
-    freePacks: 3,
-    totalUnits: 495,
-    ptr: 110.00,
-    mrp: 168.00,
-    gstPercent: 12,
-    rack: 'C3',
-    stockStatus: 'In Stock',
-    unitsRemaining: 450
-  },
-  {
-    inwardDate: '12/10/2026',
-    billNo: 'MD-7712',
-    supplier: 'MALABAR DRUG DISTRIBUTORS',
-    supplierCode: 'M004',
-    supplierCity: 'CALICUT',
-    productName: 'GLYCOMET GP 2 TAB',
-    salt: 'Glimepiride 2mg + Metformin 500mg',
-    company: 'USV Ltd',
-    packSize: 15,
-    batchNo: 'GLP209',
-    expDate: '03/29',
-    billedPacks: 50,
-    freePacks: 5,
-    totalUnits: 825,
-    ptr: 82.50,
-    mrp: 135.00,
-    gstPercent: 12,
-    rack: 'D1',
-    stockStatus: 'In Stock',
-    unitsRemaining: 710
-  },
-  {
-    inwardDate: '10/10/2026',
-    billNo: 'SB-4401',
-    supplier: 'SABARI AGENCIES',
-    supplierCode: 'S076',
-    supplierCity: 'KANNUR',
-    productName: 'AZITHRAL 500 TAB',
-    salt: 'Azithromycin 500mg',
-    company: 'Alembic Pharmaceuticals',
-    packSize: 5,
-    batchNo: 'AZ5019',
-    expDate: '12/28',
-    billedPacks: 40,
-    freePacks: 4,
-    totalUnits: 220,
-    ptr: 78.00,
-    mrp: 119.50,
-    gstPercent: 12,
-    rack: 'E2',
-    stockStatus: 'In Stock',
-    unitsRemaining: 185
-  },
-  {
-    inwardDate: '08/10/2026',
-    billNo: '020399',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'CALPOL 650MG TABLET',
-    salt: 'Paracetamol 650mg',
-    company: 'GSK (GlaxoSmithKline)',
-    packSize: 15,
-    batchNo: 'CP8921',
-    expDate: '08/29',
-    billedPacks: 100,
-    freePacks: 10,
-    totalUnits: 1650,
-    ptr: 18.90,
-    mrp: 30.50,
-    gstPercent: 12,
-    rack: 'A1',
-    stockStatus: 'Fast Moving',
-    unitsRemaining: 1240
-  },
-  {
-    inwardDate: '05/10/2026',
-    billNo: 'CP-1190',
-    supplier: 'CAN DRUG LINES',
-    supplierCode: 'T011',
-    supplierCity: 'KANNUR',
-    productName: 'CIPLOX 500 TAB',
-    salt: 'Ciprofloxacin 500mg',
-    company: 'Cipla Ltd',
-    packSize: 10,
-    batchNo: 'CP5084',
-    expDate: '07/28',
-    billedPacks: 35,
-    freePacks: 3,
-    totalUnits: 380,
-    ptr: 29.40,
-    mrp: 46.20,
-    gstPercent: 12,
-    rack: 'B1',
-    stockStatus: 'In Stock',
-    unitsRemaining: 290
-  },
-  {
-    inwardDate: '01/10/2026',
-    billNo: 'MD-7650',
-    supplier: 'MALABAR DRUG DISTRIBUTORS',
-    supplierCode: 'M004',
-    supplierCity: 'CALICUT',
-    productName: 'THYRONORM 50MCG TAB',
-    salt: 'Thyroxine Sodium 50mcg',
-    company: 'Abbott Healthcare',
-    packSize: 120,
-    batchNo: 'TH5091',
-    expDate: '10/28',
-    billedPacks: 20,
-    freePacks: 1,
-    totalUnits: 2520,
-    ptr: 124.00,
-    mrp: 178.00,
-    gstPercent: 12,
-    rack: 'C1',
-    stockStatus: 'In Stock',
-    unitsRemaining: 1800
-  },
-  {
-    inwardDate: '28/09/2026',
-    billNo: '020288',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'ACILOC 150MG TAB',
-    salt: 'Ranitidine 150mg',
-    company: 'Cadila Pharmaceuticals',
-    packSize: 30,
-    batchNo: 'BN20481',
-    expDate: '02/28',
-    billedPacks: 50,
-    freePacks: 5,
-    totalUnits: 1650,
-    ptr: 23.86,
-    mrp: 38.00,
-    gstPercent: 12,
-    rack: 'C4',
-    stockStatus: 'In Stock',
-    unitsRemaining: 840
-  },
-  {
-    inwardDate: '24/09/2026',
-    billNo: 'SB-4310',
-    supplier: 'SABARI AGENCIES',
-    supplierCode: 'S076',
-    supplierCity: 'KANNUR',
-    productName: 'MONTEK LC TAB',
-    salt: 'Montelukast 10mg + Levocetirizine 5mg',
-    company: 'Sun Pharma',
-    packSize: 10,
-    batchNo: 'MNL302',
-    expDate: '04/28',
-    billedPacks: 30,
-    freePacks: 3,
-    totalUnits: 330,
-    ptr: 135.00,
-    mrp: 198.00,
-    gstPercent: 12,
-    rack: 'A3',
-    stockStatus: 'In Stock',
-    unitsRemaining: 190
-  },
-  {
-    inwardDate: '18/09/2026',
-    billNo: 'TH-8910',
-    supplier: 'THALASSERY PHARMA AGENCIES',
-    supplierCode: 'T011',
-    supplierCity: 'THALASSERY',
-    productName: 'DOLO 650 TAB',
-    salt: 'Paracetamol 650mg Fast Release',
-    company: 'Micro Labs Ltd',
-    packSize: 15,
-    batchNo: 'DL6510',
-    expDate: '09/29',
-    billedPacks: 80,
-    freePacks: 8,
-    totalUnits: 1320,
-    ptr: 19.50,
-    mrp: 31.00,
-    gstPercent: 12,
-    rack: 'A1',
-    stockStatus: 'Fast Moving',
-    unitsRemaining: 410
-  },
-  {
-    inwardDate: '10/09/2026',
-    billNo: 'MD-7512',
-    supplier: 'MALABAR DRUG DISTRIBUTORS',
-    supplierCode: 'M004',
-    supplierCity: 'CALICUT',
-    productName: 'SHELCAL 500 TAB',
-    salt: 'Calcium Carbonate 500mg + Vitamin D3',
-    company: 'Torrent Pharmaceuticals',
-    packSize: 15,
-    batchNo: 'SH5029',
-    expDate: '01/29',
-    billedPacks: 40,
-    freePacks: 4,
-    totalUnits: 660,
-    ptr: 75.00,
-    mrp: 128.50,
-    gstPercent: 12,
-    rack: 'D2',
-    stockStatus: 'In Stock',
-    unitsRemaining: 390
-  },
-  {
-    inwardDate: '25/08/2026',
-    billNo: '020114',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'AEROCORT ROTACAPS 30,S',
-    salt: 'Beclomethasone + Levosalbutamol',
-    company: 'Cipla Ltd',
-    packSize: 30,
-    batchNo: 'SA12378',
-    expDate: '12/27',
-    billedPacks: 15,
-    freePacks: 1,
-    totalUnits: 480,
-    ptr: 82.00,
-    mrp: 103.96,
-    gstPercent: 12,
-    rack: '50',
-    stockStatus: 'Near Expiry Alert',
-    unitsRemaining: 60
-  },
-  {
-    inwardDate: '15/08/2026',
-    billNo: '019950',
-    supplier: 'THE CAN DRUG HOUSE',
-    supplierCode: 'T010',
-    supplierCity: 'KANNUR',
-    productName: 'ALERID 10MG TAB',
-    salt: 'Cetirizine Hydrochloride 10mg',
-    company: 'Cipla Ltd',
-    packSize: 10,
-    batchNo: 'J4000061',
-    expDate: '06/27',
-    billedPacks: 60,
-    freePacks: 6,
-    totalUnits: 660,
-    ptr: 14.50,
-    mrp: 23.50,
-    gstPercent: 12,
-    rack: 'B2',
-    stockStatus: 'In Stock',
-    unitsRemaining: 210
-  }
-];
+
+
 
 // List of major pharmaceutical companies for the filter dropdown
 const PHARMA_COMPANIES = [
@@ -361,8 +52,11 @@ export default function BatchEnquiryPage({
 
   // Filters State
   const [timePeriodPreset, setTimePeriodPreset] = useState('all'); // 'all', 'today', '7days', '30days', 'current-month', '90days', 'custom'
-  const [fromDate, setFromDate] = useState('01/09/2026');
-  const [toDate, setToDate] = useState('16/10/2026');
+  const [fromDate, setFromDate] = useState(() => {
+    const d = new Date();
+    return `01/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  });
+  const [toDate, setToDate] = useState(() => new Date().toLocaleDateString('en-GB'));
   const [selectedCompany, setSelectedCompany] = useState('All Manufacturers');
   const [selectedSupplier, setSelectedSupplier] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -391,7 +85,7 @@ export default function BatchEnquiryPage({
         if (Array.isArray(parsed)) {
           purchaseLots = parsed.flatMap(p => {
             return (p.items || []).map(it => ({
-              inwardDate: p.date || p.billDate || '16/10/2026',
+              inwardDate: p.date || p.billDate || new Date().toLocaleDateString('en-GB'),
               billNo: p.billNo || 'PUR',
               supplier: p.supplier || p.supplierName || 'DISTRIBUTOR',
               supplierCode: p.supplierCode || 'S001',
@@ -417,19 +111,20 @@ export default function BatchEnquiryPage({
       }
     } catch (e) {}
 
-    return [...purchaseLots, ...SEEDED_INWARD_LOTS];
+    return purchaseLots;
   }, [medicines]);
 
-  // Filtered Inward Lots List
   const filteredLots = useMemo(() => {
-    const today = new Date(2026, 9, 16); // 16 Oct 2026 reference date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toLocaleDateString('en-GB');
 
     return allInwardLots.filter((lot) => {
       const lotDate = parseDateStr(lot.inwardDate);
 
       // 1. Time Period Filter
       if (timePeriodPreset === 'today') {
-        if (lot.inwardDate !== '16/10/2026') return false;
+        if (lot.inwardDate !== todayStr) return false;
       } else if (timePeriodPreset === '7days') {
         const diffDays = (today - lotDate) / (1000 * 60 * 60 * 24);
         if (diffDays < 0 || diffDays > 7) return false;
@@ -437,7 +132,7 @@ export default function BatchEnquiryPage({
         const diffDays = (today - lotDate) / (1000 * 60 * 60 * 24);
         if (diffDays < 0 || diffDays > 30) return false;
       } else if (timePeriodPreset === 'current-month') {
-        if (lotDate.getMonth() !== 9 || lotDate.getFullYear() !== 2026) return false;
+        if (lotDate.getMonth() !== today.getMonth() || lotDate.getFullYear() !== today.getFullYear()) return false;
       } else if (timePeriodPreset === '90days') {
         const diffDays = (today - lotDate) / (1000 * 60 * 60 * 24);
         if (diffDays < 0 || diffDays > 90) return false;
