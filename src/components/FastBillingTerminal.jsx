@@ -50,7 +50,7 @@ export default function FastBillingTerminal({
   onReprintLastBill,
   onOpenSalesReturn,
   activeShift,
-  staffList = ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'],
+  staffList = [],
   onSelectActiveStaff,
   onAddStaff,
   onOpenShiftModal,

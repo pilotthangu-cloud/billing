@@ -9,7 +9,7 @@
  */
 
 const DB_NAME = 'BetaPharmaDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance = null;
 
@@ -63,6 +63,12 @@ export function openPharmaDB() {
         const syncStore = db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
         syncStore.createIndex('status', 'status', { unique: false });
         syncStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+
+      // 6. 2+ Years Daily Snapshots Store (730+ Days Retention)
+      if (!db.objectStoreNames.contains('backups')) {
+        const backupsStore = db.createObjectStore('backups', { keyPath: 'date' });
+        backupsStore.createIndex('timestamp', 'timestamp', { unique: false });
       }
     };
 

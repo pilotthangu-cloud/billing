@@ -23,7 +23,7 @@ export default function ShiftReconciliationModal({
   onSaveShiftHandover,
   recentBills = [],
   theme,
-  staffList = ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'],
+  staffList = [],
   onAddStaff,
   targetIncomingStaff
 }) {
@@ -34,37 +34,55 @@ export default function ShiftReconciliationModal({
   const [step, setStep] = useState('cashier_count');
 
   // Staff Handover Selection
-  const [outgoingStaff, setOutgoingStaff] = useState(() => activeShift?.staffName || staffList[0] || 'Rahul C');
+  const [outgoingStaff, setOutgoingStaff] = useState(() => activeShift?.staffName || staffList[0] || 'Counter Staff');
   const [incomingStaff, setIncomingStaff] = useState(() => {
-    const current = activeShift?.staffName || staffList[0] || 'Rahul C';
+    const current = activeShift?.staffName || staffList[0] || 'Counter Staff';
     if (targetIncomingStaff && targetIncomingStaff !== current) return targetIncomingStaff;
-    return staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar';
+    return staffList.find(s => s !== current) || staffList[1] || '';
   });
 
   // Inline Quick Add Staff Sub-State
   const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [newStaffInput, setNewStaffInput] = useState('');
 
+  // Mandatory Shift Bill Range State
+  const [startBillNo, setStartBillNo] = useState('');
+  const [endBillNo, setEndBillNo] = useState('');
+
   // Handover Parameters
   const [handoverNotes, setHandoverNotes] = useState('');
   const [nextOpeningFloat, setNextOpeningFloat] = useState(2000);
   const [completedRecord, setCompletedRecord] = useState(null);
 
-  // Sync with activeShift and targetIncomingStaff when modal opens
+  // Sync with activeShift, targetIncomingStaff, and bill range when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep('cashier_count');
-      const current = activeShift?.staffName || staffList[0] || 'Rahul C';
+      const current = activeShift?.staffName || staffList[0] || 'Counter Staff';
       setOutgoingStaff(current);
       if (targetIncomingStaff && targetIncomingStaff !== current) {
         setIncomingStaff(targetIncomingStaff);
       } else {
-        setIncomingStaff(staffList.find(s => s !== current) || staffList[1] || 'Suresh Kumar');
+        setIncomingStaff(staffList.find(s => s !== current) || staffList[1] || '');
       }
       setCompletedRecord(null);
       setHandoverNotes('');
+
+      // Auto-detect starting and ending bill numbers from current shift's transactions
+      const shiftBills = recentBills.filter(b => !b.shiftId || b.shiftId === activeShift?.shiftId);
+      if (shiftBills.length > 0) {
+        // recentBills stores newest first: last element is earliest, first element is latest
+        const earliest = shiftBills[shiftBills.length - 1]?.billNo || '';
+        const latest = shiftBills[0]?.billNo || '';
+        setStartBillNo(earliest);
+        setEndBillNo(latest);
+      } else {
+        const nextNo = localStorage.getItem('beta_pharma_next_bill_no') || '000001';
+        setStartBillNo(nextNo);
+        setEndBillNo(nextNo);
+      }
     }
-  }, [isOpen, activeShift, staffList, targetIncomingStaff]);
+  }, [isOpen, activeShift, staffList, targetIncomingStaff, recentBills]);
 
   // Cashier physical denominations count
   const [denominations, setDenominations] = useState({
@@ -167,6 +185,15 @@ export default function ShiftReconciliationModal({
       return;
     }
 
+    if (!startBillNo.trim()) {
+      alert('Mandatory Requirement: Please enter the Starting Bill Number for this shift.');
+      return;
+    }
+    if (!endBillNo.trim()) {
+      alert('Mandatory Requirement: Please enter the Ending Bill Number for this shift.');
+      return;
+    }
+
     if (totalPhysicalCash <= 0) {
       if (!window.confirm('You have entered ₹0.00 physical cash. Are you sure your cash drawer is empty?')) {
         return;
@@ -180,6 +207,8 @@ export default function ShiftReconciliationModal({
       startTime: activeShift?.startTime || '08:00 AM',
       endTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date().toLocaleDateString('en-GB'),
+      startBillNo: startBillNo.trim(),
+      endBillNo: endBillNo.trim(),
       openingFloat: shiftSales.openingFloat,
       totalBills: shiftSales.billCount,
       cashSales: shiftSales.cashSales,
@@ -195,6 +224,15 @@ export default function ShiftReconciliationModal({
       nextStaffName: incomingStaff,
       nextOpeningFloat: parseFloat(nextOpeningFloat) || 2000
     };
+
+    // Save to persistent handover audit logs in localStorage
+    try {
+      const logs = JSON.parse(localStorage.getItem('beta_pharma_handover_logs') || '[]');
+      logs.unshift(record);
+      localStorage.setItem('beta_pharma_handover_logs', JSON.stringify(logs.slice(0, 500)));
+    } catch (err) {
+      console.error('Error saving to beta_pharma_handover_logs', err);
+    }
 
     setCompletedRecord(record);
 
@@ -346,6 +384,81 @@ export default function ShiftReconciliationModal({
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Mandatory Shift Bill Sequence & Sales Audit Range */}
+            <div className={`p-3.5 rounded-xl border space-y-2.5 ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase font-mono text-sky-600 flex items-center space-x-1.5">
+                  <Receipt className="w-4 h-4" />
+                  <span>Mandatory Bill Sequence & Sales Audit Range</span>
+                </span>
+                <span className="text-[11px] font-mono text-slate-500 font-bold">
+                  {shiftSales.billCount} Bill{shiftSales.billCount === 1 ? '' : 's'} in Shift
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className={`block text-[10px] font-mono font-bold uppercase mb-1 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    Starting Bill No *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={startBillNo}
+                    onChange={(e) => setStartBillNo(e.target.value)}
+                    placeholder="e.g. 000001"
+                    className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-mono font-black ${
+                      isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-mono font-bold uppercase mb-1 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    Ending Bill No *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={endBillNo}
+                    onChange={(e) => setEndBillNo(e.target.value)}
+                    placeholder="e.g. 000014"
+                    className={`w-full px-2.5 py-1.5 rounded-lg border text-xs font-mono font-black ${
+                      isDark ? 'bg-zinc-900 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-950'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Payment Mode Split Badges */}
+              <div className="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-xs">
+                <div className={`p-2 rounded-lg border ${
+                  isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-emerald-50/70 border-emerald-200'
+                }`}>
+                  <span className="text-[10px] text-slate-500 uppercase block font-bold">Cash Sales</span>
+                  <span className="font-black text-emerald-600">₹{shiftSales.cashSales.toFixed(2)}</span>
+                </div>
+                <div className={`p-2 rounded-lg border ${
+                  isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-indigo-50/70 border-indigo-200'
+                }`}>
+                  <span className="text-[10px] text-slate-500 uppercase block font-bold">UPI / QR Digital</span>
+                  <span className="font-black text-indigo-600">₹{shiftSales.upiSales.toFixed(2)}</span>
+                </div>
+                <div className={`p-2 rounded-lg border ${
+                  isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-amber-50/70 border-amber-200'
+                }`}>
+                  <span className="text-[10px] text-slate-500 uppercase block font-bold">Credit Khata</span>
+                  <span className="font-black text-amber-600">₹{shiftSales.creditSales.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -569,15 +682,15 @@ export default function ShiftReconciliationModal({
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 text-slate-500 font-bold">Opening Cash Float</td>
-                    <td className="py-2 px-3 font-bold text-right">
-                      ₹{shiftSales.openingFloat.toFixed(2)}
+                    <td className="py-2 px-3 text-slate-500 font-bold">Shift Bill Sequence Range</td>
+                    <td className="py-2 px-3 font-black text-right text-sky-600">
+                      {completedRecord?.startBillNo || startBillNo} ➔ {completedRecord?.endBillNo || endBillNo} ({shiftSales.billCount} Bills)
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 text-slate-500 font-bold">Total Sales Bills Ringed</td>
-                    <td className="py-2 px-3 font-bold text-right text-sky-600">
-                      {shiftSales.billCount} Bills
+                    <td className="py-2 px-3 text-slate-500 font-bold">Opening Cash Float</td>
+                    <td className="py-2 px-3 font-bold text-right">
+                      ₹{shiftSales.openingFloat.toFixed(2)}
                     </td>
                   </tr>
                   <tr>
@@ -590,6 +703,18 @@ export default function ShiftReconciliationModal({
                     <td className="py-2 px-3 text-slate-500 font-bold">UPI / QR Digital Sales (Non-Cash)</td>
                     <td className="py-2 px-3 font-bold text-right text-indigo-600">
                       ₹{shiftSales.upiSales.toFixed(2)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 text-slate-500 font-bold">Credit Khata Sales (Uncollected)</td>
+                    <td className="py-2 px-3 font-bold text-right text-amber-600">
+                      ₹{shiftSales.creditSales.toFixed(2)}
+                    </td>
+                  </tr>
+                  <tr className={isDark ? 'bg-zinc-950/80 font-bold' : 'bg-slate-50 font-bold'}>
+                    <td className="py-2 px-3 text-slate-400">Total Shift Turnover Ringed</td>
+                    <td className="py-2 px-3 font-bold text-right">
+                      ₹{shiftSales.grossTotal.toFixed(2)}
                     </td>
                   </tr>
                   <tr className={isDark ? 'bg-zinc-950 font-black' : 'bg-slate-100 font-black'}>

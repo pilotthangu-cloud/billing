@@ -96,3 +96,70 @@ export async function pushStockTransferToSupabase(transferData) {
     return { success: false, offline: true };
   }
 }
+
+/**
+ * Live Cloud Storage Metric Watchdog (Supabase 500 MB Free Tier)
+ */
+export async function getCloudStorageEstimate() {
+  const MAX_FREE_TIER_MB = 500;
+  const CATALOG_BASE_MB = 18.5; // Estimated footprint of 24k medicine master
+  
+  let billCount = 0;
+  let isConnected = true;
+
+  try {
+    const { count, error } = await supabase
+      .from('sales_bills')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      isConnected = false;
+      // Fallback to local stored bill count
+      const local = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
+      billCount = local.length;
+    } else {
+      billCount = count || 0;
+    }
+  } catch (e) {
+    isConnected = false;
+    const local = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
+    billCount = local.length;
+  }
+
+  const billsMB = (billCount * 0.85) / 1024;
+  const totalUsedMB = Number((CATALOG_BASE_MB + billsMB).toFixed(1));
+  const pctUsed = Number(((totalUsedMB / MAX_FREE_TIER_MB) * 100).toFixed(1));
+  const remainingMB = Math.max(0, MAX_FREE_TIER_MB - totalUsedMB);
+  const estRunwayYears = Number(((remainingMB / 0.16) / 365).toFixed(1));
+
+  return {
+    isConnected,
+    billCount,
+    usedMB: totalUsedMB,
+    maxMB: MAX_FREE_TIER_MB,
+    pctUsed,
+    remainingMB,
+    estRunwayYears,
+    isWarningThreshold: pctUsed >= 80.0
+  };
+}
+
+/**
+ * Purge historical bills older than cutoff date from Cloud Supabase
+ */
+export async function purgeOldCloudBills(cutoffIsoDate) {
+  try {
+    const { data, error } = await supabase
+      .from('sales_bills')
+      .delete()
+      .lt('created_at', cutoffIsoDate);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+

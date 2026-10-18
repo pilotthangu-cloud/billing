@@ -30,7 +30,8 @@ import {
   AlertOctagon,
   Activity,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  Bookmark
 } from 'lucide-react';
 import supplierList from '../data/suppliers.json';
 // Daily OCR Token Quota Limit: 245,000 Tokens/Day Hardcap (Strictly gpt-4o-mini)
@@ -220,9 +221,11 @@ export default function PurchaseEntryPage({
             purNo: p.purNo || `0${6927 + idx + 1}`,
             billNo: p.billNo || p.distBillNo || '0000',
             supplier: p.supplier || p.supplierName || p.name || 'DISTRIBUTOR',
+            supplierCode: p.supplierCode,
             date: p.date || p.billDate || '',
             amount: parseFloat(p.amount !== undefined ? p.amount : p.totalAmount) || 0,
-            itemsCount: p.itemsCount || (p.items ? p.items.length : 1)
+            itemsCount: p.itemsCount || (p.items ? p.items.length : 1),
+            items: p.items || []
           }));
         }
       }
@@ -231,6 +234,22 @@ export default function PurchaseEntryPage({
   });
   const [activeTab, setActiveTab] = useState('entry'); // 'entry' or 'vouchers'
   const [saveSuccessToast, setSaveSuccessToast] = useState('');
+
+  // Parked Drafts Subsystem (F12)
+  const [parkedPurchases, setParkedPurchases] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_parked_purchases');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [isParkedModalOpen, setIsParkedModalOpen] = useState(false);
+
+  // Previous Inward Vouchers Revision & Search State
+  const [searchVoucherQuery, setSearchVoucherQuery] = useState('');
+  const [editingVoucher, setEditingVoucher] = useState(null); // { purNo, billNo, originalItems }
+  const [expandedVoucherNo, setExpandedVoucherNo] = useState(null);
 
   const medSearchInputRef = useRef(null);
   const batchInputRef = useRef(null);
@@ -683,7 +702,123 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
   const totalFreePacks = purchaseItems.reduce((acc, it) => acc + it.freeQty, 0);
   const totalInwardUnits = purchaseItems.reduce((acc, it) => acc + it.totalUnits, 0);
 
-  // Post and save purchase voucher
+  // 1. Park Current Inward Draft (F12)
+  const handleParkPurchase = () => {
+    if (purchaseItems.length === 0) {
+      alert('Cannot park an empty purchase entry. Add at least one item first.');
+      return;
+    }
+    const draftId = `DRF-${Date.now().toString().slice(-6)}`;
+    const newDraft = {
+      id: draftId,
+      date: billDate,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      supplierCode,
+      supplierName: currentSupplier?.name || 'Selected Distributor',
+      invoiceNo: invoiceNo.trim() || 'DRAFT',
+      isCash,
+      items: [...purchaseItems],
+      itemsCount: purchaseItems.length,
+      grossTotal,
+      netPayable
+    };
+
+    const updated = [newDraft, ...parkedPurchases];
+    setParkedPurchases(updated);
+    try {
+      localStorage.setItem('beta_pharma_parked_purchases', JSON.stringify(updated));
+    } catch (e) {}
+
+    setInvoiceNo('');
+    setPurchaseItems([]);
+    setEditingVoucher(null);
+    setSaveSuccessToast(`Purchase draft #${newDraft.invoiceNo} parked in Hold Queue (F12)! Form cleared.`);
+    setTimeout(() => setSaveSuccessToast(''), 4500);
+  };
+
+  // 2. Resume Parked Draft
+  const handleResumeDraft = (draft) => {
+    if (purchaseItems.length > 0 && !confirm('Active purchase table has items. Discard and load parked draft #' + draft.invoiceNo + '?')) {
+      return;
+    }
+    setSupplierCode(draft.supplierCode);
+    setInvoiceNo(draft.invoiceNo === 'DRAFT' ? '' : draft.invoiceNo);
+    setBillDate(draft.date);
+    setIsCash(!!draft.isCash);
+    setPurchaseItems(draft.items || []);
+    setEditingVoucher(null);
+
+    const remaining = parkedPurchases.filter(p => p.id !== draft.id);
+    setParkedPurchases(remaining);
+    try {
+      localStorage.setItem('beta_pharma_parked_purchases', JSON.stringify(remaining));
+    } catch (e) {}
+
+    setIsParkedModalOpen(false);
+    setActiveTab('entry');
+    setSaveSuccessToast(`Resumed parked purchase draft #${draft.invoiceNo}!`);
+    setTimeout(() => setSaveSuccessToast(''), 4000);
+  };
+
+  // 3. Discard Parked Draft
+  const handleDeleteDraft = (draftId, e) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Are you sure you want to discard this parked draft?')) return;
+    const remaining = parkedPurchases.filter(p => p.id !== draftId);
+    setParkedPurchases(remaining);
+    try {
+      localStorage.setItem('beta_pharma_parked_purchases', JSON.stringify(remaining));
+    } catch (e) {}
+  };
+
+  // 4. Load Previous Inward Voucher for Revision & Appending Items
+  const handleEditVoucher = (voucher) => {
+    if (purchaseItems.length > 0 && !confirm(`Active entry table has items. Discard and load Voucher #${voucher.purNo} (${voucher.supplier}) for revision?`)) {
+      return;
+    }
+    setEditingVoucher({
+      purNo: voucher.purNo,
+      billNo: voucher.billNo,
+      supplier: voucher.supplier,
+      originalItems: [...(voucher.items || [])]
+    });
+    if (voucher.supplierCode) {
+      setSupplierCode(voucher.supplierCode);
+    }
+    setInvoiceNo(voucher.billNo || '');
+    setBillDate(voucher.date || billDate);
+    setPurchaseItems([...(voucher.items || [])]);
+    setActiveTab('entry');
+    setSaveSuccessToast(`Loaded Voucher #${voucher.purNo}! Add forgotten items or revise quantities below.`);
+    setTimeout(() => setSaveSuccessToast(''), 5000);
+  };
+
+  // 5. Cancel Revision Mode
+  const handleCancelRevision = () => {
+    if (confirm('Cancel revising Voucher #' + editingVoucher?.purNo + '? Any unsaved modifications will be discarded.')) {
+      setEditingVoucher(null);
+      setInvoiceNo('');
+      setPurchaseItems([]);
+    }
+  };
+
+  // F12 Keyboard Shortcut for Parking and Restoring Drafts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12' && activeTab === 'entry') {
+        e.preventDefault();
+        if (purchaseItems.length > 0) {
+          handleParkPurchase();
+        } else if (parkedPurchases.length > 0) {
+          setIsParkedModalOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [purchaseItems, parkedPurchases, supplierCode, invoiceNo, billDate, isCash, grossTotal, netPayable, activeTab]);
+
+  // Post or Update Purchase Invoice
   const handlePostPurchase = () => {
     if (!invoiceNo.trim()) {
       alert('Please enter Distributor Bill / Invoice Number');
@@ -694,6 +829,65 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       return;
     }
 
+    if (editingVoucher) {
+      // ATOMIC REVISION OF EXISTING VOUCHER
+      const updatedVoucher = {
+        purNo: editingVoucher.purNo,
+        billNo: invoiceNo.trim(),
+        supplier: currentSupplier.name,
+        supplierCode: currentSupplier.code,
+        supplierName: currentSupplier.name,
+        date: billDate,
+        billDate,
+        amount: netPayable,
+        totalAmount: netPayable,
+        balanceDue: netPayable,
+        paidAmount: 0,
+        creditDays: currentSupplier.creditDays || 21,
+        itemsCount: purchaseItems.length,
+        items: purchaseItems,
+        status: 'DUE',
+        revisedAt: new Date().toISOString()
+      };
+
+      setSavedVouchers(prev => {
+        const updated = prev.map(v => v.purNo === editingVoucher.purNo ? updatedVoucher : v);
+        try {
+          localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+
+      // Update live stock in App catalog for delta units only!
+      if (onUpdateCatalogStock) {
+        const deltaItems = purchaseItems.map(item => {
+          const orig = (editingVoucher.originalItems || []).find(o => 
+            (o.batch === item.batch || o.batch_no === item.batch) && 
+            (o.medCode === item.medCode || (o.name && o.name.toLowerCase() === item.name.toLowerCase()))
+          );
+          const origUnits = orig ? (orig.totalUnits || (orig.wQty || 0) * (orig.packSize || 10)) : 0;
+          const diffUnits = item.totalUnits - origUnits;
+          return {
+            ...item,
+            totalUnits: diffUnits
+          };
+        }).filter(it => it.totalUnits > 0);
+
+        if (deltaItems.length > 0) {
+          onUpdateCatalogStock(deltaItems);
+        }
+      }
+
+      setSaveSuccessToast(`✓ Purchase Voucher #${editingVoucher.purNo} revised and updated in stock!`);
+      setTimeout(() => setSaveSuccessToast(''), 4500);
+
+      setEditingVoucher(null);
+      setInvoiceNo('');
+      setPurchaseItems([]);
+      return;
+    }
+
+    // NEW VOUCHER POSTING
     const voucherNumber = '0' + (6927 + savedVouchers.length + 1);
 
     const newVoucher = {
@@ -703,7 +897,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       supplierCode: currentSupplier.code,
       supplierName: currentSupplier.name,
       date: billDate,
-      billDate: billDate,
+      billDate,
       amount: netPayable,
       totalAmount: netPayable,
       balanceDue: netPayable,
@@ -783,8 +977,8 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
-          {/* Upload / OCR Distributor Invoice Button (Open directly without password gate) */}
+        <div className="flex items-center space-x-2">
+          {/* Upload / OCR Distributor Invoice Button */}
           {activeTab === 'entry' && (
             <button
               onClick={() => {
@@ -796,20 +990,47 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
               title="Upload Distributor Invoice PDF or Photo to auto-extract details"
             >
               <Camera className="w-4 h-4 text-slate-950" />
-              <span>Upload Bill / Photo (Auto-Extract)</span>
+              <span className="hidden md:inline">Upload Bill</span>
             </button>
           )}
 
-          {/* History Tab Toggle */}
+          {/* Park Purchase Draft Button (F12) */}
+          {activeTab === 'entry' && (
+            <button
+              onClick={handleParkPurchase}
+              disabled={purchaseItems.length === 0}
+              className={`py-1.5 px-3 rounded-lg border text-xs font-bold font-mono transition flex items-center space-x-1 ${
+                purchaseItems.length > 0
+                  ? (isDark ? 'border-amber-600 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer' : 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shadow-xs')
+                  : (isDark ? 'border-zinc-800 text-zinc-600 cursor-not-allowed' : 'border-slate-200 text-slate-400 cursor-not-allowed')
+              }`}
+              title="Park in-progress purchase invoice into Drafts (F12)"
+            >
+              <span>Park (F12)</span>
+            </button>
+          )}
+
+          {/* Parked Drafts Counter Pill */}
+          {parkedPurchases.length > 0 && (
+            <button
+              onClick={() => setIsParkedModalOpen(true)}
+              className="py-1.5 px-2.5 rounded-lg font-black text-xs font-mono bg-amber-600 hover:bg-amber-500 text-white shadow transition cursor-pointer flex items-center space-x-1"
+              title="Click to view and resume parked purchase drafts"
+            >
+              <span>Drafts ({parkedPurchases.length})</span>
+            </button>
+          )}
+
+          {/* Previous Inwards Register Toggle */}
           <button
             onClick={() => setActiveTab(activeTab === 'entry' ? 'vouchers' : 'entry')}
-            className={`py-1.5 px-3 rounded-lg border text-xs font-bold font-mono transition ${
+            className={`py-1.5 px-3 rounded-lg border text-xs font-bold font-mono transition flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'vouchers'
-                ? 'bg-sky-600 text-white border-sky-600'
-                : (isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-slate-300 bg-white text-slate-800 shadow-sm')
+                ? 'bg-sky-600 text-white border-sky-600 shadow'
+                : (isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50 shadow-sm')
             }`}
           >
-            History ({savedVouchers.length} Vouchers)
+            <span>Previous Inwards ({savedVouchers.length})</span>
           </button>
 
           {/* Post Purchase Button */}
@@ -819,16 +1040,34 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
               disabled={purchaseItems.length === 0}
               className={`py-1.5 px-4 rounded-lg font-black text-xs flex items-center space-x-1.5 transition shadow ${
                 purchaseItems.length > 0
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
+                  ? (editingVoucher ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer')
                   : (isDark ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-slate-300 text-slate-500 cursor-not-allowed')
               }`}
             >
               <FileCheck className="w-4 h-4" />
-              <span>Post & Update Stock (F12)</span>
+              <span>{editingVoucher ? `Update Voucher #${editingVoucher.purNo}` : 'Post & Update Stock'}</span>
             </button>
           )}
         </div>
       </div>
+
+      {/* Revision Alert Banner */}
+      {editingVoucher && activeTab === 'entry' && (
+        <div className="px-4 py-2 bg-indigo-600 text-white text-xs font-mono font-bold flex items-center justify-between shadow-inner">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>
+              REVISING PREVIOUS VOUCHER #{editingVoucher.purNo} (Dist. Bill: {editingVoucher.billNo || '0000'} • {editingVoucher.supplier}) — Add forgotten items or revise quantities below. Only delta units will be added to stock.
+            </span>
+          </div>
+          <button
+            onClick={handleCancelRevision}
+            className="px-2.5 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-[11px] font-black cursor-pointer transition"
+          >
+            Cancel Revision
+          </button>
+        </div>
+      )}
 
       {activeTab === 'entry' ? (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -1413,50 +1652,171 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
           </div>
         </div>
       ) : (
-        /* Voucher History Tab */
-        <div className="flex-1 overflow-y-auto">
-          <table className={`w-full text-left border-collapse text-xs font-mono border ${
-            isDark ? 'border-zinc-800' : 'border-slate-300'
+        /* Previous Inwards Register & Revision Tab */
+        <div className="flex-1 overflow-hidden flex flex-col font-mono">
+          {/* Search Toolbar */}
+          <div className={`p-3 border-b flex items-center justify-between ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-slate-100 border-slate-300'
           }`}>
-            <thead>
-              <tr className={`border-b text-[11px] uppercase tracking-wider font-extrabold ${
-                isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-slate-200 border-slate-300 text-slate-950'
-              }`}>
-                <th className="py-2.5 px-3 w-12 text-center border-r border-inherit">Sr</th>
-                <th className="py-2.5 px-3 text-center border-r border-inherit w-24">Voucher No</th>
-                <th className="py-2.5 px-3 text-center border-r border-inherit w-28">Dist. Bill No</th>
-                <th className="py-2.5 px-3 border-r border-inherit">Distributor Agency</th>
-                <th className="py-2.5 px-3 text-center border-r border-inherit w-28">Inward Date</th>
-                <th className="py-2.5 px-3 text-center border-r border-inherit w-24">Items</th>
-                <th className="py-2.5 px-3 text-right border-r border-inherit w-32">Total Amount (₹)</th>
-                <th className="py-2.5 px-3 text-center w-24">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-inherit">
-              {savedVouchers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 font-bold font-sans">
-                    No purchase vouchers posted yet. Complete and post an inward voucher to view historical entries.
-                  </td>
+            <div className="flex items-center space-x-3">
+              <div className="relative w-80">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchVoucherQuery}
+                  onChange={(e) => setSearchVoucherQuery(e.target.value)}
+                  placeholder="Search by Bill #, Supplier, or Voucher #..."
+                  className={`w-full pl-9 pr-3 py-1.5 rounded-lg border text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                    isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
+                  }`}
+                />
+              </div>
+              <span className="text-xs text-slate-500 font-mono">
+                Showing {savedVouchers.filter(v => {
+                  const q = searchVoucherQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (v.billNo && v.billNo.toLowerCase().includes(q)) || 
+                         (v.supplier && v.supplier.toLowerCase().includes(q)) || 
+                         (v.purNo && v.purNo.toLowerCase().includes(q)) ||
+                         (v.date && v.date.includes(q));
+                }).length} of {savedVouchers.length} vouchers
+              </span>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('entry')}
+              className="py-1.5 px-3 rounded-lg font-bold text-xs bg-sky-600 hover:bg-sky-500 text-white flex items-center space-x-1.5 shadow transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Purchase Inward</span>
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="flex-1 overflow-y-auto">
+            <table className={`w-full text-left border-collapse text-xs font-mono border ${
+              isDark ? 'border-zinc-800' : 'border-slate-300'
+            }`}>
+              <thead>
+                <tr className={`border-b text-[11px] uppercase tracking-wider font-extrabold ${
+                  isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : 'bg-slate-200 border-slate-300 text-slate-950'
+                }`}>
+                  <th className="py-2.5 px-3 w-12 text-center border-r border-inherit">Sr</th>
+                  <th className="py-2.5 px-3 text-center border-r border-inherit w-24">Voucher No</th>
+                  <th className="py-2.5 px-3 text-center border-r border-inherit w-28">Dist. Bill No</th>
+                  <th className="py-2.5 px-3 border-r border-inherit">Distributor Agency</th>
+                  <th className="py-2.5 px-3 text-center border-r border-inherit w-28">Inward Date</th>
+                  <th className="py-2.5 px-3 text-center border-r border-inherit w-20">Items</th>
+                  <th className="py-2.5 px-3 text-right border-r border-inherit w-32">Total Amount (₹)</th>
+                  <th className="py-2.5 px-3 text-center border-r border-inherit w-24">Status</th>
+                  <th className="py-2.5 px-3 text-center w-36">Actions</th>
                 </tr>
-              ) : (
-                savedVouchers.map((v, idx) => (
-                  <tr key={idx} className="border-b">
-                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
-                    <td className="py-2 px-3 text-center font-black border-r border-inherit text-sky-600">#{v.purNo}</td>
-                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.billNo}</td>
-                    <td className="py-2 px-3 font-bold font-sans border-r border-inherit">{v.supplier}</td>
-                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.date}</td>
-                    <td className="py-2 px-3 text-center font-bold border-r border-inherit">{v.itemsCount}</td>
-                    <td className={`py-2 px-3 text-right font-black border-r border-inherit ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                      ₹{v.amount.toFixed(2)}
+              </thead>
+              <tbody className="divide-y divide-inherit">
+                {savedVouchers.filter(v => {
+                  const q = searchVoucherQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (v.billNo && v.billNo.toLowerCase().includes(q)) || 
+                         (v.supplier && v.supplier.toLowerCase().includes(q)) || 
+                         (v.purNo && v.purNo.toLowerCase().includes(q)) ||
+                         (v.date && v.date.includes(q));
+                }).length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-500 font-bold font-sans">
+                      No matching purchase vouchers found.
                     </td>
-                    <td className="py-2 px-3 text-center font-bold text-emerald-600">POSTED</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  savedVouchers.filter(v => {
+                    const q = searchVoucherQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    return (v.billNo && v.billNo.toLowerCase().includes(q)) || 
+                           (v.supplier && v.supplier.toLowerCase().includes(q)) || 
+                           (v.purNo && v.purNo.toLowerCase().includes(q)) ||
+                           (v.date && v.date.includes(q));
+                  }).map((v, idx) => (
+                    <React.Fragment key={idx}>
+                      <tr className={`border-b transition ${isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-slate-50'}`}>
+                        <td className="py-2.5 px-3 text-center font-bold border-r border-inherit">{idx + 1}</td>
+                        <td className="py-2.5 px-3 text-center font-black border-r border-inherit text-sky-600">#{v.purNo}</td>
+                        <td className="py-2.5 px-3 text-center font-bold border-r border-inherit">{v.billNo}</td>
+                        <td className="py-2.5 px-3 font-bold font-sans border-r border-inherit">{v.supplier}</td>
+                        <td className="py-2.5 px-3 text-center font-bold border-r border-inherit">{v.date}</td>
+                        <td className="py-2.5 px-3 text-center font-bold border-r border-inherit">{v.itemsCount || (v.items ? v.items.length : 1)}</td>
+                        <td className={`py-2.5 px-3 text-right font-black border-r border-inherit ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                          ₹{(v.amount || 0).toFixed(2)}
+                        </td>
+                        <td className="py-2.5 px-3 text-center font-bold text-emerald-600 border-r border-inherit">
+                          {v.revisedAt ? 'REVISED' : 'POSTED'}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <div className="flex items-center justify-center space-x-1.5">
+                            <button
+                              onClick={() => handleEditVoucher(v)}
+                              className="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow transition cursor-pointer"
+                              title="Load this voucher into editor to add items or revise quantities"
+                            >
+                              Edit / Append
+                            </button>
+                            <button
+                              onClick={() => setExpandedVoucherNo(expandedVoucherNo === v.purNo ? null : v.purNo)}
+                              className={`p-1 rounded border transition cursor-pointer ${
+                                isDark ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-300' : 'border-slate-300 hover:bg-slate-200 text-slate-700'
+                              }`}
+                              title="Toggle line items breakdown"
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedVoucherNo === v.purNo ? 'rotate-180' : ''}`} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Expandable Line Items Table */}
+                      {expandedVoucherNo === v.purNo && (
+                        <tr className={isDark ? 'bg-zinc-950/70' : 'bg-slate-100/70'}>
+                          <td colSpan={9} className="p-3 border-b border-inherit">
+                            <div className="space-y-1.5">
+                              <div className="text-[11px] font-black uppercase text-slate-400">
+                                Voucher #{v.purNo} Line Items ({v.items?.length || 0} Products inwarded)
+                              </div>
+                              <table className={`w-full text-xs font-mono border ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-slate-300 bg-white'}`}>
+                                <thead>
+                                  <tr className={`border-b text-[10px] uppercase font-bold ${isDark ? 'bg-zinc-950 text-zinc-300' : 'bg-slate-200 text-slate-800'}`}>
+                                    <th className="py-1 px-2 text-left">Medicine Name</th>
+                                    <th className="py-1 px-2 text-center">Batch No</th>
+                                    <th className="py-1 px-2 text-center">Exp</th>
+                                    <th className="py-1 px-2 text-right">Billed Qty</th>
+                                    <th className="py-1 px-2 text-right">Free</th>
+                                    <th className="py-1 px-2 text-right">PTR (₹)</th>
+                                    <th className="py-1 px-2 text-right">MRP (₹)</th>
+                                    <th className="py-1 px-2 text-right">Line Total (₹)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(v.items || []).map((it, itemIdx) => (
+                                    <tr key={itemIdx} className="border-b border-inherit">
+                                      <td className="py-1 px-2 font-bold">{it.name}</td>
+                                      <td className="py-1 px-2 text-center font-bold text-sky-600">{it.batch}</td>
+                                      <td className="py-1 px-2 text-center font-bold">{it.exp}</td>
+                                      <td className="py-1 px-2 text-right">{it.wQty}</td>
+                                      <td className="py-1 px-2 text-right text-emerald-600">+{it.freeQty || 0}</td>
+                                      <td className="py-1 px-2 text-right">₹{(it.rate || it.ptr || 0).toFixed(2)}</td>
+                                      <td className="py-1 px-2 text-right">₹{(it.mrp || 0).toFixed(2)}</td>
+                                      <td className="py-1 px-2 text-right font-black">₹{(it.total || 0).toFixed(2)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       {/* OCR Document Inward & Manual Review Modal */}
@@ -2069,6 +2429,120 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Parked Purchase Drafts Modal (F12 Hold Queue) */}
+      {isParkedModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-xs font-sans">
+          <div className={`max-w-2xl w-full rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] ${
+            isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900'
+          }`}>
+            <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black shadow-sm">
+                  <Bookmark className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black uppercase tracking-wide">
+                    Parked Purchase Inwards (Hold Queue / F12)
+                  </h4>
+                  <p className={`text-[11px] font-mono ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                    {parkedPurchases.length} drafted inward invoice{parkedPurchases.length === 1 ? '' : 's'} on hold
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsParkedModalOpen(false)}
+                className={`p-1.5 rounded-lg transition ${
+                  isDark ? 'hover:bg-zinc-800 text-zinc-400 hover:text-white' : 'hover:bg-slate-200 text-slate-600 hover:text-slate-950'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-3 flex-1">
+              {parkedPurchases.length === 0 ? (
+                <div className={`p-8 text-center rounded-xl border border-dashed font-mono text-xs ${
+                  isDark ? 'border-zinc-800 text-zinc-500' : 'border-slate-300 text-slate-500'
+                }`}>
+                  No purchase drafts currently parked in hold queue.
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Press <strong className="text-amber-500 font-bold">F12</strong> while entering an invoice to park it here and free up the screen.
+                  </p>
+                </div>
+              ) : (
+                parkedPurchases.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className={`p-4 rounded-xl border transition flex items-center justify-between ${
+                      isDark 
+                        ? 'bg-zinc-950 border-zinc-800 hover:border-amber-600/50' 
+                        : 'bg-slate-50 border-slate-200 hover:border-amber-400 shadow-sm'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/40 text-[10px] font-mono font-bold">
+                          {draft.id}
+                        </span>
+                        <span className="font-bold text-xs uppercase text-slate-800 dark:text-zinc-200">
+                          {draft.supplierName}
+                        </span>
+                        <span className="text-[11px] font-mono text-slate-500">
+                          Bill #{draft.invoiceNo}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-500">
+                        <span>Date: {draft.date} {draft.time && `• ${draft.time}`}</span>
+                        <span>•</span>
+                        <span className="text-sky-600 font-bold">{draft.itemsCount || draft.items?.length || 0} Line Items</span>
+                        <span>•</span>
+                        <span className="text-emerald-600 font-bold">Net: ₹{(draft.netPayable || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleResumeDraft(draft)}
+                        className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-mono text-xs font-bold transition flex items-center space-x-1 cursor-pointer shadow-sm"
+                      >
+                        <span>Resume</span>
+                        <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteDraft(draft.id, e)}
+                        className={`p-1.5 rounded-lg border transition ${
+                          isDark ? 'border-zinc-800 hover:bg-rose-950/40 text-zinc-400 hover:text-rose-400' : 'border-slate-300 hover:bg-rose-50 text-slate-500 hover:text-rose-600'
+                        }`}
+                        title="Discard Draft"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className={`px-5 py-3 border-t flex items-center justify-between ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-200'
+            }`}>
+              <span className={`text-[11px] font-mono ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                Tip: Press F12 anytime to quickly park or open the hold queue.
+              </span>
+              <button
+                onClick={() => setIsParkedModalOpen(false)}
+                className={`px-4 py-1.5 rounded-lg border text-xs font-bold font-mono transition ${
+                  isDark ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'
+                }`}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -192,7 +192,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
     ? new Map(customMaster.map(m => [cleanMedicineName(m.name), m]))
     : masterByName;
 
-  return records.map((rawRec, idx) => {
+  const normalizedList = records.map((rawRec, idx) => {
     // 1. Normalize all field keys to uppercase trimmed strings
     const r = {};
     for (const [k, v] of Object.entries(rawRec)) {
@@ -267,16 +267,38 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
     const gstPercent = parseFloat(r.GST || r.TAX || r.VAT || r.PUR_TAX || r.SAL_TPS || master?.tax_percent || 12) || 12;
     const hsn = String(r.HSN || r.HSNCODE || r.HSN_CODE || master?.hsn || '3004').trim();
 
-    // 11. Batches (keep realistic batches from master catalog)
-    const batches = master?.batches && master.batches.length > 0 
-      ? master.batches 
-      : [{
-          batch_no: r.BATCH ? String(r.BATCH).trim() : `B${code.slice(-4)}`,
-          exp_date: r.EXPIRY ? String(r.EXPIRY).trim() : '12/27',
-          mrp: Number(mrp.toFixed(2)),
-          per: per,
-          supplier: 'THE CAN DRUG HOUSE'
-        }];
+    // 11. Batches (keep realistic batches from imported DBF or master catalog)
+    let batches = [];
+    if (Array.isArray(r.BATCHES) && r.BATCHES.length > 0) {
+      batches = r.BATCHES.map(b => ({
+        batch_no: String(b.batch_no || b.batch || `B${code.slice(-4)}`).trim(),
+        exp_date: String(b.exp_date || b.exp || '12/28').trim(),
+        mrp: parseFloat(b.mrp) || Number(mrp.toFixed(2)),
+        per: per,
+        qty: parseInt(b.qty || b.stock || 0, 10) || 0,
+        supplier: b.supplier || 'THE CAN DRUG HOUSE'
+      }));
+    } else if (r.BATCH) {
+      batches = [{
+        batch_no: String(r.BATCH).trim(),
+        exp_date: r.EXPIRY ? String(r.EXPIRY).trim() : '12/27',
+        mrp: Number(mrp.toFixed(2)),
+        per: per,
+        qty: stock,
+        supplier: r.SUPPLIER || 'THE CAN DRUG HOUSE'
+      }];
+    } else if (master?.batches && master.batches.length > 0) {
+      batches = master.batches;
+    } else {
+      batches = [{
+        batch_no: `B${code.slice(-4)}`,
+        exp_date: '12/27',
+        mrp: Number(mrp.toFixed(2)),
+        per: per,
+        qty: stock,
+        supplier: 'THE CAN DRUG HOUSE'
+      }];
+    }
 
     return {
       code,
@@ -299,6 +321,27 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
       isImported: true
     };
   });
+
+  // Group duplicate medicine codes: sum live stock and merge batches
+  const groupedMap = new Map();
+  for (const item of normalizedList) {
+    if (!groupedMap.has(item.code)) {
+      groupedMap.set(item.code, item);
+    } else {
+      const existing = groupedMap.get(item.code);
+      existing.stock = (existing.stock || 0) + (item.stock || 0);
+      existing.stock_shop1 = existing.stock;
+      const existingBatchNos = new Set((existing.batches || []).map(b => b.batch_no));
+      for (const b of (item.batches || [])) {
+        if (!existingBatchNos.has(b.batch_no)) {
+          existing.batches.push(b);
+          existingBatchNos.add(b.batch_no);
+        }
+      }
+    }
+  }
+
+  return Array.from(groupedMap.values());
 }
 
 /**

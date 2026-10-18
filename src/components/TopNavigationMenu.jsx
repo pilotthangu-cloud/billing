@@ -27,7 +27,12 @@ import {
   User,
   Search,
   Layers,
-  Zap
+  Zap,
+  Printer,
+  HelpCircle,
+  Cloud,
+  HardDrive,
+  X
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -58,10 +63,17 @@ export default function TopNavigationMenu({
   density = 'compact',
   onToggleDensity,
   syncStatus,
-  onTriggerSync
+  onTriggerSync,
+  isInstantPrint = true,
+  onToggleInstantPrint,
+  onLockTerminal,
+  onOpenCloudStorageModal,
+  onOpenBackupModal,
+  cloudMetrics
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [isPrinterGuideOpen, setIsPrinterGuideOpen] = useState(false);
 
   const toggleDropdown = (menu) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -81,17 +93,34 @@ export default function TopNavigationMenu({
       {/* Level 1: Pharmacy Title & Menu Bar */}
       <div className="px-3 py-1.5 flex items-center justify-between border-b border-inherit">
         <div className="flex items-center space-x-4">
-          {/* Pharmacy Identity - Locked to Onboarding Selection (No accidental switching) */}
+          {/* Pharmacy Identity - Locked to Machine Configuration */}
           <div className="flex items-center space-x-2">
             <span className="font-black text-sm tracking-wider text-sky-600 font-mono">
               {activeBranch?.name?.toUpperCase() || 'BETA PHARMACY'}
             </span>
-            <div className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border text-[11px] font-mono font-bold select-none ${
-              isDark ? 'bg-zinc-950 border-zinc-700 text-zinc-300' : 'bg-white border-slate-300 text-slate-800 shadow-xs'
-            }`} title="Physical Branch Locked to Machine Configuration">
-              <Building2 className="w-3 h-3 text-sky-500" />
+            <button
+              onClick={() => {
+                if (authenticatedRole !== 'MANAGER') {
+                  if (onOpenPasswordModal) {
+                    onOpenPasswordModal('Switch Branch Machine Identity', 'Enter Admin PIN (1536) to switch physical shop configuration.');
+                  }
+                  return;
+                }
+                const otherBranch = availableBranches.find(b => b.id !== activeBranch?.id);
+                if (otherBranch && onSelectBranch) {
+                  if (window.confirm(`Switch active machine counter to ${otherBranch.name}?`)) {
+                    onSelectBranch(otherBranch.id);
+                  }
+                }
+              }}
+              className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border text-[11px] font-mono font-bold transition cursor-pointer ${
+                isDark ? 'bg-zinc-950 border-zinc-700 text-zinc-300 hover:border-zinc-500' : 'bg-white border-slate-300 text-slate-800 shadow-xs hover:border-slate-400'
+              }`} 
+              title="Physical Branch Locked to Machine Configuration • Click with Admin PIN to Switch"
+            >
+              <Lock className="w-3 h-3 text-amber-500" />
               <span>{activeBranch?.location ? `${activeBranch.location} • Counter 01` : 'Main Counter 01'}</span>
-            </div>
+            </button>
           </div>
 
           <span className="text-slate-400">|</span>
@@ -103,7 +132,7 @@ export default function TopNavigationMenu({
               <button
                 onClick={() => toggleDropdown('masters')}
                 className={`px-2.5 py-1 rounded flex items-center space-x-1 ${
-                  ['product-master', 'supplier-master', 'company-master', 'tax-master', 'doctor-master'].includes(activePage) || openDropdown === 'masters'
+                  ['product-master', 'supplier-master', 'company-master', 'tax-master'].includes(activePage) || openDropdown === 'masters'
                     ? (isDark ? 'bg-zinc-800 text-sky-400 font-bold' : 'bg-white text-sky-800 font-bold shadow-sm') 
                     : (isDark ? 'hover:bg-zinc-800' : 'hover:bg-slate-200')
                 }`}
@@ -159,13 +188,6 @@ export default function TopNavigationMenu({
                     <span className={`text-[10px] font-mono px-1 rounded ${
                       isDark ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-emerald-100 text-emerald-950 border border-emerald-300'
                     }`}>GST/HSN</span>
-                  </button>
-                  <button 
-                    onClick={() => navigateTo('doctor-master')} 
-                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
-                  >
-                    <span>Doctor & Hospital Master [MAS007]</span>
-                    <span className="text-[10px] font-mono opacity-70">1.3k</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('shortages')} 
@@ -396,20 +418,20 @@ export default function TopNavigationMenu({
 
         {/* Right: Cashier Shift Handover, Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
         <div className="flex items-center space-x-2 font-mono text-[11px]">
-          {/* Active Cashier Shift & Handover Button */}
+          {/* Active Cashier Shift, Handover & Lock Terminal */}
           <div className="flex items-center space-x-1">
             <div className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-bold ${
               isDark
                 ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
                 : 'bg-white border-slate-300 text-slate-800 shadow-xs'
             }`}>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className={`w-2 h-2 rounded-full ${activeShift ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
               <span className="text-slate-500 text-[10px]">CASHIER:</span>
               <select
-                value={activeShift?.staffName || (staffList[0] || 'Rahul C')}
+                value={activeShift?.staffName || staffList[0] || 'Counter Staff'}
                 onChange={(e) => {
                   const selected = e.target.value;
-                  if (selected !== (activeShift?.staffName || 'Rahul C')) {
+                  if (selected !== (activeShift?.staffName || 'Counter Staff')) {
                     if (onOpenShiftModal) {
                       onOpenShiftModal(selected);
                     }
@@ -425,6 +447,11 @@ export default function TopNavigationMenu({
                     {s}
                   </option>
                 ))}
+                {staffList.length === 0 && !activeShift?.staffName && (
+                  <option value="Counter Staff" className={isDark ? 'bg-zinc-900 text-white' : 'bg-white text-slate-950'}>
+                    Counter Staff
+                  </option>
+                )}
               </select>
             </div>
 
@@ -435,10 +462,26 @@ export default function TopNavigationMenu({
                   ? 'bg-sky-950 text-sky-300 border-sky-800 hover:bg-sky-900' 
                   : 'bg-sky-100 text-sky-900 border-sky-300 hover:bg-sky-200'
               }`}
-              title="Click to perform cash drawer audit and shift handover"
+              title="Click to perform cash drawer audit and shift handover (F10)"
             >
               Handover
             </button>
+
+            {/* Quick Lock Terminal Button (Ctrl+L) */}
+            {onLockTerminal && (
+              <button
+                onClick={onLockTerminal}
+                className={`p-1 rounded border transition cursor-pointer flex items-center space-x-1 text-xs font-bold ${
+                  isDark 
+                    ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-amber-400' 
+                    : 'border-slate-300 bg-white hover:bg-slate-100 text-amber-700 shadow-xs'
+                }`}
+                title="Lock Terminal & Cash Register (Ctrl+L)"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span className="hidden xl:inline text-[10px]">Lock</span>
+              </button>
+            )}
           </div>
 
           {/* Universal Command Palette Spotlight Trigger (Ctrl+K) */}
@@ -530,6 +573,37 @@ export default function TopNavigationMenu({
             )}
           </button>
 
+          {/* Live Cloud Storage Quota Watchdog Meter */}
+          {onOpenCloudStorageModal && (
+            <button
+              onClick={onOpenCloudStorageModal}
+              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
+                cloudMetrics?.isWarningThreshold
+                  ? 'bg-rose-500/10 border-rose-500/40 text-rose-600 animate-pulse'
+                  : (isDark ? 'bg-zinc-800 border-zinc-700 text-sky-400 hover:bg-zinc-700' : 'bg-white border-slate-300 text-sky-700 hover:bg-slate-100 shadow-xs')
+              }`}
+              title="Cloud Storage Health & Quota Watchdog (500 MB Free Tier) • Click to inspect or purge old archive"
+            >
+              <Cloud className="w-3 h-3 text-sky-500 shrink-0" />
+              <span>{cloudMetrics?.usedMB || 18.5}/{cloudMetrics?.maxMB || 500}M</span>
+            </button>
+          )}
+
+          {/* 2+ Years Local Disk Backup Hub Button */}
+          {onOpenBackupModal && (
+            <button
+              onClick={onOpenBackupModal}
+              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
+                isDark ? 'bg-zinc-800 border-zinc-700 text-emerald-400 hover:bg-zinc-700' : 'bg-white border-slate-300 text-emerald-700 hover:bg-slate-100 shadow-xs'
+              }`}
+              title="2+ Years Local Disk Backup Hub (730+ Days Local Hard Drive Retention)"
+            >
+              <HardDrive className="w-3 h-3 text-emerald-500 shrink-0" />
+              <span className="hidden xl:inline">Backup:</span>
+              <span>730d</span>
+            </button>
+          )}
+
           {/* 1-Click Install App Badge (Hidden if already standalone desktop app) */}
           {!isAppInstalled && onInstallApp && (
             <button
@@ -558,6 +632,32 @@ export default function TopNavigationMenu({
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
+
+          {/* TVS MSP 250 Star 1-Click Print Toggle & Setup Guide */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={onToggleInstantPrint}
+              className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-bold transition cursor-pointer ${
+                isInstantPrint
+                  ? (isDark ? 'bg-emerald-950 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-900 border-emerald-400 shadow-xs')
+                  : (isDark ? 'bg-zinc-800 text-zinc-400 border-zinc-700' : 'bg-slate-200 text-slate-700 border-slate-300')
+              }`}
+              title="Toggle between 1-Click Instant Print (Clipper DOS speed) and Preview Modal"
+            >
+              <Printer className="w-3 h-3 text-emerald-500" />
+              <span>TVS 250: {isInstantPrint ? 'INSTANT' : 'PREVIEW'}</span>
+            </button>
+
+            <button
+              onClick={() => setIsPrinterGuideOpen(true)}
+              className={`p-1 rounded border text-[10px] transition cursor-pointer ${
+                isDark ? 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white' : 'bg-white text-slate-600 border-slate-300 hover:text-black shadow-xs'
+              }`}
+              title="TVS MSP 250 Star Hardware & Windows Driver Setup Guide (Continuous Tractor Stationery)"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-sky-500" />
+            </button>
+          </div>
 
           {/* Admin Session Status & 1-Click Lock / Unlock */}
           {authenticatedRole === 'MANAGER' ? (
@@ -758,6 +858,87 @@ export default function TopNavigationMenu({
           <span>Alt+B: POS</span>
         </div>
       </div>
+
+      {/* TVS MSP 250 Star Hardware & Driver Setup Modal */}
+      {isPrinterGuideOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 font-sans select-text">
+          <div className={`w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${
+            isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-slate-300 text-slate-900'
+          }`}>
+            <div className={`px-5 py-4 border-b flex items-center justify-between ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
+                  <Printer className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm uppercase">TVS MSP 250 Star • Tractor Feed Setup</h3>
+                  <p className="text-xs text-slate-500 font-mono">Continuous 80-Column Fanfold Hardware Protocol</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsPrinterGuideOpen(false)}
+                className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-slate-200 text-slate-500'}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-mono leading-relaxed overflow-y-auto max-h-[75vh]">
+              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 space-y-1">
+                <div className="font-bold font-sans">✓ Continuous Stationery Dimensions Applied:</div>
+                <div>App is hardcoded to <strong>210mm wide x 140mm height (8.5&quot; x 5.5&quot;)</strong>. It will stop immediately at the half-fold tear perforation without rolling an 11-inch A4 page.</div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-bold text-sm font-sans text-sky-600 dark:text-sky-400">
+                  Step 1: Windows Printer Driver Settings (One-Time)
+                </div>
+                <ol className="list-decimal list-inside space-y-1.5 pl-1 text-slate-700 dark:text-zinc-300">
+                  <li>Open <strong>Windows Settings</strong> &rarr; <strong>Bluetooth & devices</strong> &rarr; <strong>Printers & scanners</strong>.</li>
+                  <li>Click on <strong>TVS MSP 250 Star</strong> &rarr; <strong>Printing preferences</strong>.</li>
+                  <li>Click <strong>Advanced</strong> or <strong>Page Setup</strong>.</li>
+                  <li>Set Paper Size to: <strong>User Defined / Fanfold 8.5 x 5.5 in</strong> (Width: 210mm / 8.5in, Height: 140mm / 5.5in).</li>
+                  <li>Click <strong>Apply</strong> and <strong>OK</strong>.</li>
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-bold text-sm font-sans text-sky-600 dark:text-sky-400">
+                  Step 2: Chrome / Browser Print Dialog Settings
+                </div>
+                <ol className="list-decimal list-inside space-y-1.5 pl-1 text-slate-700 dark:text-zinc-300">
+                  <li>In print preview, click <strong>More settings</strong>.</li>
+                  <li>Set Margins to: <strong>None</strong>.</li>
+                  <li>Check <strong>Background graphics</strong>.</li>
+                  <li>Ensure Destination is set to <strong>TVS MSP 250 Star</strong>.</li>
+                </ol>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-bold text-sm font-sans text-emerald-600 dark:text-emerald-400">
+                  Step 3: Instant 1-Click Print (Clipper POS Speed)
+                </div>
+                <p className="text-slate-700 dark:text-zinc-300">
+                  When <strong>TVS 250: INSTANT</strong> is toggled ON in the top menu, pressing <strong>Print Bill (*+)</strong> or <strong>F5</strong> in sales billing will automatically print directly without displaying the in-app preview modal!
+                </p>
+              </div>
+            </div>
+
+            <div className={`px-5 py-3 border-t flex justify-end ${
+              isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-200'
+            }`}>
+              <button
+                onClick={() => setIsPrinterGuideOpen(false)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition shadow cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

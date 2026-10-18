@@ -102,7 +102,7 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
         </div>
 
         {/* Items List */}
-        <div className="min-h-[120px] space-y-1 py-1">
+        <div className="min-h-0 print:min-h-0 space-y-0.5 py-0.5">
           {items.map((it, idx) => {
             const medName = (it.medicine?.name || it.name || 'MEDICINE').toUpperCase();
             const isSched = it.medicine?.schedule === 'H' || it.medicine?.schedule === 'H1' || it.schedule === 'H' || it.schedule === 'H1';
@@ -115,7 +115,7 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
             const lineTotal = typeof it.totalValue === 'number' ? it.totalValue : ((it.rate || it.mrp || 10) * it.qty);
 
             return (
-              <div key={idx} className="grid grid-cols-12 text-[10px] items-center">
+              <div key={idx} className="grid grid-cols-12 text-[10px] print:text-[9.5px] items-center">
                 <span className="col-span-1 text-center font-bold">{idx + 1}</span>
                 <span className="col-span-4 font-bold truncate">
                   {medName} {isSched && <span className="font-black text-rose-600">*</span>}
@@ -139,26 +139,25 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
         </div>
 
         {/* Total Value Line */}
-        <div className="flex justify-end font-mono font-bold text-xs py-1">
+        <div className="flex justify-end font-mono font-bold text-xs py-0.5">
           <span className="mr-4 text-slate-500">NET PAYABLE:</span>
           <span className="font-black text-sm">₹{netPayable.toFixed(2)}</span>
         </div>
 
         {/* Legal Footer & Signatures (Exact Match from Physical Receipt Photo) */}
-        <div className="flex justify-between items-start text-[9px] font-mono leading-tight pt-2 border-t border-dashed border-slate-300">
-          <div className="space-y-0.5">
-            <div>We undertake to refund any excess</div>
-            <div>collected by oversight. E &.O.E.</div>
-            <div className="pt-1">Sale return will be entertained only within 7 days of bill date.</div>
+        <div className="flex justify-between items-start text-[8.5px] font-mono leading-tight pt-1.5 border-t border-dashed border-slate-400 mt-1">
+          <div className="space-y-0.5 text-slate-600">
+            <div>We undertake to refund any excess collected by oversight. E &.O.E.</div>
+            <div>Sale return will be entertained only within 7 days of bill date.</div>
           </div>
           <div className="text-right">
-            <div className="h-6"></div>
-            <div className="border-t border-slate-400 pt-0.5 font-bold">Signature - Pharmacist</div>
+            <div className="h-4"></div>
+            <div className="border-t border-slate-400 pt-0.5 font-bold text-slate-800">Signature - Pharmacist</div>
           </div>
         </div>
 
         {/* Bottom Slogan */}
-        <div className="flex justify-between font-mono text-[9px] text-slate-500 mt-2 select-none">
+        <div className="flex justify-between font-mono text-[8.5px] text-slate-500 mt-1 select-none">
           <span>{time || '19:23'}</span>
           <span className="font-bold">** GET WELL SOON **</span>
         </div>

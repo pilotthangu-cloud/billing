@@ -57,22 +57,61 @@ export default function DatabaseImportModal({
         const { records: stockRecs } = parseDbfBuffer(sBuf);
 
         const stockMap = new Map();
+        const batchesMap = new Map();
+
         stockRecs.forEach(sr => {
           const code = String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase();
-          const qty = parseInt(sr.STOCK || sr.QTY || 0, 10) || 0;
-          if (code) stockMap.set(code, qty);
+          const batchQty = parseInt(sr.STOCK || sr.QTY || sr.BALANCE || sr.CL_STOCK || 0, 10) || 0;
+          if (!code) return;
+
+          // CRITICAL: ACCUMULATE multi-batch stock (e.g. 20 + 25 + 5 = 50, not overwriting with 5!)
+          stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
+
+          const batchNo = String(sr.BATCH || sr.BATCH_NO || sr.BAT_NO || 'BN001').trim();
+          const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '12/28').trim();
+          const mrp = parseFloat(sr.MRP || sr.RATE || sr.PRICE || 0) || 0;
+          const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PRATE || 0) || 0;
+          const supplier = String(sr.SUPPLIER || sr.DIST || 'Direct Inward').trim();
+
+          const list = batchesMap.get(code) || [];
+          list.push({
+            batch_no: batchNo,
+            exp_date: expDate,
+            mrp: mrp > 0 ? mrp : undefined,
+            ptr: ptr > 0 ? ptr : undefined,
+            qty: batchQty,
+            stock: batchQty,
+            supplier: supplier
+          });
+          batchesMap.set(code, list);
         });
 
         if (records.length > 0) {
           records = records.map(r => {
             const code = String(r.IT_CODE || r.CODE || '').trim().toUpperCase();
             if (stockMap.has(code)) {
-              return { ...r, STOCK: stockMap.get(code) };
+              return { 
+                ...r, 
+                STOCK: stockMap.get(code),
+                BATCHES: batchesMap.get(code)
+              };
             }
             return r;
           });
         } else {
-          records = stockRecs;
+          // If only STK*.DBF was uploaded, synthesize grouped items per unique IT_CODE
+          const grouped = [];
+          for (const [code, totalStock] of stockMap.entries()) {
+            const batches = batchesMap.get(code) || [];
+            const first = stockRecs.find(sr => String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase() === code) || {};
+            grouped.push({
+              ...first,
+              IT_CODE: code,
+              STOCK: totalStock,
+              BATCHES: batches
+            });
+          }
+          records = grouped;
         }
       }
 

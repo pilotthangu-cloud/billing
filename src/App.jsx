@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TopNavigationMenu from './components/TopNavigationMenu';
 import FastBillingTerminal from './components/FastBillingTerminal';
 import ProductCatalogPage from './components/ProductCatalogPage';
@@ -18,7 +18,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import BatchEnquiryPage from './components/BatchEnquiryPage';
 import TaxMasterPage from './components/TaxMasterPage';
 import CompanyMasterPage from './components/CompanyMasterPage';
-import DoctorMasterPage from './components/DoctorMasterPage';
 import ShiftReconciliationModal from './components/ShiftReconciliationModal';
 import FirstTimeSetupWizardModal from './components/FirstTimeSetupWizardModal';
 import DatabaseImportModal from './components/DatabaseImportModal';
@@ -27,10 +26,14 @@ import CustomerHistoryModal from './components/CustomerHistoryModal';
 import SalesReturnModal from './components/SalesReturnModal';
 import DistributorInvoiceImportModal from './components/DistributorInvoiceImportModal';
 import CommandPaletteModal from './components/CommandPaletteModal';
+import TerminalLockScreen from './components/TerminalLockScreen';
+import CloudStoragePurgeModal from './components/CloudStoragePurgeModal';
+import BackupManagerModal from './components/BackupManagerModal';
 import { syncEngine } from './utils/syncEngine';
 import { idbCacheMedicines, idbClearMedicines } from './utils/indexedDb';
 import { autoRepairCorruptedMedicines } from './utils/dbfReader';
-import { pushSalesBillToSupabase } from './utils/supabaseClient';
+import { pushSalesBillToSupabase, getCloudStorageEstimate } from './utils/supabaseClient';
+import { saveDailyBackupSnapshot } from './utils/backupEngine';
 
 import initialMedicines from './data/medicines.json';
 
@@ -180,7 +183,7 @@ function getInitialBranch() {
   return AVAILABLE_BRANCHES[0];
 }
 
-// Persistent storage loader for staff roster
+// Persistent storage loader for staff roster (Starts clean with zero dummy employees)
 function getInitialStaffList() {
   try {
     const saved = localStorage.getItem('beta_pharma_staff_list');
@@ -189,23 +192,16 @@ function getInitialStaffList() {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  return ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K', 'Pooja Nair'];
+  return [];
 }
 
-// Persistent storage loader for active cashier shift session
+// Persistent storage loader for active cashier shift session (Requires operator login)
 function getInitialActiveShift() {
   try {
     const saved = localStorage.getItem('beta_pharma_active_shift');
     if (saved) return JSON.parse(saved);
   } catch (e) {}
-  return {
-    shiftId: 'SHIFT-001',
-    staffName: 'Rahul C',
-    counter: 'Counter 01',
-    startTime: '08:00 AM',
-    startTimestamp: Date.now() - 4 * 60 * 60 * 1000,
-    openingFloat: 2000
-  };
+  return null;
 }
 
 export default function App() {
@@ -255,6 +251,14 @@ export default function App() {
   const [activeBranch, setActiveBranch] = useState(getInitialBranch);
 
   const handleSelectBranch = (branchId) => {
+    if (authenticatedRole !== 'MANAGER') {
+      setPasswordModalInfo({
+        title: 'Switch Branch Machine Identity',
+        description: 'Enter Admin PIN (1536) to change physical shop configuration for this counter.'
+      });
+      setIsPasswordModalOpen(true);
+      return;
+    }
     const found = AVAILABLE_BRANCHES.find(b => b.id === branchId);
     if (!found) return;
     setActiveBranch(found);
@@ -494,6 +498,65 @@ export default function App() {
     }
   };
 
+  // Terminal Lock & Shift Sign-In Gate (Zero-Trust Counter Protection)
+  const [isTerminalLocked, setIsTerminalLocked] = useState(() => {
+    try {
+      const unlocked = localStorage.getItem('beta_pharma_terminal_unlocked');
+      const activeShiftSaved = localStorage.getItem('beta_pharma_active_shift');
+      return unlocked !== 'true' || !activeShiftSaved;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const handleUnlockTerminal = (shiftPayload, role = 'CASHIER') => {
+    setActiveShift(shiftPayload);
+    setIsTerminalLocked(false);
+    setAuthenticatedRole(role);
+    try {
+      localStorage.setItem('beta_pharma_active_shift', JSON.stringify(shiftPayload));
+      localStorage.setItem('beta_pharma_terminal_unlocked', 'true');
+    } catch (e) {}
+  };
+
+  const handleLockTerminal = () => {
+    setIsTerminalLocked(true);
+    try {
+      localStorage.removeItem('beta_pharma_terminal_unlocked');
+    } catch (e) {}
+  };
+
+  // Live Cloud Storage Metric Watchdog (Supabase 500 MB Free Tier)
+  const [cloudMetrics, setCloudMetrics] = useState({ usedMB: 18.5, maxMB: 500, pctUsed: 3.7, estRunwayYears: 8.0, isWarningThreshold: false });
+  const [isCloudPurgeModalOpen, setIsCloudPurgeModalOpen] = useState(false);
+
+  const refreshCloudMetrics = () => {
+    getCloudStorageEstimate().then(m => {
+      if (m) setCloudMetrics(m);
+    }).catch(() => {});
+  };
+
+  // 2+ Years Local Disk Backup Hub (730+ Days Hard Drive Retention)
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+
+  const handleRestoreBackupData = ({ restoredMeds, restoredBills, restoredOverrides }) => {
+    if (restoredMeds && restoredMeds.length > 0) {
+      setMedicines(restoredMeds);
+      idbCacheMedicines(restoredMeds).catch(() => {});
+    }
+    if (restoredBills && restoredBills.length > 0) {
+      setRecentBills(restoredBills);
+      try {
+        localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(restoredBills));
+      } catch (e) {}
+    }
+    if (restoredOverrides) {
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(restoredOverrides));
+      } catch (e) {}
+    }
+  };
+
   // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
   const [medicines, setMedicines] = useState(getInitialMedicines);
   const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
@@ -536,6 +599,42 @@ export default function App() {
   const [completedBillData, setCompletedBillData] = useState(null);
   const [isReprintMode, setIsReprintMode] = useState(false);
   const [recentBills, setRecentBills] = useState(getInitialRecentBills);
+
+  // Instant 1-Click Print setting (Default: true for TVS MSP 250 Star Clipper POS speed)
+  const [isInstantPrint, setIsInstantPrint] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_instant_print');
+      return saved !== null ? saved === 'true' : true;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const handleToggleInstantPrint = () => {
+    setIsInstantPrint(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('beta_pharma_instant_print', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const pendingInstantPrintRef = useRef(false);
+
+  // Deterministic 1-click print: triggers window.print once the exact bill is committed to DOM
+  useEffect(() => {
+    if (pendingInstantPrintRef.current && completedBillData) {
+      pendingInstantPrintRef.current = false;
+      // Micro-task delay to ensure CSS continuous media print styles are applied
+      setTimeout(() => {
+        window.print();
+        if (!isReprintMode) {
+          handleNewBill();
+        }
+      }, 50);
+    }
+  }, [completedBillData, isReprintMode]);
 
   // Sales Return (F8) & Distributor Invoice Import Modals
   const [isSalesReturnOpen, setIsSalesReturnOpen] = useState(false);
@@ -609,6 +708,17 @@ export default function App() {
     };
   }, [authenticatedRole]);
 
+  // Zero-Trust Security Enforcement: Never allow protected pages without MANAGER role
+  useEffect(() => {
+    if (PROTECTED_PAGES[activePage] && authenticatedRole !== 'MANAGER') {
+      const pageToProtect = activePage;
+      setActivePage('billing');
+      setPendingPage(pageToProtect);
+      setPasswordModalInfo(PROTECTED_PAGES[pageToProtect]);
+      setIsPasswordModalOpen(true);
+    }
+  }, [activePage, authenticatedRole]);
+
   const handlePasswordSuccess = (role) => {
     setAuthenticatedRole(role);
     if (pendingPage) {
@@ -646,7 +756,11 @@ export default function App() {
     }
     setCompletedBillData(recentBills[0]);
     setIsReprintMode(true);
-    setIsReceiptOpen(true);
+    if (isInstantPrint) {
+      pendingInstantPrintRef.current = true;
+    } else {
+      setIsReceiptOpen(true);
+    }
   };
 
   // Initialize IndexedDB with medicines catalog on startup (offline-first storage)
@@ -673,6 +787,11 @@ export default function App() {
         e.preventDefault();
         handleReprintLastBill();
       }
+      // Ctrl+L / Cmd+L locks the counter terminal
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
+        e.preventDefault();
+        handleLockTerminal();
+      }
       // F12 holds bill if on billing page
       if (e.key === 'F12' && activePage === 'billing') {
         e.preventDefault();
@@ -686,6 +805,20 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePage, items, heldBills, recentBills]);
+
+  // Live Cloud Metrics Polling (500 MB Free Tier Watchdog)
+  useEffect(() => {
+    refreshCloudMetrics();
+    const interval = setInterval(refreshCloudMetrics, 60000);
+    return () => clearInterval(interval);
+  }, [recentBills.length]);
+
+  // Automated 2+ Years Daily Backup Snapshot Engine (Local Hard Drive)
+  useEffect(() => {
+    if (medicines && medicines.length > 0 && activeShift) {
+      saveDailyBackupSnapshot(medicines, recentBills, activeBranch, activeShift);
+    }
+  }, [activeShift, recentBills.length]);
 
   // Add new medicine to master catalog with localStorage persistence
   const handleAddNewMedicine = (newMed) => {
@@ -751,6 +884,101 @@ export default function App() {
       } catch (e) {}
       return updated;
     });
+  };
+
+  // Delete individual batch from catalog and re-sum stock
+  const handleDeleteBatch = (medCodeOrName, batchNo) => {
+    if (!confirm(`Are you sure you want to delete batch "${batchNo}"?`)) return;
+
+    setMedicines(prev => {
+      const updated = [...prev];
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+
+      const idx = updated.findIndex(m => m.code === medCodeOrName || m.name.toLowerCase() === String(medCodeOrName).toLowerCase());
+      if (idx !== -1) {
+        const med = { ...updated[idx] };
+        const oldBatches = med.batches || [];
+        const targetBatch = oldBatches.find(b => b.batch_no === batchNo);
+        const batchQty = targetBatch ? (targetBatch.qty !== undefined ? targetBatch.qty : (targetBatch.stock !== undefined ? targetBatch.stock : 0)) : 0;
+        
+        med.batches = oldBatches.filter(b => b.batch_no !== batchNo);
+        med[targetStockKey] = Math.max(0, (med[targetStockKey] || 0) - batchQty);
+        med.stock = med[targetStockKey];
+        
+        updated[idx] = med;
+        const key = med.code || med.name.toLowerCase();
+        overrides[key] = med;
+      }
+
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  // Bulk purge historical dead batches (0 stock or expired > 180 days ago)
+  const handlePurgeDeadBatches = () => {
+    if (!confirm("Are you sure you want to purge dead batches? This will permanently clean zero-stock batches and historical batches expired over 180 days ago.")) return;
+
+    const parseDays = (expStr) => {
+      if (!expStr) return 999;
+      try {
+        const parts = expStr.trim().split(/[\/-]/);
+        let month = 1, year = 2026;
+        if (parts.length === 2) {
+          month = parseInt(parts[0], 10);
+          let yr = parseInt(parts[1], 10);
+          year = yr < 100 ? 2000 + yr : yr;
+        } else if (parts.length === 3) {
+          month = parseInt(parts[1], 10);
+          let yr = parseInt(parts[2], 10);
+          year = yr < 100 ? 2000 + yr : yr;
+        }
+        const expDate = new Date(year, month, 0);
+        return Math.round((expDate - new Date()) / (1000 * 60 * 60 * 24));
+      } catch (e) {
+        return 180;
+      }
+    };
+
+    let totalPurged = 0;
+    setMedicines(prev => {
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+
+      const updated = prev.map(med => {
+        if (!med.batches || med.batches.length === 0) return med;
+        const keptBatches = med.batches.filter(b => {
+          const bStock = b.qty !== undefined ? b.qty : (b.stock !== undefined ? b.stock : 0);
+          const days = parseDays(b.exp_date);
+          const isDead = (bStock <= 0) || (days < -180);
+          if (isDead) totalPurged++;
+          return !isDead;
+        });
+
+        if (keptBatches.length !== med.batches.length) {
+          const newMed = {
+            ...med,
+            batches: keptBatches,
+            [targetStockKey]: keptBatches.reduce((acc, b) => acc + (b.qty !== undefined ? b.qty : (b.stock || 0)), 0),
+            stock: keptBatches.reduce((acc, b) => acc + (b.qty !== undefined ? b.qty : (b.stock || 0)), 0)
+          };
+          const key = newMed.code || newMed.name.toLowerCase();
+          overrides[key] = newMed;
+          return newMed;
+        }
+        return med;
+      });
+
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      } catch (e) {}
+      return updated;
+    });
+
+    alert(`Successfully purged ${totalPurged} dead/obsolete batches from counter inventory.`);
   };
 
   // Sales Return / Credit Note Handler: Restocks medicines to current branch and issues Credit Note
@@ -1019,8 +1247,8 @@ export default function App() {
       store: activeBranch.name,
       branchId: activeBranch.id,
       location: activeBranch.location,
-      staffName: activeShift?.staffName || 'Rahul C',
-      shiftId: activeShift?.shiftId || 'SHIFT-001'
+      staffName: activeShift?.staffName || 'Counter Staff',
+      shiftId: activeShift?.shiftId || 'SHIFT-OPEN'
     };
 
     setCompletedBillData(billPayload);
@@ -1115,8 +1343,12 @@ export default function App() {
     // Offline-first delta sync engine (IndexedDB local write + background delta push to Supabase)
     syncEngine.recordSalesBill(billPayload);
 
-    // 4. Open clean Dot-Matrix Receipt Modal: Cashier can preview voucher, press Enter to print, send WhatsApp, or press Esc
-    setIsReceiptOpen(true);
+    if (isInstantPrint) {
+      pendingInstantPrintRef.current = true;
+    } else {
+      // 4. Open clean Dot-Matrix Receipt Modal: Cashier can preview voucher, press Enter to print, send WhatsApp, or press Esc
+      setIsReceiptOpen(true);
+    }
   };
 
   const handleNewBill = () => {
@@ -1188,7 +1420,6 @@ export default function App() {
     }, 8000);
 
     setActivePage('billing');
-    setAuthenticatedRole('MANAGER');
   };
 
   return (
@@ -1229,6 +1460,12 @@ export default function App() {
           onToggleDensity={handleToggleDensity}
           syncStatus={syncStatus}
           onTriggerSync={() => syncEngine.triggerManualSync()}
+          isInstantPrint={isInstantPrint}
+          onToggleInstantPrint={handleToggleInstantPrint}
+          onLockTerminal={handleLockTerminal}
+          onOpenCloudStorageModal={() => setIsCloudPurgeModalOpen(true)}
+          onOpenBackupModal={() => setIsBackupModalOpen(true)}
+          cloudMetrics={cloudMetrics}
         />
       )}
 
@@ -1269,7 +1506,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'product-master' && (
+      {activePage === 'product-master' && authenticatedRole === 'MANAGER' && (
         <ProductCatalogPage
           theme={theme}
           medicines={medicines}
@@ -1296,19 +1533,12 @@ export default function App() {
         />
       )}
 
-      {activePage === 'tax-master' && (
+      {activePage === 'tax-master' && authenticatedRole === 'MANAGER' && (
         <TaxMasterPage
           theme={theme}
           medicines={medicines}
           onBackToBilling={() => setActivePage('billing')}
           onUpdateMedicine={handleUpdateMedicine}
-        />
-      )}
-
-      {activePage === 'doctor-master' && (
-        <DoctorMasterPage
-          theme={theme}
-          onBackToBilling={() => setActivePage('billing')}
         />
       )}
 
@@ -1326,6 +1556,8 @@ export default function App() {
           theme={theme}
           medicines={medicines}
           onBackToBilling={() => setActivePage('billing')}
+          onDeleteBatch={handleDeleteBatch}
+          onPurgeDeadBatches={handlePurgeDeadBatches}
         />
       )}
 
@@ -1346,7 +1578,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'sales-register' && (
+      {activePage === 'sales-register' && authenticatedRole === 'MANAGER' && (
         <DailySalesRegisterPage
           theme={theme}
           onBackToBilling={() => setActivePage('billing')}
@@ -1367,7 +1599,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'distributor-payments' && (
+      {activePage === 'distributor-payments' && authenticatedRole === 'MANAGER' && (
         <DistributorPaymentsPage
           theme={theme}
           onBackToBilling={() => setActivePage('billing')}
@@ -1382,7 +1614,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'admin' && (
+      {activePage === 'admin' && authenticatedRole === 'MANAGER' && (
         <ErrorBoundary fallbackTitle="Beta Pharmacy HQ Admin" theme={theme}>
           <AdminDashboardApp
             theme={theme}
@@ -1534,6 +1766,39 @@ export default function App() {
         density={density}
         onToggleDensity={handleToggleDensity}
         onTriggerSync={() => syncEngine.triggerManualSync()}
+      />
+
+      {/* Terminal Lock & Shift Sign-In Gate (Blocks unauthorized visitors & secures cash counter) */}
+      {isTerminalLocked && (
+        <TerminalLockScreen
+          theme={theme}
+          activeBranch={activeBranch}
+          staffList={staffList}
+          onUnlockTerminal={handleUnlockTerminal}
+          onAddStaff={handleAddStaff}
+        />
+      )}
+
+      {/* Live Cloud Storage Quota Health & 2-Step Safe Purge Modal */}
+      <CloudStoragePurgeModal
+        isOpen={isCloudPurgeModalOpen}
+        onClose={() => setIsCloudPurgeModalOpen(false)}
+        theme={theme}
+        cloudMetrics={cloudMetrics}
+        onRefreshMetrics={refreshCloudMetrics}
+        recentBills={recentBills}
+        activeBranch={activeBranch}
+      />
+
+      {/* 2+ Years Local Disk Backup Hub (730+ Days Retention & USB Export) */}
+      <BackupManagerModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        theme={theme}
+        medicines={medicines}
+        recentBills={recentBills}
+        activeBranch={activeBranch}
+        onRestoreBackup={handleRestoreBackupData}
       />
     </div>
   );

@@ -48,7 +48,7 @@ export default function FirstTimeSetupWizardModal({
   const [selectedBranchId, setSelectedBranchId] = useState('MAIN');
   const [customBranchName, setCustomBranchName] = useState('');
   const [counterName, setCounterName] = useState('Counter 01');
-  const [cashierName, setCashierName] = useState('Rahul C');
+  const [cashierName, setCashierName] = useState('');
 
   // Step 2: Catalog Choice - Defaulting to 'import' if user chooses Option B, or 'master'
   const [catalogChoice, setCatalogChoice] = useState('import'); // 'master' | 'import' (Option B)
@@ -139,7 +139,7 @@ export default function FirstTimeSetupWizardModal({
     onCompleteSetup({
       branch: finalBranch || availableBranches[0],
       counter: counterName.trim() || 'Counter 01',
-      cashier: cashierName.trim() || 'Rahul C',
+      cashier: cashierName.trim() || 'Counter Staff',
       catalogType: catalogChoice,
       importedMeds: catalogChoice === 'import' ? importedMeds : []
     });
@@ -264,7 +264,7 @@ export default function FirstTimeSetupWizardModal({
                     type="text"
                     value={cashierName}
                     onChange={(e) => setCashierName(e.target.value)}
-                    placeholder="e.g. Rahul C, Suresh Kumar"
+                    placeholder="Enter primary cashier / pharmacist name"
                     className={`w-full px-3 py-2 rounded-lg border text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                       isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
                     }`}
