@@ -82,6 +82,11 @@ export default function FastBillingTerminal({
   const phoneInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const focusSearchInput = () => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  };
+
   // Typo-Tolerant High Speed Fuzzy & Prefix Search Engine
   const filtered = searchQuery.trim().length > 0 
     ? fuzzySearchMedicines(medicines, searchQuery, stockKey, 35) 

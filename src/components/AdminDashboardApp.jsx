@@ -34,7 +34,8 @@ import {
   ArrowUpRight,
   Plus,
   Minus,
-  ShoppingCart
+  ShoppingCart,
+  Zap
 } from 'lucide-react';
 import initialMedicines from '../data/medicines.json';
 import supplierList from '../data/suppliers.json';
