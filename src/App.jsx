@@ -1115,13 +1115,8 @@ export default function App() {
     // Offline-first delta sync engine (IndexedDB local write + background delta push to Supabase)
     syncEngine.recordSalesBill(billPayload);
 
-    // 4. DIRECT PRINT: Trigger native Windows printer immediately without any blocking preview popup
-    setTimeout(() => {
-      window.print();
-    }, 50);
-
-    // 5. Instantly advance bill counter & clear terminal ready for next patient
-    handleNewBill();
+    // 4. Open clean Dot-Matrix Receipt Modal: Cashier can preview voucher, press Enter to print, send WhatsApp, or press Esc
+    setIsReceiptOpen(true);
   };
 
   const handleNewBill = () => {

@@ -8,7 +8,8 @@ import {
   HelpCircle, 
   AlertCircle,
   FileCheck,
-  RefreshCw
+  RefreshCw,
+  FolderOpen
 } from 'lucide-react';
 import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords } from '../utils/dbfReader';
 
@@ -28,6 +29,78 @@ export default function DatabaseImportModal({
   const [mergeMode, setMergeMode] = useState('merge'); // 'merge' | 'replace'
 
   if (!isOpen) return null;
+
+  // 1-Click Folder Upload: Reads entire DATA folder (ITEMFILE.DBF + STK*.DBF together)
+  const handleFolderUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsParsing(true);
+    setStatusMessage(`Scanning ${files.length} files in folder...`);
+
+    try {
+      const itemFile = files.find(f => f.name.toUpperCase() === 'ITEMFILE.DBF');
+      const stockFile = files.find(f => f.name.toUpperCase().startsWith('STK') && f.name.toUpperCase().endsWith('.DBF'));
+
+      let records = [];
+
+      if (itemFile) {
+        setStatusMessage(`Reading master catalog from ${itemFile.name}...`);
+        const buf = await itemFile.arrayBuffer();
+        const { records: itemRecs } = parseDbfBuffer(buf);
+        records = itemRecs;
+      }
+
+      if (stockFile) {
+        setStatusMessage(`Applying live shop stock from ${stockFile.name}...`);
+        const sBuf = await stockFile.arrayBuffer();
+        const { records: stockRecs } = parseDbfBuffer(sBuf);
+
+        const stockMap = new Map();
+        stockRecs.forEach(sr => {
+          const code = String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase();
+          const qty = parseInt(sr.STOCK || sr.QTY || 0, 10) || 0;
+          if (code) stockMap.set(code, qty);
+        });
+
+        if (records.length > 0) {
+          records = records.map(r => {
+            const code = String(r.IT_CODE || r.CODE || '').trim().toUpperCase();
+            if (stockMap.has(code)) {
+              return { ...r, STOCK: stockMap.get(code) };
+            }
+            return r;
+          });
+        } else {
+          records = stockRecs;
+        }
+      }
+
+      if (records.length === 0) {
+        const anyDbf = files.find(f => f.name.toUpperCase().endsWith('.DBF'));
+        if (anyDbf) {
+          const buf = await anyDbf.arrayBuffer();
+          const { records: r } = parseDbfBuffer(buf);
+          records = r;
+        }
+      }
+
+      if (records.length === 0) {
+        setStatusMessage('No ITEMFILE.DBF or STK*.DBF found in the selected folder.');
+        return;
+      }
+
+      setSelectedFile({ name: `DATA Folder (${files.length} files)` });
+      const normalized = normalizeLegacyMedicineRecords(records);
+      setParsedRecords(normalized);
+      setStatusMessage(`✓ Loaded ${normalized.length.toLocaleString()} medicines with live counter stock!`);
+    } catch (err) {
+      console.error('Folder upload error:', err);
+      setStatusMessage(`Error parsing folder: ${err.message || 'Invalid format'}`);
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -98,26 +171,52 @@ export default function DatabaseImportModal({
 
         {/* Content */}
         <div className="p-6 space-y-5 overflow-y-auto">
-          {/* Dropzone */}
-          <label className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-            isDark 
-              ? 'border-zinc-700 hover:border-purple-500 hover:bg-zinc-800/40' 
-              : 'border-slate-300 hover:border-purple-500 hover:bg-purple-50/40'
-          }`}>
-            <Upload className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-            <span className="text-sm font-bold block">
-              {selectedFile ? selectedFile.name : 'Select or Drop ITEMFILE.DBF, STK2610.DBF or CSV'}
-            </span>
-            <span className="text-xs text-slate-500 block mt-1">
-              Supports dBase III / Clipper DBF files and CSV exports. Processes 100% locally in browser memory.
-            </span>
-            <input
-              type="file"
-              accept=".dbf,.csv,.txt"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </label>
+          {/* Two Clear Options */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Option 1: Entire DATA Folder */}
+            <label className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+              isDark 
+                ? 'border-purple-600/60 hover:border-purple-400 bg-purple-950/20 hover:bg-purple-900/30' 
+                : 'border-purple-400 hover:border-purple-600 bg-purple-50/60 hover:bg-purple-100/60'
+            }`}>
+              <FolderOpen className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+              <span className="text-sm font-black block text-purple-700 dark:text-purple-300">
+                1-Click: Select "DATA" Folder
+              </span>
+              <span className="text-[11px] text-slate-500 block mt-1 leading-normal">
+                Select your old software's <strong>DATA</strong> folder directly. Automatically imports <strong>ITEMFILE.DBF</strong> + today's <strong>STK*.DBF</strong> stock in one click!
+              </span>
+              <input
+                type="file"
+                webkitdirectory="true"
+                directory=""
+                multiple
+                onChange={handleFolderUpload}
+                className="hidden"
+              />
+            </label>
+
+            {/* Option 2: Single DBF / CSV File */}
+            <label className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+              isDark 
+                ? 'border-zinc-700 hover:border-sky-500 hover:bg-zinc-800/40' 
+                : 'border-slate-300 hover:border-sky-500 hover:bg-sky-50/40'
+            }`}>
+              <Upload className="w-8 h-8 mx-auto mb-2 text-sky-500" />
+              <span className="text-sm font-bold block">
+                Select Single .DBF / .CSV File
+              </span>
+              <span className="text-[11px] text-slate-500 block mt-1 leading-normal">
+                Double-click into <strong>DATA</strong>, click on <strong>ITEMFILE.DBF</strong> or <strong>STK2610.DBF</strong>, then click <strong>Open</strong>.
+              </span>
+              <input
+                type="file"
+                accept=".dbf,.csv,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
 
           {/* Status Alert */}
           {statusMessage && (

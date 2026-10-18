@@ -150,12 +150,17 @@
 /* Print Output Styles (Both Dot-Matrix Invoice & Master Reports) */
 @media print {
   @page {
-    margin: 5mm;
     size: auto;
+    margin: 0;
   }
-  body {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
     color: black !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   .no-print, header, nav, .btn-no-print {
     display: none !important;
@@ -170,17 +175,19 @@
     visibility: visible !important;
   }
   #printable-receipt {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100% !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 620px !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 8px 16px !important;
+    padding: 6px 12px !important;
     background: white !important;
     color: black !important;
     border: none !important;
     box-shadow: none !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
 
