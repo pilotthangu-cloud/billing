@@ -15,14 +15,19 @@ import {
   RotateCcw,
   AlertTriangle,
   Zap,
-  Tag
+  Tag,
+  Share2,
+  MessageSquare
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
 import SubstituteRadarModal from './SubstituteRadarModal';
+import { fuzzySearchMedicines } from '../utils/fuzzySearch';
+import { triggerWhatsAppBillShare } from '../utils/billUtils';
 
 export default function FastBillingTerminal({
   theme,
+  density = 'compact',
   activeBranch,
   items,
   setItems,
@@ -77,52 +82,11 @@ export default function FastBillingTerminal({
   const phoneInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Strict Prefix Matching & Scoring algorithm
-  const q = searchQuery.trim().toLowerCase();
-  let filtered = [];
+  // Typo-Tolerant High Speed Fuzzy & Prefix Search Engine
+  const filtered = searchQuery.trim().length > 0 
+    ? fuzzySearchMedicines(medicines, searchQuery, stockKey, 35) 
+    : [];
 
-  if (q.length > 0) {
-    const scored = [];
-    for (const m of medicines) {
-      const name = m.name.toLowerCase();
-      const generic = (m.generic || '').toLowerCase();
-      const company = (m.company || '').toLowerCase();
-      const code = (m.code || '').toLowerCase();
-
-      let score = 0;
-      if (name.startsWith(q)) {
-        // Highest priority: Medicine brand name starts with typed query (e.g. PAC -> PACIMOL, PACIFAST)
-        score = 1000 - (name.length - q.length);
-      } else {
-        const words = name.split(' ');
-        if (words.some(w => w.startsWith(q))) {
-          score = 500;
-        } else if (name.includes(q)) {
-          score = 300;
-        } else if (generic.startsWith(q)) {
-          score = 200;
-        } else if (generic.includes(q)) {
-          score = 100;
-        } else if (company.includes(q) || code.includes(q)) {
-          score = 50;
-        }
-      }
-
-      if (score > 0) {
-        // Bonus for available stock in this shop branch
-        const shopStock = m[stockKey] !== undefined ? m[stockKey] : (m.stock_shop1 || 0);
-        if (shopStock > 0) score += 20;
-        scored.push({ med: m, score });
-      }
-    }
-
-    scored.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.med.name.localeCompare(b.med.name);
-    });
-
-    filtered = scored.slice(0, 35).map(s => s.med);
-  }
 
   // Keyboard navigation inside search
   const handleSearchKeyDown = (e) => {
@@ -374,14 +338,30 @@ export default function FastBillingTerminal({
   // When user adds 12 items, it dynamically expands to 13, 14, 15... automatically!
   const DISPLAY_ROWS = Math.max(12, items.length + 2);
 
-  // Focus search input helper
-  const focusSearchInput = () => {
-    searchInputRef.current?.focus();
-    searchInputRef.current?.select();
+  // 1-Click Digital WhatsApp Invoice Dispatch
+  const handleSendWhatsAppBill = () => {
+    if (items.length === 0) return;
+    const billPayload = {
+      billNo,
+      date: billDate,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      patientName: patientName || 'CUSTOMER',
+      customerPhone: customerPhone ? customerPhone.trim() : '',
+      doctorName: doctorName || 'GENERAL OTC',
+      paymentMode,
+      items: [...items],
+      grossTotal,
+      netPayable,
+      store: activeBranch?.name || 'Beta Pharmacy',
+      location: activeBranch?.location || ''
+    };
+    triggerWhatsAppBillShare(billPayload, customerPhone);
   };
 
   return (
     <div className={`flex-1 flex flex-col overflow-hidden font-sans ${
+      density === 'compact' ? 'density-compact' : 'density-comfortable'
+    } ${
       theme === 'dark' ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-slate-950'
     }`}>
       {/* Shift Handover Confirmation Notification Banner */}
@@ -878,13 +858,13 @@ export default function FastBillingTerminal({
                     )}
                   </td>
 
-                  {/* Shelf Rack */}
+                  {/* Shelf Rack (High-Visibility Glow Badge for Physical Picking Speed) */}
                   <td className="py-1.5 px-3 text-center border-r border-inherit">
                     {item ? (
-                      <span className={`px-1.5 py-0.5 rounded font-black text-[10px] border shadow-xs inline-block ${
+                      <span className={`px-2 py-0.5 rounded font-black text-[11px] border rack-badge-glow inline-block ${
                         theme === 'dark' 
-                          ? 'bg-sky-950/80 text-sky-300 border-sky-600' 
-                          : 'bg-sky-50 text-sky-800 border-sky-300'
+                          ? 'bg-amber-950/90 text-amber-300 border-amber-500' 
+                          : 'bg-amber-100 text-amber-950 border-amber-400'
                       }`}>
                         R-{item.medicine.rack}
                       </span>
@@ -930,7 +910,7 @@ export default function FastBillingTerminal({
                     {item ? `${item.batch.per || 10}s` : ''}
                   </td>
 
-                  {/* Qty (Directly Editable with Loose Dispensing Pro-Rata Math) */}
+                  {/* Qty (Directly Editable with Loose Dispensing Pro-Rata Math & Fast Keyboard Next) */}
                   <td className="py-1 px-2 text-center border-r border-inherit">
                     {item ? (
                       <div className="flex flex-col items-center">
@@ -940,6 +920,12 @@ export default function FastBillingTerminal({
                           value={item.qty}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => handleUpdateItemQty(idx, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === 'Tab') {
+                              e.preventDefault();
+                              searchInputRef.current?.focus();
+                            }
+                          }}
                           className={`w-16 py-0.5 px-1 text-center font-black font-mono text-sm rounded border focus:outline-none focus:ring-1 focus:ring-sky-500 ${
                             theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-sky-400' : 'bg-sky-50 border-sky-300 text-sky-900'
                           }`}
@@ -1067,7 +1053,25 @@ export default function FastBillingTerminal({
             title="Recall and Reprint Last Completed Bill if customer or printer tore the receipt (F7)"
           >
             <Printer className="w-3.5 h-3.5 text-sky-600" />
-            <span>Reprint Bill (F7)</span>
+            <span>Reprint (F7)</span>
+          </button>
+
+          {/* Digital WhatsApp Invoice Button */}
+          <button
+            type="button"
+            onClick={handleSendWhatsAppBill}
+            disabled={items.length === 0}
+            className={`px-3 py-1.5 rounded font-mono font-bold text-xs uppercase border transition flex items-center space-x-1.5 cursor-pointer ${
+              items.length === 0 
+                ? 'opacity-40 cursor-not-allowed border-slate-300' 
+                : (theme === 'dark' 
+                    ? 'border-emerald-700 bg-emerald-950/70 text-emerald-300 hover:bg-emerald-900' 
+                    : 'border-emerald-500 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 shadow-xs')
+            }`}
+            title="Send Digital ESC/P Invoice directly to customer via WhatsApp"
+          >
+            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>WhatsApp Bill</span>
           </button>
 
           <button

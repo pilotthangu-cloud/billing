@@ -24,7 +24,10 @@ import {
   Download,
   Database,
   Upload,
-  User
+  User,
+  Search,
+  Layers,
+  Zap
 } from 'lucide-react';
 
 export default function TopNavigationMenu({
@@ -50,7 +53,12 @@ export default function TopNavigationMenu({
   onOpenSetupWizard,
   onInstallApp,
   isAppInstalled = false,
-  onOpenCustomerHistory
+  onOpenCustomerHistory,
+  onOpenCommandPalette,
+  density = 'compact',
+  onToggleDensity,
+  syncStatus,
+  onTriggerSync
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -427,6 +435,43 @@ export default function TopNavigationMenu({
             </button>
           </div>
 
+          {/* Universal Command Palette Spotlight Trigger (Ctrl+K) */}
+          {onOpenCommandPalette && (
+            <button
+              onClick={onOpenCommandPalette}
+              className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-bold transition cursor-pointer ${
+                isDark 
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700' 
+                  : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50 shadow-xs'
+              }`}
+              title="Global Spotlight Search & Keyboard Shortcuts (Ctrl+K)"
+            >
+              <Search className="w-3 h-3 text-sky-500" />
+              <span>Spotlight</span>
+              <kbd className={`text-[9px] px-1 rounded font-bold ${
+                isDark ? 'bg-zinc-700 text-zinc-300' : 'bg-slate-100 text-slate-600'
+              }`}>
+                ^K
+              </kbd>
+            </button>
+          )}
+
+          {/* Table Density Switcher: Speed Counter (Compact) vs Executive HQ (Comfort) */}
+          {onToggleDensity && (
+            <button
+              onClick={onToggleDensity}
+              className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-bold transition cursor-pointer ${
+                isDark 
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700' 
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-xs'
+              }`}
+              title={`Switch Density: Currently ${density === 'compact' ? 'Compact' : 'Comfortable'}`}
+            >
+              <Layers className="w-3 h-3 text-amber-500" />
+              <span>{density === 'compact' ? 'COMPACT' : 'COMFORT'}</span>
+            </button>
+          )}
+
           {/* Owner Admin HQ Portal Quick Access */}
           <button
             onClick={() => navigateTo('admin')}
@@ -443,31 +488,38 @@ export default function TopNavigationMenu({
             <span>ADMIN HQ</span>
           </button>
 
-
-
-          {/* Cloud Sync Status Indicator */}
+          {/* Cloud Delta Sync Status Indicator */}
           <button
-            onClick={() => setIsOffline(!isOffline)}
+            onClick={() => {
+              if (onTriggerSync) {
+                onTriggerSync();
+              } else if (setIsOffline) {
+                setIsOffline(!isOffline);
+              }
+            }}
             className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 cursor-pointer transition ${
-              isOffline
-                ? (isDark 
-                    ? 'bg-amber-950 text-amber-300 border-amber-800' 
-                    : 'bg-amber-100 text-amber-900 border-amber-300')
-                : (isDark 
-                    ? 'bg-emerald-950 text-emerald-300 border-emerald-800' 
-                    : 'bg-emerald-100 text-emerald-900 border-emerald-300')
+              syncStatus && !syncStatus.isOnline
+                ? (isDark ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-amber-100 text-amber-900 border-amber-300')
+                : syncStatus?.isSyncing
+                ? (isDark ? 'bg-sky-950 text-sky-300 border-sky-800' : 'bg-sky-100 text-sky-900 border-sky-300')
+                : (isDark ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-emerald-100 text-emerald-900 border-emerald-300')
             }`}
-            title="Click to simulate offline / online sync"
+            title={`Supabase Cloud Sync • Pending deltas: ${syncStatus?.pendingCount || 0} • Click to flush`}
           >
-            {isOffline ? (
+            {syncStatus && !syncStatus.isOnline ? (
               <>
                 <WifiOff className={`w-3 h-3 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
-                <span>OFFLINE (Local)</span>
+                <span>OFFLINE ({syncStatus.pendingCount || 0} Q'd)</span>
+              </>
+            ) : syncStatus?.isSyncing ? (
+              <>
+                <Wifi className="w-3 h-3 text-sky-400 animate-pulse" />
+                <span>SYNCING...</span>
               </>
             ) : (
               <>
                 <Wifi className={`w-3 h-3 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <span>CLOUD SYNC: ACTIVE</span>
+                <span>{syncStatus?.pendingCount > 0 ? `SYNCING (${syncStatus.pendingCount})` : 'CLOUD SYNC: ACTIVE'}</span>
               </>
             )}
           </button>

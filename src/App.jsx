@@ -26,6 +26,9 @@ import PrintableReceipt from './components/PrintableReceipt';
 import CustomerHistoryModal from './components/CustomerHistoryModal';
 import SalesReturnModal from './components/SalesReturnModal';
 import DistributorInvoiceImportModal from './components/DistributorInvoiceImportModal';
+import CommandPaletteModal from './components/CommandPaletteModal';
+import { syncEngine } from './utils/syncEngine';
+import { idbCacheMedicines } from './utils/indexedDb';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -158,6 +161,39 @@ export default function App() {
   const [activePage, setActivePage] = useState(initialRoute);
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  // Table Density Switching: 'compact' (Speed Counter) vs 'comfortable' (Executive HQ)
+  const [density, setDensity] = useState(() => {
+    try {
+      return localStorage.getItem('beta_pharma_density') || 'compact';
+    } catch (e) {
+      return 'compact';
+    }
+  });
+
+  const handleToggleDensity = () => {
+    setDensity(prev => {
+      const next = prev === 'compact' ? 'comfortable' : 'compact';
+      try {
+        localStorage.setItem('beta_pharma_density', next);
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // Universal Command Palette Spotlight (Ctrl+K)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Background Delta Sync Engine Status
+  const [syncStatus, setSyncStatus] = useState(() => syncEngine.getStatus());
+
+  useEffect(() => {
+    const unsubscribe = syncEngine.subscribe((status) => {
+      setSyncStatus(status);
+      setIsOffline(!status.isOnline);
+    });
+    return unsubscribe;
+  }, []);
 
   // Multi-Shop Branch Machine Identity
   const [activeBranch, setActiveBranch] = useState(getInitialBranch);
@@ -445,9 +481,21 @@ export default function App() {
     setIsReceiptOpen(true);
   };
 
+  // Initialize IndexedDB with medicines catalog on startup (offline-first storage)
+  useEffect(() => {
+    if (medicines && medicines.length > 0) {
+      idbCacheMedicines(medicines).catch(err => console.warn('IndexedDB medicine caching note:', err));
+    }
+  }, []);
+
   // Global Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl+K / Cmd+K triggers Universal Command Palette Spotlight
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
       // Escape returns to billing from any page
       if (e.key === 'Escape' && activePage !== 'billing') {
         setActivePage('billing');
@@ -699,6 +747,66 @@ export default function App() {
     alert(`🎉 Purchase Invoice Inwarded! ${importedData.items.length} items successfully updated into live inventory.`);
   };
 
+  // Multi-Store Inter-Branch Stock Transfer Handler
+  const handleTransferStock = ({ medCode, medicineName, fromBranchId, toBranchId, qty }) => {
+    const fromShopKey = fromBranchId === 'POLYCLINIC' ? 'stock_shop2' : 'stock_shop1';
+    const toShopKey = toBranchId === 'POLYCLINIC' ? 'stock_shop2' : 'stock_shop1';
+    const fromBranchName = fromBranchId === 'POLYCLINIC' ? 'Beta Polyclinic' : 'Beta Pharmacy';
+    const toBranchName = toBranchId === 'POLYCLINIC' ? 'Beta Polyclinic' : 'Beta Pharmacy';
+
+    // 1. Update live medicines catalog state and persist in localStorage
+    setMedicines(prev => {
+      const updated = prev.map(m => {
+        if (m.code === medCode || m.name.toLowerCase() === (medicineName || '').toLowerCase()) {
+          const currentFrom = m[fromShopKey] || 0;
+          const currentTo = m[toShopKey] || 0;
+          const actualQty = Math.min(currentFrom, qty);
+          return {
+            ...m,
+            [fromShopKey]: Math.max(0, currentFrom - actualQty),
+            [toShopKey]: currentTo + actualQty
+          };
+        }
+        return m;
+      });
+
+      try {
+        const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+        const target = updated.find(m => m.code === medCode || m.name.toLowerCase() === (medicineName || '').toLowerCase());
+        if (target) {
+          overrides[target.code || target.name.toLowerCase()] = target;
+          localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+        }
+      } catch (e) {}
+
+      return updated;
+    });
+
+    // 2. Create transfer note in audit trail
+    const trNumber = `TR-${Date.now().toString().slice(-6)}`;
+    const transferRecord = {
+      id: trNumber,
+      date: new Date().toLocaleDateString('en-GB'),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      medicine: medicineName,
+      medCode,
+      from: fromBranchName,
+      to: toBranchName,
+      qty,
+      status: 'DISPATCHED'
+    };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('beta_pharma_transfer_notes') || '[]');
+      localStorage.setItem('beta_pharma_transfer_notes', JSON.stringify([transferRecord, ...existing]));
+    } catch (e) {}
+
+    // 3. Record in Delta Sync Engine (IndexedDB + Supabase)
+    syncEngine.recordStockTransfer(transferRecord);
+
+    return transferRecord;
+  };
+
   // Hold Bill
   const handleHoldBill = () => {
     if (items.length === 0) return;
@@ -836,8 +944,8 @@ export default function App() {
     }
 
     setIsReprintMode(false);
-    // Background async sync to Supabase (does not block counter or dot-matrix printing!)
-    pushSalesBillToSupabase(billPayload);
+    // Offline-first delta sync engine (IndexedDB local write + background delta push to Supabase)
+    syncEngine.recordSalesBill(billPayload);
 
     // 4. DIRECT PRINT: Trigger native Windows printer immediately without any blocking preview popup
     setTimeout(() => {
@@ -953,6 +1061,11 @@ export default function App() {
           onInstallApp={handleTriggerInstall}
           isAppInstalled={isAppInstalled}
           onOpenCustomerHistory={() => setIsCustomerHistoryOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          density={density}
+          onToggleDensity={handleToggleDensity}
+          syncStatus={syncStatus}
+          onTriggerSync={() => syncEngine.triggerManualSync()}
         />
       )}
 
@@ -960,6 +1073,7 @@ export default function App() {
       {activePage === 'billing' && (
         <FastBillingTerminal
           theme={theme}
+          density={density}
           activeBranch={activeBranch}
           items={items}
           setItems={setItems}
@@ -1063,6 +1177,7 @@ export default function App() {
           theme={theme}
           medicines={medicines}
           onBackToBilling={() => setActivePage('billing')}
+          onTransferStock={handleTransferStock}
         />
       )}
 
@@ -1114,6 +1229,7 @@ export default function App() {
             activeShift={activeShift}
             billDate={billDate}
             onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
+            onTransferStock={handleTransferStock}
           />
         </ErrorBoundary>
       )}
@@ -1226,6 +1342,27 @@ export default function App() {
           <PrintableReceipt billData={completedBillData || recentBills[0]} isReprint={isReprintMode} />
         </div>
       )}
+
+      {/* Universal Command Palette Spotlight (Ctrl+K) */}
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigate={handleNavigatePage}
+        medicines={medicines}
+        onDirectAddMedicine={(med) => {
+          setActivePage('billing');
+        }}
+        onReprintLastBill={handleReprintLastBill}
+        onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
+        onOpenSalesReturn={() => setIsSalesReturnOpen(true)}
+        onOpenShiftModal={handleOpenShiftHandover}
+        onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
+        onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+        theme={theme}
+        density={density}
+        onToggleDensity={handleToggleDensity}
+        onTriggerSync={() => syncEngine.triggerManualSync()}
+      />
     </div>
   );
 }

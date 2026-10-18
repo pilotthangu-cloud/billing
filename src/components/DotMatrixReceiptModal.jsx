@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw } from 'lucide-react';
+import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw, Share2 } from 'lucide-react';
 import PrintableReceipt from './PrintableReceipt';
+import { triggerWhatsAppBillShare } from '../utils/billUtils';
 
 export default function DotMatrixReceiptModal({ 
   isOpen, 
@@ -12,6 +13,11 @@ export default function DotMatrixReceiptModal({
   onSelectBill
 }) {
   const receiptRef = useRef(null);
+
+  const handleWhatsAppShare = () => {
+    if (!billData) return;
+    triggerWhatsAppBillShare(billData, billData.customerPhone);
+  };
 
   // Unified Print Action
   const handlePrint = () => {
@@ -92,6 +98,16 @@ export default function DotMatrixReceiptModal({
               </div>
             )}
 
+            {/* WhatsApp Bill Action */}
+            <button
+              onClick={handleWhatsAppShare}
+              className="py-1.5 px-3 rounded-lg text-xs font-black flex items-center space-x-1.5 transition shadow cursor-pointer bg-emerald-700 hover:bg-emerald-600 text-white"
+              title="Send Digital Invoice on WhatsApp"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Send WhatsApp</span>
+            </button>
+
             {/* Print Action */}
             <button
               onClick={handlePrint}
@@ -136,6 +152,13 @@ export default function DotMatrixReceiptModal({
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back (Esc)</span>
+            </button>
+            <button
+              onClick={handleWhatsAppShare}
+              className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-black transition shadow flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Send WhatsApp</span>
             </button>
             <button
               onClick={handlePrint}

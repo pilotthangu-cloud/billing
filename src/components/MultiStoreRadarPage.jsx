@@ -1,9 +1,89 @@
-import React, { useState } from 'react';
-import { Building2, Search, ArrowLeft, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Building2, Search, ArrowLeft, ArrowRightLeft, CheckCircle2, Zap } from 'lucide-react';
 
-export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling }) {
+export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling, onTransferStock }) {
   const [search, setSearch] = useState('');
   const [transferSuccess, setTransferSuccess] = useState(null);
+
+  // Proactive Automatic Rebalancing Engine
+  const rebalanceCandidates = useMemo(() => {
+    const list = [];
+    (medicines || []).forEach(m => {
+      if (!m) return;
+      const shop1 = m.stock_shop1 || 0;
+      const shop2 = m.stock_shop2 || 0;
+
+      if (shop1 >= 15 && shop2 <= 2) {
+        list.push({
+          medCode: m.code,
+          name: m.name,
+          generic: m.generic || '',
+          rack: m.rack || 'GN',
+          fromBranchId: 'MAIN',
+          fromBranchName: 'Beta Pharmacy (Main)',
+          toBranchId: 'POLYCLINIC',
+          toBranchName: 'Beta Polyclinic',
+          fromStock: shop1,
+          toStock: shop2,
+          transferQty: Math.min(Math.floor(shop1 / 2), 10)
+        });
+      } else if (shop2 >= 15 && shop1 <= 2) {
+        list.push({
+          medCode: m.code,
+          name: m.name,
+          generic: m.generic || '',
+          rack: m.rack || 'GN',
+          fromBranchId: 'POLYCLINIC',
+          fromBranchName: 'Beta Polyclinic',
+          toBranchId: 'MAIN',
+          toBranchName: 'Beta Pharmacy (Main)',
+          fromStock: shop2,
+          toStock: shop1,
+          transferQty: Math.min(Math.floor(shop2 / 2), 10)
+        });
+      }
+    });
+    return list;
+  }, [medicines]);
+
+  const handleDispatchRebalance = (cand) => {
+    if (!cand) return;
+    if (onTransferStock) {
+      onTransferStock({
+        medCode: cand.medCode,
+        medicineName: cand.name,
+        fromBranchId: cand.fromBranchId,
+        toBranchId: cand.toBranchId,
+        qty: cand.transferQty
+      });
+    } else {
+      handleTransfer(
+        { code: cand.medCode, name: cand.name },
+        cand.fromBranchName,
+        cand.toBranchName,
+        cand.transferQty
+      );
+    }
+    setTransferSuccess(`Inter-store Transfer Dispatched: ${cand.transferQty} packs of ${cand.name} moving from ${cand.fromBranchName} to ${cand.toBranchName}.`);
+    setTimeout(() => setTransferSuccess(null), 5000);
+  };
+
+  const handleDispatchAllRebalance = () => {
+    if (rebalanceCandidates.length === 0) return;
+    rebalanceCandidates.forEach(cand => {
+      if (onTransferStock) {
+        onTransferStock({
+          medCode: cand.medCode,
+          medicineName: cand.name,
+          fromBranchId: cand.fromBranchId,
+          toBranchId: cand.toBranchId,
+          qty: cand.transferQty
+        });
+      }
+    });
+    setTransferSuccess(`🚀 Dispatched all ${rebalanceCandidates.length} inter-store stock transfers.`);
+    setTimeout(() => setTransferSuccess(null), 5000);
+  };
 
   const filtered = search.trim() === ''
     ? medicines.slice(0, 50)
@@ -18,23 +98,33 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
       }).slice(0, 60);
 
   const handleTransfer = (med, fromShop, toShop, qty = 5) => {
-    const trNumber = `TR-${Date.now().toString().slice(-6)}`;
-    const note = {
-      id: trNumber,
-      date: new Date().toLocaleDateString('en-GB'),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      medicineName: med.name,
-      medCode: med.code,
-      fromBranch: fromShop,
-      toBranch: toShop,
-      qty,
-      status: 'DISPATCHED'
-    };
-    try {
-      const existing = JSON.parse(localStorage.getItem('beta_pharma_transfer_notes') || '[]');
-      localStorage.setItem('beta_pharma_transfer_notes', JSON.stringify([note, ...existing]));
-    } catch (e) {}
-    setTransferSuccess(`Inter-store Transfer Note Created: ${qty} strips of ${med.name} moving from ${fromShop} to ${toShop}. Voucher #${trNumber} generated.`);
+    if (onTransferStock) {
+      onTransferStock({
+        medCode: med.code,
+        medicineName: med.name,
+        fromBranchId: fromShop.includes('Polyclinic') ? 'POLYCLINIC' : 'MAIN',
+        toBranchId: toShop.includes('Polyclinic') ? 'POLYCLINIC' : 'MAIN',
+        qty
+      });
+    } else {
+      const trNumber = `TR-${Date.now().toString().slice(-6)}`;
+      const note = {
+        id: trNumber,
+        date: new Date().toLocaleDateString('en-GB'),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        medicineName: med.name,
+        medCode: med.code,
+        fromBranch: fromShop,
+        toBranch: toShop,
+        qty,
+        status: 'DISPATCHED'
+      };
+      try {
+        const existing = JSON.parse(localStorage.getItem('beta_pharma_transfer_notes') || '[]');
+        localStorage.setItem('beta_pharma_transfer_notes', JSON.stringify([note, ...existing]));
+      } catch (e) {}
+    }
+    setTransferSuccess(`Inter-store Transfer Note Created: ${qty} strips of ${med.name} moving from ${fromShop} to ${toShop}.`);
     setTimeout(() => setTransferSuccess(null), 5000);
   };
 
@@ -88,10 +178,33 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling 
         </div>
       </div>
 
-      {transferSuccess && (
-        <div className="bg-emerald-600 text-white px-4 py-2 text-xs font-mono font-bold flex items-center space-x-2 shadow">
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{transferSuccess}</span>
+      {/* Proactive Multi-Store Rebalancing Banner */}
+      {rebalanceCandidates.length > 0 && (
+        <div className={`p-3.5 px-4 border-b flex flex-wrap items-center justify-between gap-3 ${
+          theme === 'dark' ? 'bg-purple-950/60 border-purple-800 text-purple-200' : 'bg-purple-50 border-purple-200 text-purple-950'
+        }`}>
+          <div className="flex items-center space-x-2.5">
+            <span className="p-1 rounded-lg bg-purple-600 text-white font-bold">
+              <ArrowRightLeft className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="font-black text-xs uppercase tracking-wide block">
+                {rebalanceCandidates.length} Imbalance Shortage Risks Detected Between Branches
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-purple-300">
+                Top recommendation: {rebalanceCandidates[0]?.name} (Move {rebalanceCandidates[0]?.transferQty} packs from {rebalanceCandidates[0]?.fromBranchName} to {rebalanceCandidates[0]?.toBranchName})
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDispatchAllRebalance}
+            className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center space-x-1.5 shadow-xs cursor-pointer"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-300" />
+            <span>Dispatch All ({rebalanceCandidates.length})</span>
+          </button>
         </div>
       )}
 
