@@ -177,6 +177,12 @@ export default function TopNavigationMenu({
                   <button 
                     onClick={() => {
                       setOpenDropdown(null);
+                      if (authenticatedRole !== 'MANAGER') {
+                        if (onOpenPasswordModal) {
+                          onOpenPasswordModal('Database Migration', 'Enter Admin PIN to import or overwrite catalog data.');
+                        }
+                        return;
+                      }
                       if (onOpenImportModal) onOpenImportModal();
                     }} 
                     className={`w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold border-t ${
@@ -552,6 +558,35 @@ export default function TopNavigationMenu({
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
+
+          {/* Admin Session Status & 1-Click Lock / Unlock */}
+          {authenticatedRole === 'MANAGER' ? (
+            <button
+              onClick={onLogoutRole}
+              className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
+                isDark 
+                  ? 'bg-amber-950 text-amber-300 border-amber-700 hover:bg-amber-900' 
+                  : 'bg-amber-100 text-amber-950 border-amber-300 hover:bg-amber-200 shadow-xs'
+              }`}
+              title="Admin Session Active (Click to Lock Counter Security)"
+            >
+              <Lock className="w-3 h-3 text-amber-500" />
+              <span>Admin [Lock]</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onOpenPasswordModal && onOpenPasswordModal('Manager Authorization', 'Enter Admin PIN to unlock management features.')}
+              className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
+                isDark 
+                  ? 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700' 
+                  : 'bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300 shadow-xs'
+              }`}
+              title="Click to enter Admin PIN and unlock manager features"
+            >
+              <Unlock className="w-3 h-3 text-slate-500" />
+              <span>Admin Login</span>
+            </button>
+          )}
 
           {/* Clock */}
           <div className={`px-2 py-0.5 rounded border font-mono ${

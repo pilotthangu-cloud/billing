@@ -33,6 +33,15 @@ import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
 
+// Protected modules requiring Administrator PIN authentication
+export const PROTECTED_PAGES = {
+  'admin': { title: 'Owner Admin HQ', description: 'Enter Admin PIN to view executive financial telemetry & margins.' },
+  'sales-register': { title: 'Daily Sales & Margin Register', description: 'Enter Admin PIN to view store revenue, COGS, and gross margins.' },
+  'distributor-payments': { title: 'Distributor Payments & Cheque Register', description: 'Enter Admin PIN to access payables ledger & bank cheques.' },
+  'product-master': { title: 'Product Catalog Master', description: 'Enter Admin PIN to access master catalog pricing & PTR rates.' },
+  'tax-master': { title: 'Tax & GST Master', description: 'Enter Admin PIN to modify statutory GST tax slabs.' }
+};
+
 // URL-based direct routing (e.g. /admin or #admin directly opens the Admin Dashboard!)
 function getInitialPage() {
   try {
@@ -158,7 +167,10 @@ function getInitialActiveShift() {
 export default function App() {
   const initialRoute = getInitialPage();
   const [theme, setTheme] = useState('light');
-  const [activePage, setActivePage] = useState(initialRoute);
+  const [activePage, setActivePage] = useState(() => {
+    if (PROTECTED_PAGES[initialRoute]) return 'billing';
+    return initialRoute;
+  });
   const [isOffline, setIsOffline] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
@@ -357,14 +369,20 @@ export default function App() {
   const [medicines, setMedicines] = useState(getInitialMedicines);
   const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
 
-  // Security & Password Authorization Subsystem (Password prompts removed per request)
-  const [authenticatedRole, setAuthenticatedRole] = useState('MANAGER');
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordModalInfo, setPasswordModalInfo] = useState({
-    title: 'Manager Authorization',
-    description: 'Enter security PIN to access protected operations.'
+  // Security & Password Authorization Subsystem (Admin PIN: 1536)
+  const [authenticatedRole, setAuthenticatedRole] = useState(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(() => {
+    return !!PROTECTED_PAGES[initialRoute];
   });
-  const [pendingPage, setPendingPage] = useState(null);
+  const [passwordModalInfo, setPasswordModalInfo] = useState(() => {
+    return PROTECTED_PAGES[initialRoute] || {
+      title: 'Manager Authorization',
+      description: 'Enter security PIN to access protected operations.'
+    };
+  });
+  const [pendingPage, setPendingPage] = useState(() => {
+    return PROTECTED_PAGES[initialRoute] ? initialRoute : null;
+  });
 
   // Active Bill States (Starts clean & empty)
   const [billNo, setBillNo] = useState(getInitialBillNo);
@@ -409,8 +427,15 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Navigation to pages (Password gates removed as requested)
+  // Navigation to pages (Admin PIN check on protected modules)
   const handleNavigatePage = (page) => {
+    if (PROTECTED_PAGES[page] && authenticatedRole !== 'MANAGER') {
+      setPendingPage(page);
+      setPasswordModalInfo(PROTECTED_PAGES[page]);
+      setIsPasswordModalOpen(true);
+      return;
+    }
+
     setActivePage(page);
     if (page === 'admin') {
       setIsSetupWizardOpen(false);
@@ -430,10 +455,16 @@ export default function App() {
   useEffect(() => {
     const handleUrlChange = () => {
       const page = getInitialPage();
+      if (PROTECTED_PAGES[page] && authenticatedRole !== 'MANAGER') {
+        setPendingPage(page);
+        setPasswordModalInfo(PROTECTED_PAGES[page]);
+        setIsPasswordModalOpen(true);
+        setActivePage('billing');
+        return;
+      }
       setActivePage(page);
       if (page === 'admin') {
         setIsSetupWizardOpen(false);
-        setAuthenticatedRole('MANAGER');
       }
     };
     window.addEventListener('popstate', handleUrlChange);
@@ -442,12 +473,15 @@ export default function App() {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, []);
+  }, [authenticatedRole]);
 
   const handlePasswordSuccess = (role) => {
     setAuthenticatedRole(role);
     if (pendingPage) {
       setActivePage(pendingPage);
+      if (pendingPage === 'admin') {
+        setIsSetupWizardOpen(false);
+      }
       try {
         if (pendingPage === 'admin') {
           window.history.replaceState(null, '', '/admin');
@@ -461,7 +495,7 @@ export default function App() {
 
   const handleLogoutRole = () => {
     setAuthenticatedRole(null);
-    if (activePage === 'purchases' || activePage === 'sales-register' || activePage === 'admin') {
+    if (PROTECTED_PAGES[activePage]) {
       setActivePage('billing');
       try {
         window.history.replaceState(null, '', '/');
@@ -1240,6 +1274,12 @@ export default function App() {
         onClose={() => {
           setIsPasswordModalOpen(false);
           setPendingPage(null);
+          if (PROTECTED_PAGES[activePage] && authenticatedRole !== 'MANAGER') {
+            setActivePage('billing');
+            try {
+              window.history.replaceState(null, '', '/');
+            } catch (e) {}
+          }
         }}
         onSuccess={handlePasswordSuccess}
         actionTitle={passwordModalInfo.title}

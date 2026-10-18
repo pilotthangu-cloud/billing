@@ -15,7 +15,6 @@ import {
   RotateCcw,
   AlertTriangle,
   Zap,
-  Tag,
   Share2,
   MessageSquare
 } from 'lucide-react';
@@ -242,8 +241,7 @@ export default function FastBillingTerminal({
       batch: chosenBatch,
       qty: Number(qty),
       totalValue: lineVal,
-      isShortExpiry,
-      hasClearanceDiscount: false
+      isShortExpiry
     };
 
     setItems((prev) => [...prev, newLine]);
@@ -271,8 +269,7 @@ export default function FastBillingTerminal({
       batch: activeBatch,
       qty: Number(entryQty),
       totalValue: lineVal,
-      isShortExpiry: false,
-      hasClearanceDiscount: false
+      isShortExpiry: false
     };
 
     setItems((prev) => [...prev, newLine]);
@@ -296,19 +293,7 @@ export default function FastBillingTerminal({
     setItems((prev) => prev.map((item, i) => {
       if (i !== index) return item;
       const baseVal = (item.batch.mrp / (item.batch.per || 10)) * qtyNum;
-      const discountMult = item.hasClearanceDiscount ? 0.90 : 1;
-      return { ...item, qty: qtyNum, totalValue: +(baseVal * discountMult).toFixed(2) };
-    }));
-  };
-
-  // 1-Click Toggle 10% Clearance Discount on Short-Expiry item
-  const handleToggleClearanceDiscount = (index) => {
-    setItems((prev) => prev.map((item, i) => {
-      if (i !== index) return item;
-      const nextDiscount = !item.hasClearanceDiscount;
-      const baseVal = (item.batch.mrp / (item.batch.per || 10)) * (item.qty || 1);
-      const discountMult = nextDiscount ? 0.90 : 1;
-      return { ...item, hasClearanceDiscount: nextDiscount, totalValue: +(baseVal * discountMult).toFixed(2) };
+      return { ...item, qty: qtyNum, totalValue: +baseVal.toFixed(2) };
     }));
   };
 
@@ -946,35 +931,11 @@ export default function FastBillingTerminal({
                     ) : ''}
                   </td>
 
-                  {/* Amount with Short-Expiry Clearance Discount Tag */}
+                  {/* Amount */}
                   <td className={`py-1.5 px-3 text-right font-black text-sm border-r border-inherit ${
                     theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'
                   }`}>
-                    {item ? (
-                      <div>
-                        <div>₹{item.totalValue.toFixed(2)}</div>
-                        {item.isShortExpiry && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleClearanceDiscount(idx);
-                            }}
-                            className={`mt-0.5 px-1 py-0.2 rounded text-[8px] font-black uppercase tracking-wider block ml-auto border cursor-pointer ${
-                              item.hasClearanceDiscount
-                                ? 'bg-amber-500 text-white border-amber-600'
-                                : (theme === 'dark' ? 'bg-amber-950/60 text-amber-300 border-amber-700 hover:bg-amber-900/60' : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100')
-                            }`}
-                            title="Toggle 10% Clearance Discount on Short Expiry Stock"
-                          >
-                            <span className="flex items-center space-x-0.5">
-                              <Tag className="w-2.5 h-2.5" />
-                              <span>{item.hasClearanceDiscount ? '-10% Applied' : '10% Clearance?'}</span>
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    ) : ''}
+                    {item ? `₹${item.totalValue.toFixed(2)}` : ''}
                   </td>
 
                   {/* Action */}
