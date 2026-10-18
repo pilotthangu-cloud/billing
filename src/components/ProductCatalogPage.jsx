@@ -17,7 +17,9 @@ import {
   TrendingUp,
   Package,
   Ban,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw,
+  Database
 } from 'lucide-react';
 
 export default function ProductCatalogPage({ 
@@ -25,10 +27,15 @@ export default function ProductCatalogPage({
   medicines, 
   onBackToBilling, 
   onOpenNewMedModal,
-  onUpdateMedicine
+  onUpdateMedicine,
+  onResetMasterCatalog,
+  onAutoRepairMedicines
 }) {
   const isDark = theme === 'dark';
   const [search, setSearch] = useState('');
+  
+  // Check for any corrupted records from bad legacy imports
+  const corruptedCount = medicines.filter(m => m.name && m.name.toUpperCase().includes('UNKNOWN')).length;
   const [selectedRack, setSelectedRack] = useState('ALL');
   const [selectedSchedule, setSelectedSchedule] = useState('ALL');
   const [selectedTax, setSelectedTax] = useState('ALL');
@@ -241,6 +248,21 @@ export default function ProductCatalogPage({
             />
           </div>
 
+          {onResetMasterCatalog && (
+            <button
+              onClick={onResetMasterCatalog}
+              title="Revert back to clean 24,665 master catalog with real medicine names"
+              className={`py-1.5 px-3 font-bold rounded-lg text-xs flex items-center space-x-1.5 border shadow-xs transition-colors ${
+                isDark 
+                  ? 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200' 
+                  : 'border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800'
+              }`}
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-purple-500" />
+              <span>Restore 24,665 Master</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenNewMedModal}
             className="py-1.5 px-3 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg text-xs flex items-center space-x-1.5 shadow"
@@ -250,6 +272,38 @@ export default function ProductCatalogPage({
           </button>
         </div>
       </div>
+
+      {/* Corrupted Medicine Names Alert Banner */}
+      {corruptedCount > 0 && (
+        <div className="mx-4 my-2 p-3 bg-amber-500/15 border-2 border-amber-500/40 rounded-xl flex items-center justify-between text-xs font-sans">
+          <div className="flex items-center space-x-2 text-amber-700 dark:text-amber-300 font-bold">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 animate-bounce" />
+            <div>
+              <span className="block font-black text-sm">Detected {corruptedCount.toLocaleString()} items showing "UNKNOWN MEDICINE" from recent file import!</span>
+              <span className="font-medium text-xs text-amber-800/80 dark:text-amber-300/80">Your imported shop stock counts are safe. Click below to instantly repair names or reset.</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 shrink-0">
+            {onAutoRepairMedicines && (
+              <button
+                onClick={onAutoRepairMedicines}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black shadow-md cursor-pointer flex items-center space-x-1.5 text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Auto-Repair Names (Keep Stock)</span>
+              </button>
+            )}
+            {onResetMasterCatalog && (
+              <button
+                onClick={onResetMasterCatalog}
+                className="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg font-black shadow-md cursor-pointer text-xs"
+              >
+                <span>Reset to 24,665 Master</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modern High-Contrast Table */}
       <div className="flex-1 overflow-y-auto">

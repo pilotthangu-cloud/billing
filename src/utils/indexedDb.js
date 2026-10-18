@@ -170,6 +170,22 @@ export async function idbGetCachedMedicines() {
   });
 }
 
+export async function idbClearMedicines() {
+  const db = await openPharmaDB();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction('medicines', 'readwrite');
+      const store = tx.objectStore('medicines');
+      store.clear();
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
 // ================= DUE BILLS REPOSITORY =================
 
 export async function idbSaveDueBill(dueBill) {

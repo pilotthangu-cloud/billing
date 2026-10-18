@@ -16,7 +16,8 @@ export default function DatabaseImportModal({
   isOpen,
   onClose,
   theme,
-  onImportMedicines
+  onImportMedicines,
+  onResetMasterCatalog
 }) {
   const isDark = theme === 'dark';
 
@@ -198,10 +199,12 @@ export default function DatabaseImportModal({
           }`}>
             <div className="font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
               <HelpCircle className="w-3.5 h-3.5 text-purple-500" />
-              <span>Where to find this in your shop's old computer:</span>
+              <span>Which file to choose from your shop computer:</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              Open your old computer's File Explorer and check <code>D:\LOCAL DISK\RETAILG4\DATA\ITEMFILE.DBF</code> or <code>C:\PHARMA\DATA</code>. Copy it onto a USB thumb drive and select it here.
+              <strong>ITEMFILE.DBF:</strong> Medicine names, shelf racks, MRP, and generics.<br />
+              <strong>STK2610.DBF (or STK*.DBF):</strong> Live physical counter stock counts.<br />
+              <em>Tip: You can import either or both. Names and stock are automatically cross-matched!</em>
             </p>
           </div>
         </div>
@@ -210,14 +213,33 @@ export default function DatabaseImportModal({
         <div className={`px-6 py-4 border-t flex items-center justify-between ${
           isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
         }`}>
-          <button
-            onClick={onClose}
-            className={`px-4 py-2 rounded-lg border text-xs font-bold ${
-              isDark ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-300' : 'border-slate-300 hover:bg-slate-100 text-slate-700'
-            }`}
-          >
-            Cancel
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onClose}
+              className={`px-4 py-2 rounded-lg border text-xs font-bold ${
+                isDark ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-300' : 'border-slate-300 hover:bg-slate-100 text-slate-700'
+              }`}
+            >
+              Cancel
+            </button>
+
+            {onResetMasterCatalog && (
+              <button
+                onClick={() => {
+                  onResetMasterCatalog();
+                  onClose();
+                }}
+                className={`px-3 py-2 rounded-lg border text-xs font-bold flex items-center space-x-1 ${
+                  isDark 
+                    ? 'border-purple-800 bg-purple-950/40 text-purple-300 hover:bg-purple-900/60' 
+                    : 'border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Reset to Built-in 24,665 Master</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={handleApplyImport}

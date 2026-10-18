@@ -28,7 +28,8 @@ import SalesReturnModal from './components/SalesReturnModal';
 import DistributorInvoiceImportModal from './components/DistributorInvoiceImportModal';
 import CommandPaletteModal from './components/CommandPaletteModal';
 import { syncEngine } from './utils/syncEngine';
-import { idbCacheMedicines } from './utils/indexedDb';
+import { idbCacheMedicines, idbClearMedicines } from './utils/indexedDb';
+import { autoRepairCorruptedMedicines } from './utils/dbfReader';
 import { pushSalesBillToSupabase } from './utils/supabaseClient';
 
 import initialMedicines from './data/medicines.json';
@@ -60,6 +61,7 @@ function getInitialPage() {
 }
 
 // Persistent storage loader for medicines (initial base + modifications + newly added items)
+// Automatically heals any corrupted "UNKNOWN MEDICINE" names from bad imports while preserving live stock!
 function getInitialMedicines() {
   try {
     const overridesRaw = localStorage.getItem('beta_pharma_med_overrides');
@@ -67,15 +69,73 @@ function getInitialMedicines() {
     const overrides = overridesRaw ? JSON.parse(overridesRaw) : {};
     const added = addedRaw ? JSON.parse(addedRaw) : [];
 
+    // Authoritative master code map for instant self-healing
+    const masterByCode = new Map(initialMedicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
+
+    // 1. Sanitize overrides: never allow an override to turn a real medicine name into 'UNKNOWN'
+    const cleanOverrides = {};
+    for (const [key, val] of Object.entries(overrides)) {
+      if (val) {
+        const valName = String(val.name || '').toUpperCase();
+        if (valName.includes('UNKNOWN')) {
+          const master = masterByCode.get(String(val.code || key).trim().toUpperCase());
+          if (master) {
+            cleanOverrides[key] = {
+              ...val,
+              name: master.name,
+              rack: (val.rack && val.rack !== 'A-01' && val.rack !== 'R-A-01') ? val.rack : master.rack,
+              mrp: (val.mrp && val.mrp > 10) ? val.mrp : master.mrp
+            };
+          }
+        } else {
+          cleanOverrides[key] = val;
+        }
+      }
+    }
+
+    // 2. Sanitize added meds & recover imported shop stock from any corrupted records
+    const cleanAdded = [];
+    const stockTransfers = {};
+
+    for (const item of added) {
+      if (!item) continue;
+      const codeUpper = String(item.code || '').trim().toUpperCase();
+      const master = masterByCode.get(codeUpper);
+
+      if (master) {
+        // This is a known catalog medicine that was trapped in 'added' during DBF stock import!
+        // Extract its imported stock so live shop quantities are preserved!
+        const qty = item.stock !== undefined ? item.stock : (item.stock_shop1 !== undefined ? item.stock_shop1 : 0);
+        stockTransfers[master.code] = qty;
+      } else {
+        const itemName = String(item.name || '').toUpperCase();
+        if (itemName && !itemName.includes('UNKNOWN')) {
+          cleanAdded.push(item);
+        }
+      }
+    }
+
+    // 3. Build base catalog with clean overrides & recovered stock
     let base = initialMedicines.map(m => {
       const key = m.code || m.name.toLowerCase();
-      if (overrides[key]) {
-        return { ...m, ...overrides[key] };
+      let item = { ...m };
+      if (cleanOverrides[key]) {
+        item = { ...item, ...cleanOverrides[key] };
       }
-      return m;
+      if (stockTransfers[m.code] !== undefined) {
+        item.stock_shop1 = stockTransfers[m.code];
+        item.stock = stockTransfers[m.code];
+      }
+      return item;
     });
 
-    return [...added, ...base];
+    // 4. Save cleaned state back to localStorage to cure browser permanently
+    try {
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(cleanOverrides));
+      localStorage.setItem('beta_pharma_added_meds', JSON.stringify(cleanAdded));
+    } catch (_) {}
+
+    return [...cleanAdded, ...base];
   } catch (e) {
     console.error('Error loading persistent medicines', e);
     return initialMedicines;
@@ -286,32 +346,117 @@ export default function App() {
     if (!newRecords || newRecords.length === 0) return;
 
     setMedicines(prev => {
+      const masterMap = new Map(initialMedicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
+      const prevMap = new Map(prev.map(m => [String(m.code || '').trim().toUpperCase(), m]));
+
       let updated;
       if (mode === 'replace') {
-        updated = newRecords;
+        // Replace catalog but protect against missing names by looking up master catalog
+        updated = newRecords.map(rec => {
+          const codeUpper = String(rec.code || '').trim().toUpperCase();
+          const master = masterMap.get(codeUpper);
+          const prevItem = prevMap.get(codeUpper);
+          
+          let safeName = rec.name;
+          if (!safeName || safeName.includes('UNKNOWN')) {
+            safeName = prevItem?.name || master?.name || (rec.code ? `MEDICINE ${rec.code}` : 'MEDICINE');
+          }
+          let safeRack = rec.rack;
+          if (!safeRack || safeRack === 'A-01' || safeRack === 'R-A-01') {
+            safeRack = prevItem?.rack || master?.rack || 'GN';
+          }
+          let safeMrp = rec.mrp;
+          if (!safeMrp || safeMrp <= 0 || (safeMrp === 10 && master?.mrp && master.mrp !== 10)) {
+            safeMrp = prevItem?.mrp || master?.mrp || 10;
+          }
+
+          return {
+            ...(master || {}),
+            ...(prevItem || {}),
+            ...rec,
+            name: safeName,
+            rack: safeRack,
+            mrp: safeMrp,
+            stock: rec.stock !== undefined ? rec.stock : (prevItem?.stock_shop1 || 0),
+            stock_shop1: rec.stock !== undefined ? rec.stock : (prevItem?.stock_shop1 || 0)
+          };
+        });
       } else {
-        const existingCodes = new Set(prev.map(m => m.code));
+        // Merge mode: update matching items with live stock, add genuinely new items
         const toAdd = [];
         const overrides = {};
 
         newRecords.forEach(rec => {
-          if (existingCodes.has(rec.code)) {
-            overrides[rec.code] = rec;
+          const codeUpper = String(rec.code || '').trim().toUpperCase();
+          if (prevMap.has(codeUpper)) {
+            const existing = prevMap.get(codeUpper);
+            const master = masterMap.get(codeUpper);
+
+            const safeName = (rec.name && !rec.name.includes('UNKNOWN')) ? rec.name : (existing.name || master?.name);
+            const safeRack = (rec.rack && rec.rack !== 'A-01' && rec.rack !== 'R-A-01') ? rec.rack : (existing.rack || master?.rack || 'GN');
+            const safeMrp = (rec.mrp && rec.mrp > 10) ? rec.mrp : (existing.mrp || master?.mrp || 10);
+            const safeStock = rec.stock !== undefined ? rec.stock : existing.stock_shop1;
+
+            overrides[existing.code] = {
+              ...existing,
+              ...rec,
+              name: safeName,
+              rack: safeRack,
+              mrp: safeMrp,
+              stock: safeStock,
+              stock_shop1: safeStock
+            };
           } else {
-            toAdd.push(rec);
+            // New item not in current catalog
+            if (rec.name && !rec.name.includes('UNKNOWN')) {
+              toAdd.push(rec);
+            }
           }
         });
 
-        const baseUpdated = prev.map(m => overrides[m.code] ? { ...m, ...overrides[m.code] } : m);
+        const baseUpdated = prev.map(m => overrides[m.code] ? overrides[m.code] : m);
         updated = [...toAdd, ...baseUpdated];
       }
 
+      // Filter out any UNKNOWN MEDICINE items before persisting
+      const safeForStorage = updated.filter(m => m.name && !m.name.includes('UNKNOWN'));
+      const trulyAdded = safeForStorage.filter(m => m.isImported && !masterMap.has(String(m.code || '').trim().toUpperCase()));
+
       try {
-        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(updated.slice(0, 5000)));
+        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(trulyAdded.slice(0, 2000)));
       } catch (e) {}
+
+      // Cache to IndexedDB for offline resilience
+      idbCacheMedicines(updated).catch(() => {});
 
       return updated;
     });
+  };
+
+  // Instant 1-Click Master Catalog Restoration (Reverts to full 24,665 real items)
+  const handleResetMasterCatalog = () => {
+    try {
+      localStorage.removeItem('beta_pharma_added_meds');
+      localStorage.removeItem('beta_pharma_med_overrides');
+    } catch (_) {}
+    idbClearMedicines().catch(() => {});
+    idbCacheMedicines(initialMedicines).catch(() => {});
+    setMedicines(initialMedicines);
+    alert('✓ Master Catalog Restored: All 24,665 real medicines loaded successfully!');
+  };
+
+  // Auto-Repair corrupted names while keeping imported stock counts
+  const handleAutoRepairMedicines = () => {
+    setMedicines(prev => {
+      const repaired = autoRepairCorruptedMedicines(prev);
+      try {
+        localStorage.removeItem('beta_pharma_added_meds');
+        localStorage.removeItem('beta_pharma_med_overrides');
+      } catch (_) {}
+      idbCacheMedicines(repaired).catch(() => {});
+      return repaired;
+    });
+    alert('✓ Auto-Repair Complete: Medicine names repaired while preserving all your live shop stock!');
   };
 
   // Staff Shift Session & Reconciliation State
@@ -1136,6 +1281,8 @@ export default function App() {
           onBackToBilling={() => setActivePage('billing')}
           onOpenNewMedModal={() => setIsNewMedModalOpen(true)}
           onUpdateMedicine={handleUpdateMedicine}
+          onResetMasterCatalog={handleResetMasterCatalog}
+          onAutoRepairMedicines={handleAutoRepairMedicines}
         />
       )}
 
@@ -1333,6 +1480,7 @@ export default function App() {
         onClose={() => setIsImportModalOpen(false)}
         theme={theme}
         onImportMedicines={handleImportMedicines}
+        onResetMasterCatalog={handleResetMasterCatalog}
       />
 
       {/* Customer Prescription & Visit History Modal (F4 / Instant 1-Click Repeat) */}
