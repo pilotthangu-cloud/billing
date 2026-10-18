@@ -58,10 +58,23 @@ export default function FastBillingTerminal({
   handoverNotice,
   setHandoverNotice
 }) {
+  // Input refs
+  const searchInputRef = useRef(null);
+  const qtyInputRef = useRef(null);
+  const patientInputRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  function focusSearchInput() {
+    try {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    } catch (e) {}
+  }
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedMedIndex, setSelectedMedIndex] = useState(0);
-
 
   // Active Shop Branch Stock Key (Configured per physical machine)
   const stockKey = activeBranch?.stockKey || 'stock_shop1';
@@ -74,18 +87,6 @@ export default function FastBillingTerminal({
 
   // Option B: Active Salt & Generic Substitute Radar Modal
   const [substituteModalMed, setSubstituteModalMed] = useState(null);
-
-  // Input refs
-  const searchInputRef = useRef(null);
-  const qtyInputRef = useRef(null);
-  const patientInputRef = useRef(null);
-  const phoneInputRef = useRef(null);
-  const dropdownRef = useRef(null);
-
-  const focusSearchInput = () => {
-    searchInputRef.current?.focus();
-    searchInputRef.current?.select();
-  };
 
   // Typo-Tolerant High Speed Fuzzy & Prefix Search Engine
   const filtered = searchQuery.trim().length > 0 

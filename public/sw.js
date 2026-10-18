@@ -1,5 +1,5 @@
 // Beta Pharmacy POS — Offline-First Service Worker
-const CACHE_NAME = 'beta-pos-cache-v1';
+const CACHE_NAME = 'beta-pos-cache-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -33,8 +33,13 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // 1. Bypass external API requests (OpenAI Vision, Supabase, Cloud telemetry)
+  // 1. Bypass localhost, dev files, and external API requests
   if (
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.includes('@vite') ||
+    url.pathname.includes('@react-refresh') ||
     url.hostname.includes('openai.com') ||
     url.hostname.includes('supabase.co') ||
     request.method !== 'GET'
