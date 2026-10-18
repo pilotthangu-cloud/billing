@@ -147,10 +147,10 @@ export default function SalesReturnModal({
       }`}>
         {/* Header */}
         <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
-          isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-rose-50 border-rose-200'
+          isDark ? 'bg-zinc-800/90 border-zinc-700' : 'bg-slate-50 border-slate-200'
         }`}>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold shadow-xs">
               <RotateCcw className="w-4 h-4" />
             </div>
             <div>
@@ -158,7 +158,7 @@ export default function SalesReturnModal({
                 <h3 className="font-black text-sm uppercase tracking-wide">
                   Sales Return & Credit Note [SALESRET.PRG / F8]
                 </h3>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300">
+                <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
                   Stock Reversal
                 </span>
               </div>
@@ -261,31 +261,45 @@ export default function SalesReturnModal({
                       <div
                         key={bill.billNo}
                         onClick={() => setSelectedBill(bill)}
-                        className={`p-3 rounded-xl border cursor-pointer transition text-xs ${
+                        className={`p-3.5 rounded-xl border transition-all text-xs cursor-pointer ${
                           isPicked
-                            ? 'bg-rose-50 border-rose-400 dark:bg-rose-950/40 dark:border-rose-600'
-                            : (isDark ? 'bg-zinc-800/60 border-zinc-700/80 hover:bg-zinc-800' : 'bg-white border-slate-200 hover:bg-slate-50')
+                            ? (isDark 
+                                ? 'bg-sky-950/40 border-2 border-sky-500 shadow-md ring-1 ring-sky-500/30' 
+                                : 'bg-sky-50 border-2 border-sky-600 shadow-sm ring-1 ring-sky-500/20')
+                            : (isDark 
+                                ? 'bg-zinc-800/60 border-zinc-700/80 hover:bg-zinc-800 hover:border-zinc-600' 
+                                : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-2xs')
                         }`}
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="font-mono font-black text-sm text-sky-600 dark:text-sky-400">
+                            <span className={`font-mono font-black text-sm ${
+                              isPicked 
+                                ? (isDark ? 'text-sky-300' : 'text-sky-700') 
+                                : (isDark ? 'text-sky-400' : 'text-sky-600')
+                            }`}>
                               #{bill.billNo}
                             </span>
-                            <span className="text-[11px] text-slate-400 ml-2">{bill.date}</span>
+                            <span className="text-[11px] text-slate-500 dark:text-zinc-400 ml-2 font-medium">
+                              {bill.date}
+                            </span>
                           </div>
-                          <span className="font-mono font-black text-emerald-600 dark:text-emerald-400">
+                          <span className={`font-mono font-black text-sm ${
+                            isDark ? 'text-white' : 'text-slate-950'
+                          }`}>
                             ₹{parseFloat(bill.netPayable || bill.grossTotal || 0).toFixed(2)}
                           </span>
                         </div>
 
-                        <div className="font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        <div className={`font-black text-sm mt-1.5 ${
+                          isDark ? 'text-white' : 'text-slate-900'
+                        }`}>
                           {bill.patientName || 'Customer'}
                         </div>
 
-                        <div className="text-[10px] text-slate-500 flex items-center justify-between mt-1">
-                          <span>{bill.items?.length || 0} items</span>
-                          <span>{bill.doctorName || 'GENERAL OTC'}</span>
+                        <div className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center justify-between mt-1">
+                          <span className="font-semibold">{bill.items?.length || 0} items</span>
+                          <span className="font-mono">{bill.doctorName || 'GENERAL OTC'}</span>
                         </div>
                       </div>
                     );
@@ -311,58 +325,75 @@ export default function SalesReturnModal({
                 <form onSubmit={handleSubmitReturn} className="space-y-4">
                   {/* Bill Summary Banner */}
                   <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                    isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-100 border-slate-300'
+                    isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
                   }`}>
                     <div>
-                      <div className="font-black text-sm">Bill #{selectedBill.billNo} ({selectedBill.date})</div>
-                      <div className="text-[11px] text-slate-500">{selectedBill.patientName} • Dr. {selectedBill.doctorName}</div>
+                      <div className={`font-black text-sm ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        Bill #{selectedBill.billNo} ({selectedBill.date})
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5">
+                        {selectedBill.patientName} • Dr. {selectedBill.doctorName}
+                      </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-100 text-sky-800 border border-sky-300">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-black font-mono border ${
+                      isDark ? 'bg-sky-950 text-sky-300 border-sky-800' : 'bg-sky-50 text-sky-800 border-sky-300 shadow-2xs'
+                    }`}>
                       Original Paid: ₹{parseFloat(selectedBill.netPayable || selectedBill.grossTotal || 0).toFixed(2)}
                     </span>
                   </div>
 
                   {/* Return Items Table */}
-                  <div className={`border rounded-xl overflow-hidden ${isDark ? 'border-zinc-800' : 'border-slate-300'}`}>
+                  <div className={`border rounded-xl overflow-hidden ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-slate-300 bg-white shadow-xs'}`}>
                     <table className="w-full text-left text-xs">
                       <thead className={`border-b text-[10px] uppercase font-black ${
-                        isDark ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-slate-100 text-slate-700 border-slate-300'
+                        isDark ? 'bg-zinc-800 text-zinc-200 border-zinc-700' : 'bg-slate-100 text-slate-800 border-slate-200'
                       }`}>
                         <tr>
-                          <th className="py-2 px-2.5 w-10 text-center">Pick</th>
-                          <th className="py-2 px-2.5">Medicine</th>
-                          <th className="py-2 px-2 text-center w-20">Batch</th>
-                          <th className="py-2 px-2 text-center w-16">Billed</th>
-                          <th className="py-2 px-2 text-center w-20">Return</th>
-                          <th className="py-2 px-2.5 text-right w-20">Refund (₹)</th>
+                          <th className="py-2.5 px-3 w-12 text-center">Pick</th>
+                          <th className="py-2.5 px-3">Medicine</th>
+                          <th className="py-2.5 px-2 text-center w-24">Batch</th>
+                          <th className="py-2.5 px-2 text-center w-16">Billed</th>
+                          <th className="py-2.5 px-2 text-center w-24">Return</th>
+                          <th className="py-2.5 px-3 text-right w-24 font-black">Refund (₹)</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-inherit">
+                      <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
                         {returnItems.map((it, idx) => {
                           const unitPrice = it.mrp / (it.per || 10);
                           const lineRefund = unitPrice * it.returnQty;
 
                           return (
-                            <tr key={idx} className={it.isSelected ? (isDark ? 'bg-rose-950/30' : 'bg-rose-50/70') : ''}>
-                              <td className="py-2 px-2.5 text-center">
+                            <tr 
+                              key={idx} 
+                              className={`transition-colors ${
+                                it.isSelected 
+                                  ? (isDark ? 'bg-sky-950/25' : 'bg-sky-50/70') 
+                                  : (isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-slate-50')
+                              }`}
+                            >
+                              <td className="py-2.5 px-3 text-center">
                                 <input
                                   type="checkbox"
                                   checked={it.isSelected}
                                   onChange={() => handleToggleItem(idx)}
-                                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                                  className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 cursor-pointer accent-sky-600"
                                 />
                               </td>
-                              <td className="py-2 px-2.5">
-                                <div className="font-black text-xs">{it.name}</div>
-                                <div className="text-[10px] text-slate-400">MRP: ₹{it.mrp.toFixed(2)} ({it.per}s pack)</div>
+                              <td className="py-2.5 px-3">
+                                <div className={`font-black text-xs ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                                  {it.name}
+                                </div>
+                                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                                  MRP: ₹{it.mrp.toFixed(2)} ({it.per}s pack)
+                                </div>
                               </td>
-                              <td className="py-2 px-2 text-center font-mono font-bold text-slate-500">
+                              <td className="py-2.5 px-2 text-center font-mono font-bold text-slate-700 dark:text-zinc-300">
                                 {it.batch}
                               </td>
-                              <td className="py-2 px-2 text-center font-bold">
+                              <td className="py-2.5 px-2 text-center font-black text-slate-900 dark:text-white">
                                 {it.billedQty}
                               </td>
-                              <td className="py-2 px-2 text-center">
+                              <td className="py-2.5 px-2 text-center">
                                 <input
                                   type="number"
                                   min="0"
@@ -370,15 +401,27 @@ export default function SalesReturnModal({
                                   value={it.returnQty}
                                   onChange={(e) => handleUpdateQty(idx, e.target.value)}
                                   disabled={!it.isSelected}
-                                  className={`w-14 py-1 text-center font-mono font-black text-xs rounded border ${
+                                  className={`w-16 py-1 text-center font-mono font-black text-xs rounded-lg border transition ${
                                     it.isSelected 
-                                      ? (isDark ? 'bg-zinc-800 border-rose-500 text-white' : 'bg-white border-rose-400 text-rose-900 font-bold') 
-                                      : 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-zinc-900 border-slate-300'
+                                      ? (isDark 
+                                          ? 'bg-zinc-900 border-2 border-sky-500 text-white shadow-xs focus:ring-2 focus:ring-sky-400' 
+                                          : 'bg-white border-2 border-sky-600 text-slate-950 shadow-xs focus:ring-2 focus:ring-sky-500') 
+                                      : (isDark 
+                                          ? 'bg-zinc-800/60 border border-zinc-700 text-zinc-500 cursor-not-allowed opacity-75' 
+                                          : 'bg-slate-100 border border-slate-300 text-slate-400 cursor-not-allowed')
                                   }`}
                                 />
                               </td>
-                              <td className="py-2 px-2.5 text-right font-black text-rose-600">
-                                ₹{lineRefund.toFixed(2)}
+                              <td className="py-2.5 px-3 text-right font-mono font-black text-xs">
+                                {lineRefund > 0 ? (
+                                  <span className="text-emerald-600 dark:text-emerald-400">
+                                    ₹{lineRefund.toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 dark:text-zinc-600">
+                                    ₹0.00
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           );
@@ -390,12 +433,14 @@ export default function SalesReturnModal({
                   {/* Return Reason & Settlement Mode */}
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-500 mb-1">Reason for Return</label>
+                      <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-1">
+                        Reason for Return
+                      </label>
                       <select
                         value={returnReason}
                         onChange={(e) => setReturnReason(e.target.value)}
                         className={`w-full py-1.5 px-2.5 rounded-xl border font-bold text-xs ${
-                          isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
+                          isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-2xs'
                         }`}
                       >
                         <option value="Doctor Changed Prescription">Doctor Changed Prescription</option>
@@ -407,12 +452,14 @@ export default function SalesReturnModal({
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-500 mb-1">Refund Settlement</label>
+                      <label className="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-1">
+                        Refund Settlement
+                      </label>
                       <select
                         value={refundMode}
                         onChange={(e) => setRefundMode(e.target.value)}
                         className={`w-full py-1.5 px-2.5 rounded-xl border font-bold text-xs ${
-                          isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
+                          isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900 shadow-2xs'
                         }`}
                       >
                         <option value="CASH_REFUND">Cash Refund (Out from Counter)</option>
@@ -426,8 +473,10 @@ export default function SalesReturnModal({
                     isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-slate-50 border-slate-200'
                   }`}>
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Refund Value</span>
-                      <span className="text-xl font-black text-rose-600 font-mono">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 block tracking-wider">
+                        Total Refund Value
+                      </span>
+                      <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
                         ₹{totalRefundAmount.toFixed(2)}
                       </span>
                     </div>
@@ -436,17 +485,19 @@ export default function SalesReturnModal({
                       <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 rounded-xl border font-bold text-xs"
+                        className={`px-4 py-2 rounded-xl border font-bold text-xs cursor-pointer transition ${
+                          isDark ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800' : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                        }`}
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={selectedReturns.length === 0}
-                        className={`px-5 py-2 rounded-xl font-black text-xs text-white flex items-center space-x-1.5 shadow-md ${
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs text-white flex items-center space-x-1.5 shadow-md transition ${
                           selectedReturns.length > 0
-                            ? 'bg-rose-600 hover:bg-rose-500 cursor-pointer'
-                            : 'bg-slate-400 cursor-not-allowed opacity-50'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer shadow-emerald-600/30'
+                            : 'bg-slate-300 dark:bg-zinc-800 text-slate-500 dark:text-zinc-600 cursor-not-allowed opacity-60'
                         }`}
                       >
                         <RotateCcw className="w-4 h-4" />

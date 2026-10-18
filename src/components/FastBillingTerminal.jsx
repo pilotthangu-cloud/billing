@@ -57,23 +57,6 @@ export default function FastBillingTerminal({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedMedIndex, setSelectedMedIndex] = useState(0);
 
-  // Quick Inline Add Cashier Name on Counter
-  const [isAddingCashier, setIsAddingCashier] = useState(false);
-  const [newCashierInput, setNewCashierInput] = useState('');
-
-  const handleSaveNewCashierDirect = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    const clean = newCashierInput.trim();
-    if (!clean) return;
-    if (onAddStaff) onAddStaff(clean);
-    setNewCashierInput('');
-    setIsAddingCashier(false);
-    // Direct to Shift Handover flow with newly added cashier name
-    if (onOpenShiftModal) onOpenShiftModal(clean);
-  };
 
   // Active Shop Branch Stock Key (Configured per physical machine)
   const stockKey = activeBranch?.stockKey || 'stock_shop1';
@@ -499,98 +482,8 @@ export default function FastBillingTerminal({
           </div>
         </div>
 
-        {/* Right Section: Cashier Selector & Payment Mode */}
+        {/* Right Section: Payment Mode & Sales Return Actions */}
         <div className="flex items-center space-x-2 shrink-0">
-          {/* Cashier Selector with Mandatory Handover Enforcement */}
-          <div className="flex items-center space-x-1 font-mono">
-            {isAddingCashier ? (
-              <div className="flex items-center space-x-1 font-mono">
-                <input
-                  type="text"
-                  autoFocus
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="words"
-                  spellCheck={false}
-                  data-lpignore="true"
-                  data-form-type="other"
-                  value={newCashierInput}
-                  onChange={(e) => setNewCashierInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSaveNewCashierDirect(e);
-                    } else if (e.key === 'Escape') {
-                      setIsAddingCashier(false);
-                    }
-                  }}
-                  placeholder="Cashier Name..."
-                  className={`px-2 py-1 rounded border text-xs font-bold w-32 focus:ring-2 focus:ring-sky-500 focus:outline-none ${
-                    theme === 'dark' ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveNewCashierDirect}
-                  className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-black cursor-pointer shadow-xs transition"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingCashier(false)}
-                  className="px-1.5 py-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-                  title="Cancel"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <div className={`flex items-center border rounded px-2 py-1 ${
-                theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-xs'
-              }`}>
-                <span className="text-slate-500 text-[10px] uppercase font-bold mr-1">Cashier:</span>
-                <select
-                  value={activeShift?.staffName || (staffList && staffList[0]) || 'Rahul C'}
-                  onChange={(e) => {
-                    const selected = e.target.value;
-                    if (selected === '__add_new__') {
-                      setIsAddingCashier(true);
-                    } else if (selected !== (activeShift?.staffName || 'Rahul C')) {
-                      // Selecting a new cashier MUST trigger Shift Handover!
-                      if (onOpenShiftModal) {
-                        onOpenShiftModal(selected);
-                      }
-                    }
-                  }}
-                  className={`bg-transparent border-0 font-bold text-xs cursor-pointer focus:outline-none ${
-                    theme === 'dark' ? 'text-white' : 'text-slate-900'
-                  }`}
-                  title="Active Cashier • Select another name to initiate shift handover"
-                >
-                  {(staffList || ['Rahul C', 'Suresh Kumar', 'Deepa M', 'Arun K']).map((staff, sIdx) => (
-                    <option key={sIdx} value={staff} className={theme === 'dark' ? 'bg-zinc-900 text-white' : 'bg-white text-slate-900'}>
-                      {staff}
-                    </option>
-                  ))}
-                  <option value="__add_new__" className="text-sky-600 font-bold">
-                    ➕ Add Name...
-                  </option>
-                </select>
-                {onOpenShiftModal && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenShiftModal(null)}
-                    className="ml-2 text-[10px] font-bold text-sky-600 hover:text-sky-500 uppercase font-mono border-l pl-2 border-slate-300 dark:border-zinc-700 cursor-pointer"
-                    title="Cash Count & Shift Handover"
-                  >
-                    Handover
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
 
           {/* Payment Mode */}
           <div className="flex items-center space-x-1">
