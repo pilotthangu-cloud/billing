@@ -1221,9 +1221,11 @@ export default function App() {
       />
 
       {/* Off-screen Direct Print Target (Ensures 1-Click Print Bill directly outputs 1:1 ESC/P dot-matrix receipt without opening popup) */}
-      <div className="hidden print:block">
-        <PrintableReceipt billData={completedBillData || recentBills[0]} isReprint={isReprintMode} />
-      </div>
+      {!isSalesReturnOpen && (
+        <div className="hidden print:block">
+          <PrintableReceipt billData={completedBillData || recentBills[0]} isReprint={isReprintMode} />
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   Stethoscope,
   ArrowRight
 } from 'lucide-react';
+import PrintableCreditNote from './PrintableCreditNote';
 
 export default function SalesReturnModal({
   isOpen,
@@ -511,6 +512,13 @@ export default function SalesReturnModal({
           </div>
         )}
       </div>
+
+      {/* Off-screen Direct Print Target for Credit Note Voucher */}
+      {returnSuccessData && (
+        <div className="hidden print:block">
+          <PrintableCreditNote voucherData={returnSuccessData} />
+        </div>
+      )}
     </div>
   );
 }
