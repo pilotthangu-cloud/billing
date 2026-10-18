@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Search, AlertTriangle, Calendar, Building2, Download } from 'lucide-react';
 
 export default function ExpiryReportPage({ theme, medicines, onBackToBilling }) {
