@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port 3000 --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node test-runner.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
