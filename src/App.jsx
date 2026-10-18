@@ -91,23 +91,7 @@ function getInitialRecentBills() {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  return [
-    {
-      billNo: '025315',
-      date: '16/10/2026',
-      time: '20:15:22',
-      patientName: 'K. RAGHAVAN',
-      doctorName: 'DR. SUKUMARAN MBBS',
-      paymentMode: 'cash',
-      items: [
-        { code: 'M10001', name: 'AUGMENTIN 625MG TAB', batch: 'AUG9901', exp: '04/28', qty: 10, mrp: 22.34, totalValue: 223.40, gstPercent: 12 },
-        { code: 'M10002', name: 'PAN 40MG TAB', batch: 'PAN2041', exp: '11/27', qty: 15, mrp: 15.50, totalValue: 232.50, gstPercent: 12 }
-      ],
-      grossTotal: 455.90,
-      netPayable: 456,
-      store: 'Beta Pharmacy (Thalassery)'
-    }
-  ];
+  return [];
 }
 
 // Persistent storage loader for next bill number sequence
@@ -116,7 +100,7 @@ function getInitialBillNo() {
     const saved = localStorage.getItem('beta_pharma_next_bill_no');
     if (saved) return saved;
   } catch (e) {}
-  return '025316';
+  return '000001';
 }
 
 // Multi-Shop Branch Machine Identifiers (Configured per physical shop counter)
@@ -386,7 +370,12 @@ export default function App() {
 
   // Active Bill States (Starts clean & empty)
   const [billNo, setBillNo] = useState(getInitialBillNo);
-  const [billDate, setBillDate] = useState('16/10/2026');
+  const [billDate, setBillDate] = useState(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${d.getFullYear()}`;
+  });
   const [patientName, setPatientName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [isCustomerHistoryOpen, setIsCustomerHistoryOpen] = useState(false);

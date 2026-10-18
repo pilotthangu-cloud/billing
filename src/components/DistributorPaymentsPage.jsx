@@ -30,7 +30,12 @@ export default function DistributorPaymentsPage({ theme, onBackToBilling }) {
   const [paymentMode, setPaymentMode] = useState('CHEQUE'); // 'CHEQUE', 'NEFT', 'UPI', 'CASH'
   const [chequeNo, setChequeNo] = useState('');
   const [bankName, setBankName] = useState('State Bank of India (Thalassery)');
-  const [chequeDate, setChequeDate] = useState('16/10/2026');
+  const [chequeDate, setChequeDate] = useState(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${d.getFullYear()}`;
+  });
   const [paymentToast, setPaymentToast] = useState('');
 
   // Live Distributor Purchase Invoices Ledger loaded from localStorage (PURCHASE.DBF & ACCTBOOK.DBF)
