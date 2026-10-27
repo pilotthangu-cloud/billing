@@ -441,7 +441,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
               return updated;
             });
           } else {
-            detectedSupplier = allSuppliers[0] || { code: 'S076', name: 'THE CAN DRUG HOUSE' };
+            detectedSupplier = allSuppliers[0] || null;
           }
         }
 
@@ -472,7 +472,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
             name: (it.name || 'INWARD ITEM').toUpperCase(),
             generic: it.generic || '',
             batch: (it.batch || 'BT' + Math.floor(1000 + Math.random() * 9000)).toUpperCase(),
-            exp: it.exp || '12/28',
+            exp: it.exp || '',
             wQty,
             freeQty,
             packSize,
@@ -490,21 +490,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
           invoiceNo: parsed.invoiceNo || 'INV-' + Math.floor(10000 + Math.random() * 90000),
           invoiceDate: parsed.invoiceDate || new Date().toLocaleDateString('en-GB'),
           isCash: typeof parsed.isCash === 'boolean' ? parsed.isCash : false,
-          items: cleanedItems.length > 0 ? cleanedItems : [
-            {
-              name: 'INWARD MEDICINE',
-              generic: 'Active Compound',
-              batch: 'BT1001',
-              exp: '12/28',
-              wQty: 10,
-              freeQty: 0,
-              packSize: 10,
-              ptr: 50.00,
-              mrp: 75.00,
-              taxPercent: 12,
-              confidence: 90
-            }
-          ]
+          items: cleanedItems
         });
     } catch (err) {
       console.error('Invoice Extract Error:', err);
@@ -547,7 +533,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
           name: 'NEW MEDICINE TAB',
           generic: 'Active Salt',
           batch: 'BT' + Math.floor(1000 + Math.random() * 9000),
-          exp: '12/28',
+          exp: '',
           wQty: 10,
           freeQty: 0,
           packSize: 10,

@@ -214,7 +214,7 @@ export default function FastBillingTerminal({
 
     const chosenBatch = sortedBatches.length > 0 ? sortedBatches[0] : {
       batch_no: 'B' + med.code.slice(-4),
-      exp_date: '12/27',
+      exp_date: '',
       mrp: med.mrp,
       per: med.per || 10
     };

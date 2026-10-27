@@ -150,18 +150,18 @@
 /* Print Output Styles (TVS MSP 250 Star Dot-Matrix Continuous Stationery) */
 @media print {
   @page {
-    /* Standard Indian Fanfold Continuous Tractor Stationery: 210mm width x 140mm height (8.5 x 5.5 inches) */
-    size: 210mm 140mm;
-    margin: 0mm !important;
+    /* Standard Indian Fanfold Continuous Stationery: 8.5in width x 5.5in height (Half-Sheet) */
+    size: 8.5in 5.5in;
+    margin: 0 !important;
   }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     color: black !important;
-    width: 210mm !important;
-    height: 140mm !important;
-    max-height: 140mm !important;
+    width: 8.5in !important;
+    height: 5.5in !important;
+    max-height: 5.5in !important;
     overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -170,32 +170,38 @@
     display: none !important;
   }
 
-  /* Isolate and print only the continuous receipt */
-  body:has(#printable-receipt) * {
+  /* Isolate and pin the receipt directly to top-left (0,0) */
+  body:has(#printable-receipt-area) * {
     visibility: hidden;
   }
-  body:has(#printable-receipt) #printable-receipt,
-  body:has(#printable-receipt) #printable-receipt * {
+  body:has(#printable-receipt-area) #printable-receipt-area,
+  body:has(#printable-receipt-area) #printable-receipt-area * {
     visibility: visible !important;
   }
-  #printable-receipt {
-    position: absolute !important;
+  #printable-receipt-area {
+    position: fixed !important;
     left: 0 !important;
     top: 0 !important;
-    width: 210mm !important;
-    max-width: 210mm !important;
-    height: 140mm !important;
-    max-height: 140mm !important;
+    width: 8.5in !important;
+    max-width: 8.5in !important;
+    height: 5.5in !important;
+    max-height: 5.5in !important;
     margin: 0 !important;
-    padding: 3mm 6mm !important;
+    padding: 0.1in 0.25in !important;
     background: white !important;
     color: black !important;
     border: none !important;
     box-shadow: none !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 9.5pt !important;
+    line-height: 1.15 !important;
+    white-space: pre !important;
     page-break-after: avoid !important;
     page-break-inside: avoid !important;
     page-break-before: avoid !important;
     overflow: hidden !important;
+    display: block !important;
+    z-index: 999999 !important;
   }
 }
 

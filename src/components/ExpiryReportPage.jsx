@@ -478,7 +478,7 @@ export default function ExpiryReportPage({
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                   <div>Purchase Bill No: <strong>{selectedBatch.purBillNo}</strong></div>
                   <div>Inward Date: <strong>{selectedBatch.inwardDate}</strong></div>
-                  <div className="col-span-2">Distributor / Supplier: <strong>{selectedBatch.supplier || 'THE CAN DRUG HOUSE'}</strong></div>
+                  <div className="col-span-2">Distributor / Supplier: <strong>{selectedBatch.supplier || 'N/A'}</strong></div>
                   <div className="col-span-2">Total Inward Value: <strong>₹{((selectedBatch.stock || 1) * selectedBatch.mrp).toFixed(2)}</strong></div>
                 </div>
               </div>

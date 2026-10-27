@@ -90,7 +90,7 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
 
       const rawName = nameIdx !== -1 ? parts[nameIdx] : parts[0];
       const rawBatch = batchIdx !== -1 ? parts[batchIdx] : (parts[1] || 'BN' + Math.floor(1000 + Math.random() * 9000));
-      const rawExp = expIdx !== -1 ? parts[expIdx] : (parts[2] || '12/28');
+      const rawExp = expIdx !== -1 ? parts[expIdx] : (parts[2] || '');
       const rawQty = qtyIdx !== -1 ? parseInt(parts[qtyIdx], 10) || 10 : 10;
       const rawPtr = ptrIdx !== -1 ? parseFloat(parts[ptrIdx]) || 50.0 : 50.0;
       const rawMrp = mrpIdx !== -1 ? parseFloat(parts[mrpIdx]) || (rawPtr * 1.3) : (rawPtr * 1.3);

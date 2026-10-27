@@ -40,7 +40,40 @@ export default function DatabaseImportModal({
 
     try {
       const itemFile = files.find(f => f.name.toUpperCase() === 'ITEMFILE.DBF');
-      const stockFile = files.find(f => f.name.toUpperCase().startsWith('STK') && f.name.toUpperCase().endsWith('.DBF'));
+      // Look for Company Master DBF (maps CO_CODE -> CO_NAME e.g. H001 -> HIND)
+      const compFile = files.find(f => {
+        const n = f.name.toUpperCase();
+        return n === 'COMPMAST.DBF' || n === 'COMPANY.DBF' || n === 'COMPFILE.DBF' || n === 'COMAST.DBF';
+      });
+
+      let companyMap = new Map();
+      if (compFile) {
+        setStatusMessage(`Reading company master from ${compFile.name}...`);
+        const cBuf = await compFile.arrayBuffer();
+        const { records: compRecs } = parseDbfBuffer(cBuf);
+        compRecs.forEach(cr => {
+          const code = String(cr.CO_CODE || cr.CODE || cr.ID || '').trim().toUpperCase();
+          const name = String(cr.CO_NAME || cr.NAME || cr.COMPANY || '').trim().toUpperCase();
+          if (code && name) {
+            companyMap.set(code, name);
+          }
+        });
+      }
+
+      // Detect all STK*.DBF files and select the latest (STKFILE.DBF or newest date)
+      const stockFiles = files.filter(f => {
+        const n = f.name.toUpperCase();
+        return n.startsWith('STK') && n.endsWith('.DBF');
+      });
+      let stockFile = null;
+      if (stockFiles.length > 0) {
+        stockFiles.sort((a, b) => {
+          if (a.name.toUpperCase() === 'STKFILE.DBF') return -1;
+          if (b.name.toUpperCase() === 'STKFILE.DBF') return 1;
+          return (b.lastModified || 0) - (a.lastModified || 0) || b.name.localeCompare(a.name);
+        });
+        stockFile = stockFiles[0];
+      }
 
       let records = [];
 
@@ -68,7 +101,7 @@ export default function DatabaseImportModal({
           stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
 
           const batchNo = String(sr.BATCH || sr.BATCH_NO || sr.BAT_NO || 'BN001').trim();
-          const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '12/28').trim();
+          const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '').trim();
           const mrp = parseFloat(sr.MRP || sr.RATE || sr.PRICE || 0) || 0;
           const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PRATE || 0) || 0;
           const supplier = String(sr.SUPPLIER || sr.DIST || 'Direct Inward').trim();
@@ -96,7 +129,11 @@ export default function DatabaseImportModal({
                 BATCHES: batchesMap.get(code)
               };
             }
-            return r;
+            return {
+              ...r,
+              STOCK: 0,
+              BATCHES: []
+            };
           });
         } else {
           // If only STK*.DBF was uploaded, synthesize grouped items per unique IT_CODE
@@ -130,7 +167,7 @@ export default function DatabaseImportModal({
       }
 
       setSelectedFile({ name: `DATA Folder (${files.length} files)` });
-      const normalized = normalizeLegacyMedicineRecords(records);
+      const normalized = normalizeLegacyMedicineRecords(records, null, companyMap);
       setParsedRecords(normalized);
       setStatusMessage(`✓ Loaded ${normalized.length.toLocaleString()} medicines with live counter stock!`);
     } catch (err) {

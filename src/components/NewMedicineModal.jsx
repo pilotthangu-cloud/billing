@@ -13,7 +13,7 @@ export default function NewMedicineModal({ isOpen, onClose, onAddMedicine, theme
     batch_no: '',
     exp_date: '',
     stock: '20',
-    supplier: 'THE CAN DRUG HOUSE'
+    supplier: ''
   });
 
   if (!isOpen) return null;
@@ -43,10 +43,10 @@ export default function NewMedicineModal({ isOpen, onClose, onAddMedicine, theme
       batches: [
         {
           batch_no: formData.batch_no.trim() || 'B101',
-          exp_date: formData.exp_date.trim() || '12/28',
+          exp_date: formData.exp_date.trim() || '',
           mrp: parseFloat(formData.mrp) || 100.00,
           per: parseInt(formData.per) || 10,
-          supplier: formData.supplier || 'THE CAN DRUG HOUSE'
+          supplier: formData.supplier || ''
         }
       ]
     };

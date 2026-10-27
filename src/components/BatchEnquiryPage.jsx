@@ -92,7 +92,7 @@ export default function BatchEnquiryPage({
               supplierCity: 'KANNUR',
               productName: it.name,
               salt: it.generic || '',
-              company: it.company || 'Pharma Labs',
+              company: it.company || 'Generic',
               packSize: it.packSize || 10,
               batchNo: it.batch,
               expDate: it.exp,

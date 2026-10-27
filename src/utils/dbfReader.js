@@ -9,7 +9,7 @@
  * is imported, real medicine names, racks, MRP, and pack sizes are 100% preserved!
  */
 
-import masterCatalogData from '../data/medicines.json';
+import masterCatalogData from '../data/medicines.json' with { type: 'json' };
 
 // Build instantaneous O(1) indexed lookup maps
 const masterByCode = new Map();
@@ -183,7 +183,7 @@ function cleanMedicineName(rawName) {
  * Cross-references the authoritative 24,665 master catalog to recover real medicine
  * names, racks, and MRPs even when importing stock-only balance files (e.g. STK2610.DBF).
  */
-export function normalizeLegacyMedicineRecords(records, customMaster = null) {
+export function normalizeLegacyMedicineRecords(records, customMaster = null, companyMap = null) {
   const activeMasterByCode = customMaster 
     ? new Map(customMaster.map(m => [String(m.code || '').trim().toUpperCase(), m]))
     : masterByCode;
@@ -222,7 +222,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
     // 5. Extract Rack Location
     const rawRack = r.RACK || r.RACKNO || r.RACK_NO || r.LOCATION || r.SHELF || r.BIN || '';
     let rack = String(rawRack).trim().toUpperCase();
-    if (!rack || rack === 'A-01' || rack === 'R-A-01') {
+    if (!rack) {
       rack = master?.rack || 'GN';
     }
 
@@ -246,16 +246,18 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
     else if (r.CL_STOCK !== undefined) stock = parseInt(r.CL_STOCK, 10) || 0;
     else if (r.OP_STOCK !== undefined) stock = parseInt(r.OP_STOCK, 10) || 0;
     else if (r.IT_QTY !== undefined) stock = parseInt(r.IT_QTY, 10) || 0;
-    else if (master && master.stock_shop1 !== undefined) stock = master.stock_shop1;
+    else stock = 0; // Strictly 0 if not in imported stock file - NEVER resurrect master.stock_shop1!
 
     // 8. Extract Packing & Units
     const packing = String(r.PACK || r.PACKING || r.UNIT || r.PER || master?.per || '10 TAB').trim();
     const per = parseInt(r.PER || master?.per || 10, 10) || 10;
 
     // 9. Extract Company & Generic
-    let company = String(r.CO_NAME || r.COMPANY || r.MFG || r.MFGR || '').trim().toUpperCase();
+    const rawCoCode = String(r.CO_CODE || r.COMPANY_CODE || r.MFG_CODE || '').trim().toUpperCase();
+    let company = (companyMap && rawCoCode && companyMap.get(rawCoCode)) ||
+      String(r.CO_NAME || r.COMPANY || r.MFG || r.MFGR || '').trim().toUpperCase();
     if (!company || company === 'GENERIC') {
-      company = master?.company || 'PHARMA LABS';
+      company = master?.company || 'GENERIC';
     }
 
     let generic = String(r.GEN_NAME || r.GENERIC || r.COMPOSITION || r.SALT || '').trim().toUpperCase();
@@ -272,32 +274,32 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
     if (Array.isArray(r.BATCHES) && r.BATCHES.length > 0) {
       batches = r.BATCHES.map(b => ({
         batch_no: String(b.batch_no || b.batch || `B${code.slice(-4)}`).trim(),
-        exp_date: String(b.exp_date || b.exp || '12/28').trim(),
+        exp_date: String(b.exp_date || b.exp || '').trim(),
         mrp: parseFloat(b.mrp) || Number(mrp.toFixed(2)),
         per: per,
         qty: parseInt(b.qty || b.stock || 0, 10) || 0,
-        supplier: b.supplier || 'THE CAN DRUG HOUSE'
+        supplier: b.supplier || ''
       }));
     } else if (r.BATCH) {
       batches = [{
         batch_no: String(r.BATCH).trim(),
-        exp_date: r.EXPIRY ? String(r.EXPIRY).trim() : '12/27',
+        exp_date: r.EXPIRY ? String(r.EXPIRY).trim() : '',
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
-        supplier: r.SUPPLIER || 'THE CAN DRUG HOUSE'
+        supplier: r.SUPPLIER || ''
       }];
-    } else if (master?.batches && master.batches.length > 0) {
-      batches = master.batches;
-    } else {
-      batches = [{
+    } else if (stock > 0) {
+      batches = (master?.batches && master.batches.length > 0) ? master.batches : [{
         batch_no: `B${code.slice(-4)}`,
-        exp_date: '12/27',
+        exp_date: '',
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
-        supplier: 'THE CAN DRUG HOUSE'
+        supplier: ''
       }];
+    } else {
+      batches = [];
     }
 
     return {
@@ -316,7 +318,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null) {
       stock_shop3: master?.stock_shop3 || 0,
       gstPercent,
       hsn,
-      schedule: master?.schedule || (cleanedName.includes('CLONA') || cleanedName.includes('ALPRA') ? 'H1' : 'H'),
+      schedule: master?.schedule || (cleanedName.includes('CLONA') || cleanedName.includes('ALPRA') ? 'H1' : ''),
       batches,
       isImported: true
     };

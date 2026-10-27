@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw, Share2 } from 'lucide-react';
+import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw, Share2, Download } from 'lucide-react';
 import PrintableReceipt from './PrintableReceipt';
 import { triggerWhatsAppBillShare } from '../utils/billUtils';
+import { generateTvsEscPosStream } from '../utils/tvsPrinterEngine';
 
 export default function DotMatrixReceiptModal({ 
   isOpen, 
@@ -17,6 +18,22 @@ export default function DotMatrixReceiptModal({
   const handleWhatsAppShare = () => {
     if (!billData) return;
     triggerWhatsAppBillShare(billData, billData.customerPhone);
+  };
+
+  const handleDownloadPrn = () => {
+    if (!billData) return;
+    try {
+      const stream = generateTvsEscPosStream(billData);
+      const blob = new Blob([stream], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BILL_${billData.billNo || 'TVS'}.prn`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Error generating raw TVS spool:', e);
+    }
   };
 
   // Unified Print Action
@@ -97,6 +114,16 @@ export default function DotMatrixReceiptModal({
                 </select>
               </div>
             )}
+
+            {/* Raw TVS Spool Download */}
+            <button
+              onClick={handleDownloadPrn}
+              className="py-1.5 px-3 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition shadow cursor-pointer bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+              title="Download direct ESC/P byte spool for TVS MSP 250 Star hardware"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>TVS Spool (.prn)</span>
+            </button>
 
             {/* WhatsApp Bill Action */}
             <button

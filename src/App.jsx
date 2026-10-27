@@ -86,7 +86,7 @@ function getInitialMedicines() {
             cleanOverrides[key] = {
               ...val,
               name: master.name,
-              rack: (val.rack && val.rack !== 'A-01' && val.rack !== 'R-A-01') ? val.rack : master.rack,
+              rack: val.rack ? val.rack : master.rack,
               mrp: (val.mrp && val.mrp > 10) ? val.mrp : master.mrp
             };
           }
@@ -366,7 +366,7 @@ export default function App() {
             safeName = prevItem?.name || master?.name || (rec.code ? `MEDICINE ${rec.code}` : 'MEDICINE');
           }
           let safeRack = rec.rack;
-          if (!safeRack || safeRack === 'A-01' || safeRack === 'R-A-01') {
+          if (!safeRack) {
             safeRack = prevItem?.rack || master?.rack || 'GN';
           }
           let safeMrp = rec.mrp;
@@ -379,10 +379,11 @@ export default function App() {
             ...(prevItem || {}),
             ...rec,
             name: safeName,
+            company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (prevItem?.company || existing?.company || master?.company || 'GENERIC'),
             rack: safeRack,
             mrp: safeMrp,
-            stock: rec.stock !== undefined ? rec.stock : (prevItem?.stock_shop1 || 0),
-            stock_shop1: rec.stock !== undefined ? rec.stock : (prevItem?.stock_shop1 || 0)
+            stock: rec.stock !== undefined ? rec.stock : 0,
+            stock_shop1: rec.stock !== undefined ? rec.stock : 0
           };
         });
       } else {
@@ -397,14 +398,15 @@ export default function App() {
             const master = masterMap.get(codeUpper);
 
             const safeName = (rec.name && !rec.name.includes('UNKNOWN')) ? rec.name : (existing.name || master?.name);
-            const safeRack = (rec.rack && rec.rack !== 'A-01' && rec.rack !== 'R-A-01') ? rec.rack : (existing.rack || master?.rack || 'GN');
-            const safeMrp = (rec.mrp && rec.mrp > 10) ? rec.mrp : (existing.mrp || master?.mrp || 10);
-            const safeStock = rec.stock !== undefined ? rec.stock : existing.stock_shop1;
+            const safeRack = rec.rack ? String(rec.rack).trim() : (existing.rack || master?.rack || 'GN');
+            const safeMrp = (rec.mrp !== undefined && rec.mrp > 0) ? rec.mrp : (existing.mrp || master?.mrp || 10);
+            const safeStock = rec.stock !== undefined ? rec.stock : 0;
 
             overrides[existing.code] = {
               ...existing,
               ...rec,
               name: safeName,
+            company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (prevItem?.company || existing?.company || master?.company || 'GENERIC'),
               rack: safeRack,
               mrp: safeMrp,
               stock: safeStock,
@@ -1016,7 +1018,7 @@ export default function App() {
       time: currentTime,
       patientName: returnData.originalBill?.patientName || 'CUSTOMER',
       customerPhone: returnData.originalBill?.customerPhone || '',
-      doctorName: returnData.originalBill?.doctorName || 'GENERAL OTC',
+      doctorName: returnData.originalBill?.doctorName || 'Self / OTC',
       paymentMode: returnData.action === 'credit_note' ? 'CREDIT NOTE' : 'CASH REFUND',
       items: returnData.returnedItems.map(it => ({
         code: it.code,
@@ -1036,7 +1038,7 @@ export default function App() {
     };
 
     setRecentBills(prev => {
-      const updated = [creditNoteBill, ...prev.slice(0, 499)];
+      const updated = [creditNoteBill, ...prev];
       try {
         localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updated));
       } catch (e) {}
@@ -1079,7 +1081,7 @@ export default function App() {
           } else {
             batches.unshift({
               batch_no: item.batch || 'BN-' + Date.now().toString().slice(-4),
-              exp_date: item.exp || '12/28',
+              exp_date: item.exp || item.exp_date || '',
               mrp: item.mrp || med.mrp,
               per: item.per || med.per || 10,
               stock: item.qty
@@ -1106,7 +1108,7 @@ export default function App() {
             stock_shop2: targetStockKey === 'stock_shop2' ? item.qty : 0,
             batches: [{
               batch_no: item.batch || 'BN001',
-              exp_date: item.exp || '12/28',
+              exp_date: item.exp || item.exp_date || '',
               mrp: item.mrp || 100,
               per: item.per || 10,
               stock: item.qty
@@ -1239,7 +1241,7 @@ export default function App() {
       time: currentTime,
       patientName: patientName || 'CUSTOMER',
       customerPhone: customerPhone ? customerPhone.trim() : '',
-      doctorName: doctorName || 'GENERAL OTC',
+      doctorName: doctorName || 'Self / OTC',
       paymentMode,
       items: [...items],
       grossTotal: gross,
@@ -1283,9 +1285,9 @@ export default function App() {
 
     // 2. Persist recent bills for F7 recall / reprint (up to 500 per day — safe for localStorage)
     setRecentBills(prev => {
-      const updatedBills = [billPayload, ...prev.slice(0, 499)];
+      const updatedBills = [billPayload, ...prev];
       try {
-        localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updatedBills));
+        localStorage.setItem('beta_pharma_recent_bills', JSON.stringify(updatedBills.slice(0, 500)));
       } catch (e) {}
       return updatedBills;
     });
@@ -1298,7 +1300,7 @@ export default function App() {
         const existing = stored[cleanPhone] || {
           phone: cleanPhone,
           name: patientName || 'CUSTOMER',
-          preferredDoctor: doctorName || 'GENERAL OTC',
+          preferredDoctor: doctorName || 'Self / OTC',
           totalVisits: 0,
           totalSpent: 0,
           bills: []
@@ -1325,7 +1327,7 @@ export default function App() {
           date: billDate,
           customerName: patientName || 'CUSTOMER',
           customerPhone: customerPhone ? customerPhone.trim() : '',
-          doctorName: doctorName || 'GENERAL OTC',
+          doctorName: doctorName || 'Self / OTC',
           amount: net,
           balance: net,
           dueDate: '30 days',
@@ -1371,7 +1373,7 @@ export default function App() {
       const found = medicines.find(m => m.code === it.code || m.name.toLowerCase() === it.name.toLowerCase());
       const batchObj = found?.batches?.[0] || {
         batch_no: it.batch || 'BN001',
-        exp_date: it.exp || '12/28',
+        exp_date: it.exp || it.exp_date || '',
         mrp: it.mrp || 30,
         per: 10
       };
