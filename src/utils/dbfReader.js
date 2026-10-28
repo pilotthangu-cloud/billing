@@ -368,3 +368,191 @@ export function autoRepairCorruptedMedicines(medicinesList) {
     return med;
   });
 }
+
+
+/**
+ * Universal Multi-File DBF Folder Processor (ITEMFILE + COMPMAST + STKFILE)
+ * Shared between FirstTimeSetupWizardModal and DatabaseImportModal
+ */
+export async function processDbfFolderFiles(fileList, statusCallback = () => {}) {
+  const files = Array.from(fileList || []);
+  if (files.length === 0) {
+    throw new Error('No files found in folder.');
+  }
+
+  // 1. Locate Master Item File
+  const itemFile = files.find(f => {
+    const n = f.name.toUpperCase();
+    return (n.startsWith('ITEM') || n.startsWith('MEDICINE') || n.startsWith('PRODUCT')) && n.endsWith('.DBF');
+  });
+
+  // 2. Locate Company Master File (COMPMAST.DBF / COMPANY.DBF / COMAST.DBF / etc.)
+  const companyFile = files.find(f => {
+    const n = f.name.toUpperCase();
+    return (n.startsWith('COMP') || n.startsWith('COMAST') || n.startsWith('COMPANY')) && n.endsWith('.DBF');
+  });
+
+  // Build Company Map if COMPMAST.DBF is present
+  const companyMap = new Map();
+  if (companyFile) {
+    statusCallback(`Reading company master from ${companyFile.name}...`);
+    const cBuf = await companyFile.arrayBuffer();
+    const { records: compRecs } = parseDbfBuffer(cBuf);
+    compRecs.forEach(cr => {
+      const coCode = String(cr.CO_CODE || cr.CODE || cr.C_CODE || cr.MF_CODE || '').trim().toUpperCase();
+      const coName = String(cr.CO_NAME || cr.NAME || cr.COMPANY || cr.MFR || '').trim();
+      if (coCode && coName) {
+        companyMap.set(coCode, coName);
+      }
+    });
+  }
+
+  // 3. Locate Stock File (STKFILE.DBF or newest STK*.DBF)
+  const stockFiles = files.filter(f => {
+    const n = f.name.toUpperCase();
+    return n.startsWith('STK') && n.endsWith('.DBF');
+  });
+  let stockFile = null;
+  if (stockFiles.length > 0) {
+    stockFiles.sort((a, b) => {
+      if (a.name.toUpperCase() === 'STKFILE.DBF') return -1;
+      if (b.name.toUpperCase() === 'STKFILE.DBF') return 1;
+      return (b.lastModified || 0) - (a.lastModified || 0) || b.name.localeCompare(a.name);
+    });
+    stockFile = stockFiles[0];
+  }
+
+  let records = [];
+
+  // Parse Item File
+  if (itemFile) {
+    statusCallback(`Reading master catalog from ${itemFile.name}...`);
+    const buf = await itemFile.arrayBuffer();
+    const { records: itemRecs } = parseDbfBuffer(buf);
+    records = itemRecs;
+  }
+
+  // Parse and Merge Stock File
+  const stockMap = new Map();
+  const batchesMap = new Map();
+
+  if (stockFile) {
+    statusCallback(`Applying live shop stock from ${stockFile.name}...`);
+    const sBuf = await stockFile.arrayBuffer();
+    const { records: stockRecs } = parseDbfBuffer(sBuf);
+
+    stockRecs.forEach(sr => {
+      const code = String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase();
+      const batchQty = parseInt(sr.STOCK || sr.QTY || sr.BALANCE || sr.CL_STOCK || 0, 10) || 0;
+      if (!code) return;
+
+      stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
+
+      const batchNo = String(sr.BATCH || sr.BATCH_NO || sr.BAT_NO || 'BN001').trim();
+      const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '').trim();
+      const mrp = parseFloat(sr.MRP || sr.RATE || sr.PRICE || 0) || 0;
+      const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PRATE || 0) || 0;
+      const supplier = String(sr.SUPPLIER || sr.DIST || 'Direct Inward').trim();
+
+      const list = batchesMap.get(code) || [];
+      list.push({
+        batch_no: batchNo,
+        exp_date: expDate,
+        mrp: mrp > 0 ? mrp : undefined,
+        ptr: ptr > 0 ? ptr : undefined,
+        qty: batchQty,
+        stock: batchQty,
+        supplier: supplier
+      });
+      batchesMap.set(code, list);
+    });
+
+    if (records.length > 0) {
+      records = records.map(r => {
+        const code = String(r.IT_CODE || r.CODE || '').trim().toUpperCase();
+        if (stockMap.has(code)) {
+          return {
+            ...r,
+            STOCK: stockMap.get(code),
+            BATCHES: batchesMap.get(code)
+          };
+        }
+        return {
+          ...r,
+          STOCK: 0,
+          BATCHES: []
+        };
+      });
+    } else {
+      const grouped = [];
+      batchesMap.forEach((batchList, code) => {
+        const total = stockMap.get(code) || 0;
+        grouped.push({
+          IT_CODE: code,
+          IT_NAME: '',
+          STOCK: total,
+          BATCHES: batchList
+        });
+      });
+      records = grouped;
+    }
+  }
+
+  if (records.length === 0) {
+    throw new Error('No valid medicine records found in the selected files.');
+  }
+
+  statusCallback(`Normalizing ${records.length.toLocaleString()} records...`);
+  const normalized = normalizeLegacyMedicineRecords(records, null, companyMap);
+
+  return {
+    medicines: normalized,
+    itemFile: itemFile?.name || null,
+    stockFile: stockFile?.name || null,
+    companyFile: companyFile?.name || null,
+    totalCount: normalized.length,
+    activeStockCount: stockMap.size,
+    companyCount: companyMap.size
+  };
+}
+
+/**
+ * Robust HTML5 Drag & Drop File Extractor (Extracts recursive folder contents)
+ */
+export async function extractFilesFromDrop(dataTransfer) {
+  const files = [];
+  const items = dataTransfer?.items;
+  if (items && items.length > 0) {
+    const queue = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+        if (entry) queue.push(entry);
+        else {
+          const f = item.getAsFile();
+          if (f) files.push(f);
+        }
+      }
+    }
+    while (queue.length > 0) {
+      const entry = queue.shift();
+      if (entry.isFile) {
+        const f = await new Promise(res => entry.file(res, () => res(null)));
+        if (f) files.push(f);
+      } else if (entry.isDirectory) {
+        const dirReader = entry.createReader();
+        const readEntries = () => new Promise(res => dirReader.readEntries(res, () => res([])));
+        let batch;
+        do {
+          batch = await readEntries();
+          queue.push(...batch);
+        } while (batch && batch.length > 0);
+      }
+    }
+  }
+  if (files.length === 0 && dataTransfer?.files) {
+    files.push(...Array.from(dataTransfer.files));
+  }
+  return files;
+}

@@ -24,7 +24,7 @@ import {
   Lock,
   X
 } from 'lucide-react';
-import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords } from '../utils/dbfReader';
+import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords, processDbfFolderFiles, extractFilesFromDrop } from '../utils/dbfReader';
 
 export default function FirstTimeSetupWizardModal({
   isOpen,
@@ -56,6 +56,8 @@ export default function FirstTimeSetupWizardModal({
   const [importedMeds, setImportedMeds] = useState([]);
   const [importStatus, setImportStatus] = useState('');
   const [isParsing, setIsParsing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
 
   // Step 3: Feature Tour Active Tab
   const [activeFeatureTab, setActiveFeatureTab] = useState('billing');
@@ -71,37 +73,55 @@ export default function FirstTimeSetupWizardModal({
 
   if (!isOpen) return null;
 
-  // Handle Legacy File Upload (DBF or CSV)
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImportedFile(file);
+  // Process file list from input or drop
+  const handleProcessFolderFiles = async (files) => {
+    if (!files || files.length === 0) return;
     setIsParsing(true);
-    setImportStatus(`Reading ${file.name}...`);
+    setImportStatus(`Analyzing ${files.length} files...`);
 
     try {
-      const fileName = file.name.toUpperCase();
-      if (fileName.endsWith('.DBF')) {
-        const buffer = await file.arrayBuffer();
-        const { records } = parseDbfBuffer(buffer);
-        const normalized = normalizeLegacyMedicineRecords(records);
-        setImportedMeds(normalized);
-        setImportStatus(`✓ Extracted ${normalized.length.toLocaleString()} medicines from ${file.name}!`);
-      } else if (fileName.endsWith('.CSV') || fileName.endsWith('.TXT')) {
-        const text = await file.text();
+      // Check if it's a single CSV file
+      if (files.length === 1 && (files[0].name.toUpperCase().endsWith('.CSV') || files[0].name.toUpperCase().endsWith('.TXT'))) {
+        const text = await files[0].text();
         const records = parseCsvText(text);
         const normalized = normalizeLegacyMedicineRecords(records);
         setImportedMeds(normalized);
+        setImportSummary({
+          totalCount: normalized.length,
+          itemFile: files[0].name,
+          stockFile: 'Direct CSV',
+          companyFile: 'Embedded'
+        });
         setImportStatus(`✓ Extracted ${normalized.length.toLocaleString()} medicines from CSV!`);
-      } else {
-        setImportStatus('Please upload a .DBF file (e.g. ITEMFILE.DBF) or a .CSV file.');
+        return;
       }
+
+      // Process as DBF folder (ITEMFILE + COMPMAST + STKFILE)
+      const res = await processDbfFolderFiles(files, setImportStatus);
+      setImportedMeds(res.medicines);
+      setImportSummary(res);
+      setImportStatus(`✓ Extracted ${res.totalCount.toLocaleString()} medicines! Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
     } catch (err) {
-      console.error('Import error:', err);
-      setImportStatus(`Error reading file: ${err.message || 'Invalid format'}`);
+      console.error('Wizard import error:', err);
+      setImportStatus(`Error: ${err.message || 'Invalid files'}`);
     } finally {
       setIsParsing(false);
+    }
+  };
+
+  const handleFolderSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    await handleProcessFolderFiles(files);
+  };
+
+  const handleDropFolder = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    try {
+      const files = await extractFilesFromDrop(e.dataTransfer);
+      await handleProcessFolderFiles(files);
+    } catch (err) {
+      setImportStatus(`Drop error: ${err.message}`);
     }
   };
 
@@ -362,34 +382,79 @@ export default function FirstTimeSetupWizardModal({
                   </div>
 
                   {/* Dropzone */}
-                  <label className={`block border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
-                    isDark 
-                      ? 'border-zinc-700 hover:border-purple-500 hover:bg-zinc-900' 
-                      : 'border-slate-300 hover:border-purple-500 hover:bg-purple-50/50'
-                  }`}>
-                    <FileSpreadsheet className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                  <div 
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDropFolder}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                      isDragging 
+                        ? 'border-purple-500 bg-purple-500/10 scale-[1.01]' 
+                        : (isDark ? 'border-zinc-700 hover:border-purple-500 bg-zinc-900/60' : 'border-slate-300 hover:border-purple-500 bg-white')
+                    }`}
+                  >
+                    <FolderOpen className={`w-10 h-10 mx-auto mb-2 ${isDragging ? 'text-purple-500 animate-bounce' : 'text-slate-400'}`} />
                     <span className="text-sm font-bold block">
-                      {importedFile ? importedFile.name : 'Click to select or drag & drop ITEMFILE.DBF / CSV'}
+                      {isParsing ? 'Reading and verifying database files...' : (isDragging ? 'Drop DATA folder now!' : 'Drag & Drop DATA Folder Here')}
                     </span>
                     <span className="text-xs text-slate-500 block mt-1">
-                      Runs 100% locally in your browser memory — zero server upload, private & secure.
+                      Directly drop the DATA folder from your USB drive, or click below to select
                     </span>
-                    <input
-                      type="file"
-                      accept=".dbf,.csv,.txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
 
-                  {/* Status Banner */}
+                    <div className="mt-4 flex items-center justify-center space-x-3">
+                      <label className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center space-x-1.5">
+                        <FolderOpen className="w-4 h-4" />
+                        <span>Select DATA Folder</span>
+                        <input
+                          type="file"
+                          webkitdirectory=""
+                          directory=""
+                          multiple
+                          onChange={handleFolderSelect}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <label className="px-3.5 py-2 rounded-lg bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-bold text-xs transition cursor-pointer flex items-center space-x-1.5">
+                        <FileSpreadsheet className="w-4 h-4" />
+                        <span>Select Individual DBF</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".dbf,.csv,.txt"
+                          onChange={handleFolderSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Status Banner & Pre-Flight Diagnostic Card */}
                   {importStatus && (
-                    <div className={`p-3 rounded-lg text-xs font-mono font-bold flex items-center space-x-2 ${
+                    <div className={`p-4 rounded-xl text-xs font-mono font-bold space-y-2 ${
                       importStatus.startsWith('✓')
                         ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
                         : 'bg-amber-500/10 text-amber-600 border border-amber-500/30'
                     }`}>
-                      <span>{importStatus}</span>
+                      <div className="flex items-center space-x-2">
+                        <span>{importStatus}</span>
+                      </div>
+                      
+                      {importSummary && (
+                        <div className="pt-2 border-t border-emerald-500/20 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-sans">
+                          <div className="p-2 rounded bg-emerald-500/10">
+                            <span className="text-slate-400 block text-[10px] uppercase">Catalog Master</span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">{importSummary.itemFile || 'ITEMFILE.DBF'}</span>
+                          </div>
+                          <div className="p-2 rounded bg-emerald-500/10">
+                            <span className="text-slate-400 block text-[10px] uppercase">Live Shop Stock</span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">{importSummary.stockFile || 'STKFILE.DBF'}</span>
+                          </div>
+                          <div className="p-2 rounded bg-emerald-500/10">
+                            <span className="text-slate-400 block text-[10px] uppercase">Company Master</span>
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400">{importSummary.companyFile || 'COMPMAST.DBF'}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

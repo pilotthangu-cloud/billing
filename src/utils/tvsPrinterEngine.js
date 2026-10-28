@@ -22,14 +22,22 @@ export const ESC_P = {
 /**
  * Format string to fixed length with padding
  */
-function padRight(str, len) {
+export function padRight(str, len) {
   const s = String(str || '').slice(0, len);
   return s + ' '.repeat(Math.max(0, len - s.length));
 }
 
-function padLeft(str, len) {
+export function padLeft(str, len) {
   const s = String(str || '').slice(0, len);
   return ' '.repeat(Math.max(0, len - s.length)) + s;
+}
+
+export function padCenter(str, width) {
+  const s = String(str || '');
+  if (s.length >= width) return s.slice(0, width);
+  const leftPad = Math.floor((width - s.length) / 2);
+  const rightPad = width - s.length - leftPad;
+  return ' '.repeat(leftPad) + s + ' '.repeat(rightPad);
 }
 
 /**
@@ -65,139 +73,118 @@ export function formatTvsBillLines(billData) {
     billNo = '000001',
     date = new Date().toLocaleDateString('en-GB'),
     time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-    patientName = '*',
-    doctorName = 'Self / OTC',
+    patientName = 'CASH',
+    doctorName = 'SELF',
     paymentMode = 'cash',
     items = [],
     netPayable = 0,
     storeInfo = {}
   } = billData || {};
 
+  const headerStyle = storeInfo.headerStyle || 'FULL_PHARMACY';
   const storeName = storeInfo.name || 'BETA PHARMACY';
-  const modeLabel = paymentMode === 'upi' ? 'UPI Bill' : (paymentMode === 'credit' ? 'Credit Bill' : 'Cash Bill');
+  const modeLabel = paymentMode.toUpperCase() === 'CREDIT' ? 'Credit Bill' : 'Cash Bill';
   const storeAddr = storeInfo.address || 'Sadanada Pai Road, Chirakkara, Thalassery.';
   const storePhone = storeInfo.phone || 'Tel - 0490-2325049';
   const storeDl = storeInfo.dlNo || 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.';
   const storeMob = storeInfo.mobile || 'Mob - 9497172662';
+  const memoTitle = storeInfo.memoTitle || 'CASH MEMO';
+  const city = storeInfo.city || 'THALASSERY';
 
   const lines = [];
 
-  // Line 01: Time & Greeting
-  lines.push(padRight(time, 40) + padLeft('** GET WELL SOON **', 40));
+  // Header (Lines 1 to 5)
+  if (headerStyle === 'COMPACT_MEMO') {
+    lines.push(padRight(memoTitle, 80));
+    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date:${date}`, 25));
+    lines.push(padRight(`Pr by ${doctorName.toUpperCase()}`, 35) + padCenter(city, 20) + padLeft(`Bill No.${billNo}`, 25));
+    lines.push(' '.repeat(80));
+    lines.push(' '.repeat(80));
+  } else {
+    lines.push(padRight(`${storeName} (${modeLabel})`, 80));
+    lines.push(padRight(storeAddr, 55) + padLeft(storePhone, 25));
+    lines.push(padRight(storeDl, 55) + padLeft(storeMob, 25));
+    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date:${date}`, 25));
+    lines.push(padRight(`Pr by ${doctorName.toUpperCase()}`, 55) + padLeft(`Bill No.${billNo}`, 25));
+  }
 
-  // Line 02: Store Name & Bill Mode
-  lines.push(padRight(`${storeName} (${modeLabel})`, 80));
-
-  // Line 03: Address & Phone
-  lines.push(padRight(storeAddr, 55) + padLeft(storePhone, 25));
-
-  // Line 04: Drug Licenses & Mobile
-  lines.push(padRight(storeDl, 55) + padLeft(storeMob, 25));
-
-  // Line 05: Patient & Date
-  const patStr = `Sold to: ${patientName.toUpperCase()}`;
-  const dateStr = `Date: ${date}`;
-  lines.push(padRight(patStr, 55) + padLeft(dateStr, 25));
-
-  // Line 06: Doctor & Bill Number
-  const docStr = `Pr by  : ${doctorName.toUpperCase()}`;
-  const billStr = `Bill No: ${billNo}`;
-  lines.push(padRight(docStr, 55) + padLeft(billStr, 25));
-
-  // Line 07: Table Divider
+  // Dividers & Column Headers (Lines 6 to 8)
   lines.push('-'.repeat(80));
-
-  // Line 08: Table Header (80 columns)
-  // Col widths: Sr(3) Sp(1) Name(24) Sp(1) Mfr(5) Sp(1) Batch(8) Sp(1) Exp(6) Sp(1) Qty(4) Sp(1) MRP(7) Sp(1) Rate(7) Sp(1) Amt(8) = 80
-  const header = 
+  const colHeader = 
     padRight('Sr', 3) + ' ' +
-    padRight('Product Name', 24) + ' ' +
-    padRight('Mfr', 5) + ' ' +
-    padRight('Batch', 8) + ' ' +
-    padRight('Exp', 6) + ' ' +
-    padLeft('Qty', 4) + ' ' +
-    padLeft('M.R.P', 7) + ' ' +
-    padLeft('Rate', 7) + ' ' +
-    padLeft('Amount', 8);
-  lines.push(header);
-
-  // Line 09: Sub-Header Divider
+    padRight('Product', 24) + ' ' +
+    padRight('Mfr', 4) + ' ' +
+    padRight('Batch', 11) + ' ' +
+    padRight('Expiry', 7) + ' ' +
+    padLeft('M R P/Per', 9) + ' ' +
+    padLeft('Qty', 5) + ' ' +
+    padLeft('Value', 10);
+  lines.push(colHeader);
   lines.push('-'.repeat(80));
 
-  // Lines 10-23: Items (14 slots for medicine lines)
+  // Items slots (Lines 9 to 22 = 14 slots for half-sheet)
   const MAX_ITEM_SLOTS = 14;
-  let totalQty = 0;
-  let grossAmount = 0;
+  let runningSubtotal = 0;
 
-  for (let i = 0; i < MAX_ITEM_SLOTS; i++) {
-    if (i < items.length) {
-      const it = items[i];
-      const sr = String(i + 1);
-      const name = (it.medicine?.name || it.name || 'ITEM').slice(0, 24);
-      const mfr = (it.medicine?.company || it.company || 'GEN').slice(0, 5).toUpperCase();
-      const batch = (it.batch?.batch_no || it.batch || 'BT').slice(0, 8);
-      const exp = (it.batch?.exp_date || it.exp || '').slice(0, 6);
+  for (let slot = 0; slot < MAX_ITEM_SLOTS; slot++) {
+    if (slot < items.length) {
+      const it = items[slot];
+      const sr = String(slot + 1).padStart(2, ' ');
+      const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1';
+      let rawName = (it.medicine?.name || it.name || 'ITEM').toUpperCase();
+      let prodName = rawName.slice(0, isSchedule ? 21 : 24);
+      if (isSchedule) prodName = padRight(prodName, 22) + '*';
+      prodName = padRight(prodName, 24);
+
+      const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 4).toUpperCase(), 4);
+      const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 11);
+      const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 7);
       const qty = parseInt(it.quantity || it.qty || 1, 10);
-      const mrp = (parseFloat(it.mrp || it.rate || 0)).toFixed(2);
-      const rate = (parseFloat(it.rate || it.ptr || it.mrp || 0)).toFixed(2);
-      const amt = (parseFloat(it.amount || it.total || (qty * parseFloat(rate)))).toFixed(2);
+      const mrpValue = parseFloat(it.mrp || it.rate || 0);
+      const packSize = it.packSize || it.pack || 1;
+      const mrpPerStr = packSize > 1 ? `${mrpValue.toFixed(2)}/${packSize}` : mrpValue.toFixed(2);
+      const mrpCol = padLeft(mrpPerStr.slice(0, 9), 9);
 
-      totalQty += qty;
-      grossAmount += parseFloat(amt);
+      const ratePerUnit = packSize > 1 ? (mrpValue / packSize) : (parseFloat(it.rate || it.mrp || 0));
+      const itemAmount = parseFloat(it.amount || it.total || (qty * ratePerUnit));
+      runningSubtotal += itemAmount;
+
+      const qtyCol = padLeft(String(qty), 5);
+      const valCol = padLeft(itemAmount.toFixed(2), 10);
 
       const row = 
         padRight(sr, 3) + ' ' +
-        padRight(name, 24) + ' ' +
-        padRight(mfr, 5) + ' ' +
-        padRight(batch, 8) + ' ' +
-        padRight(exp, 6) + ' ' +
-        padLeft(String(qty), 4) + ' ' +
-        padLeft(mrp, 7) + ' ' +
-        padLeft(rate, 7) + ' ' +
-        padLeft(amt, 8);
+        prodName + ' ' +
+        mfr + ' ' +
+        batch + ' ' +
+        exp + ' ' +
+        mrpCol + ' ' +
+        qtyCol + ' ' +
+        valCol;
       lines.push(row);
     } else {
-      // Empty filler line to lock physical height
       lines.push(' '.repeat(80));
     }
   }
 
-  // Line 24: Table Footer Divider
+  // Divider (Line 23)
   lines.push('-'.repeat(80));
 
-  // Line 25: Summary / Totals
-  const countStr = `Items: ${items.length}   Units: ${totalQty}`;
-  const grossStr = `Gross Total: ${padLeft(grossAmount.toFixed(2), 10)}`;
-  lines.push(padRight(countStr, 45) + padLeft(grossStr, 35));
+  // Footer (Lines 24 to 32)
+  const netValStr = (netPayable > 0 ? parseFloat(netPayable) : runningSubtotal).toFixed(2);
 
-  // Line 26: Tax Breakdown & Discount
-  const taxNote = 'GST Included (CGST 6% + SGST 6%)';
-  const discStr = `Discount   : ${padLeft('0.00', 10)}`;
-  lines.push(padRight(taxNote, 45) + padLeft(discStr, 35));
+  lines.push(padRight('We undertake to refund any excess', 80));
+  lines.push(padRight('collected by oversight. E &.O.E.', 55) + padLeft(netValStr, 25));
+  lines.push(padRight('Sale return will be entertained only within 7 days of bill date.', 80));
+  lines.push(padRight(' ', 40) + padLeft('Signature - Pharmacist', 40));
+  lines.push(padRight(time, 30) + padCenter('** GET WELL SOON **', 20) + ' '.repeat(30));
+  lines.push(' '.repeat(80));
+  lines.push(' '.repeat(80));
+  lines.push(' '.repeat(80));
+  lines.push(' '.repeat(80));
 
-  // Line 27: Net Payable
-  const net = Number(netPayable || grossAmount).toFixed(2);
-  const netStr = `NET PAYABLE: ${padLeft(net, 10)}`;
-  lines.push(' '.repeat(45) + padLeft(netStr, 35));
-
-  // Line 28: Words
-  const words = numberToWordsIndian(parseFloat(net));
-  lines.push(padRight(words, 80));
-
-  // Line 29: Bottom Divider
-  lines.push('-'.repeat(80));
-
-  // Line 30: Legal Notice
-  lines.push(padRight('Terms: Sold medicines returnable within 7 days with bill.', 80));
-
-  // Line 31: Store Signoff
-  lines.push(padLeft(`For ${storeName}`, 80));
-
-  // Line 32: Pharmacist Signature Line
-  lines.push(padLeft('Pharmacist Signature', 80));
-
-  // Line 33: Perforation Marker Line (Stops right at tear-off boundary)
-  lines.push('- '.repeat(40));
+  // Perforation line (Line 33)
+  lines.push('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ');
 
   return lines;
 }

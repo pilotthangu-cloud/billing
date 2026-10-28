@@ -171,7 +171,7 @@ export default function FastBillingTerminal({
         e.preventDefault();
         handleRemoveItem(selectedRowIndex);
       }
-      if (e.key === '*' || (e.ctrlKey && e.key === 'p')) {
+      if (e.key === '*' || (e.ctrlKey && e.key === 'p') || e.key === 'F10') {
         if (items.length > 0) {
           e.preventDefault();
           onCompleteBill();
@@ -1074,7 +1074,7 @@ export default function FastBillingTerminal({
             }`}
           >
             <Printer className="w-4 h-4" />
-            <span>Print Bill (*+)</span>
+            <span>Print Bill (F10 / *)</span>
           </button>
         </div>
       </div>
@@ -1143,7 +1143,7 @@ export default function FastBillingTerminal({
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
               theme === 'dark' ? 'bg-zinc-800 text-emerald-400 border-zinc-700' : 'bg-white text-emerald-700 border-slate-300'
-            }`}>*+</kbd>
+            }`}>F10 / *</kbd>
             <span>Print Bill</span>
           </span>
         </div>

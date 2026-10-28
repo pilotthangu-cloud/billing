@@ -250,6 +250,24 @@ export default function App() {
   // Multi-Shop Branch Machine Identity
   const [activeBranch, setActiveBranch] = useState(getInitialBranch);
 
+  // Persistent Store Profile & Receipt Header Configuration (Admin Managed)
+  const [storeConfig, setStoreConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('beta_pharma_store_config');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      headerStyle: 'FULL_PHARMACY', // 'FULL_PHARMACY' or 'COMPACT_MEMO'
+      name: 'BETA PHARMACY',
+      address: 'Sadanada Pai Road, Chirakkara, Thalassery.',
+      phone: 'Tel - 0490-2325049',
+      mobile: 'Mob - 9497172662',
+      dlNo: 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.',
+      memoTitle: 'CASH MEMO',
+      city: 'THALASSERY'
+    };
+  });
+
   const handleSelectBranch = (branchId) => {
     if (authenticatedRole !== 'MANAGER') {
       setPasswordModalInfo({
@@ -1250,7 +1268,8 @@ export default function App() {
       branchId: activeBranch.id,
       location: activeBranch.location,
       staffName: activeShift?.staffName || 'Counter Staff',
-      shiftId: activeShift?.shiftId || 'SHIFT-OPEN'
+      shiftId: activeShift?.shiftId || 'SHIFT-OPEN',
+      storeInfo: storeConfig
     };
 
     setCompletedBillData(billPayload);
@@ -1619,17 +1638,24 @@ export default function App() {
       {activePage === 'admin' && authenticatedRole === 'MANAGER' && (
         <ErrorBoundary fallbackTitle="Beta Pharmacy HQ Admin" theme={theme}>
           <AdminDashboardApp
-            theme={theme}
-            onBackToCounter={() => setActivePage('billing')}
-            onSwitchTheme={setTheme}
-            medicines={medicines}
-            recentBills={recentBills}
-            availableBranches={AVAILABLE_BRANCHES}
-            activeShift={activeShift}
-            billDate={billDate}
-            onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
-            onTransferStock={handleTransferStock}
-          />
+              theme={theme}
+              onBackToCounter={() => setActivePage('billing')}
+              onSwitchTheme={setTheme}
+              medicines={medicines}
+              recentBills={recentBills}
+              availableBranches={AVAILABLE_BRANCHES}
+              activeShift={activeShift}
+              billDate={billDate}
+              onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
+              onTransferStock={handleTransferStock}
+              storeConfig={storeConfig}
+              onUpdateStoreConfig={(newCfg) => {
+                setStoreConfig(newCfg);
+                try {
+                  localStorage.setItem('beta_pharma_store_config', JSON.stringify(newCfg));
+                } catch (e) {}
+              }}
+            />
         </ErrorBoundary>
       )}
 
@@ -1667,7 +1693,7 @@ export default function App() {
           setIsReceiptOpen(false);
           setIsReprintMode(false);
         }}
-        billData={completedBillData}
+        billData={{ ...(completedBillData || {}), storeInfo: storeConfig }}
         onNewBill={handleNewBill}
         isReprint={isReprintMode}
         recentBills={recentBills}
@@ -1745,7 +1771,7 @@ export default function App() {
       {/* Off-screen Direct Print Target (Ensures 1-Click Print Bill directly outputs 1:1 ESC/P dot-matrix receipt without opening popup) */}
       {!isSalesReturnOpen && (
         <div className="hidden print:block">
-          <PrintableReceipt billData={completedBillData || recentBills[0]} isReprint={isReprintMode} />
+          <PrintableReceipt billData={{ ...(completedBillData || recentBills[0] || {}), storeInfo: storeConfig }} isReprint={isReprintMode} />
         </div>
       )}
 

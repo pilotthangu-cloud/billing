@@ -11,7 +11,7 @@ import {
   RefreshCw,
   FolderOpen
 } from 'lucide-react';
-import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords } from '../utils/dbfReader';
+import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords, processDbfFolderFiles, extractFilesFromDrop } from '../utils/dbfReader';
 
 export default function DatabaseImportModal({
   isOpen,
@@ -27,6 +27,7 @@ export default function DatabaseImportModal({
   const [parsedRecords, setParsedRecords] = useState([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [mergeMode, setMergeMode] = useState('merge'); // 'merge' | 'replace'
+  const [isDragging, setIsDragging] = useState(false);
 
   if (!isOpen) return null;
 
@@ -39,140 +40,36 @@ export default function DatabaseImportModal({
     setStatusMessage(`Scanning ${files.length} files in folder...`);
 
     try {
-      const itemFile = files.find(f => f.name.toUpperCase() === 'ITEMFILE.DBF');
-      // Look for Company Master DBF (maps CO_CODE -> CO_NAME e.g. H001 -> HIND)
-      const compFile = files.find(f => {
-        const n = f.name.toUpperCase();
-        return n === 'COMPMAST.DBF' || n === 'COMPANY.DBF' || n === 'COMPFILE.DBF' || n === 'COMAST.DBF';
-      });
-
-      let companyMap = new Map();
-      if (compFile) {
-        setStatusMessage(`Reading company master from ${compFile.name}...`);
-        const cBuf = await compFile.arrayBuffer();
-        const { records: compRecs } = parseDbfBuffer(cBuf);
-        compRecs.forEach(cr => {
-          const code = String(cr.CO_CODE || cr.CODE || cr.ID || '').trim().toUpperCase();
-          const name = String(cr.CO_NAME || cr.NAME || cr.COMPANY || '').trim().toUpperCase();
-          if (code && name) {
-            companyMap.set(code, name);
-          }
-        });
-      }
-
-      // Detect all STK*.DBF files and select the latest (STKFILE.DBF or newest date)
-      const stockFiles = files.filter(f => {
-        const n = f.name.toUpperCase();
-        return n.startsWith('STK') && n.endsWith('.DBF');
-      });
-      let stockFile = null;
-      if (stockFiles.length > 0) {
-        stockFiles.sort((a, b) => {
-          if (a.name.toUpperCase() === 'STKFILE.DBF') return -1;
-          if (b.name.toUpperCase() === 'STKFILE.DBF') return 1;
-          return (b.lastModified || 0) - (a.lastModified || 0) || b.name.localeCompare(a.name);
-        });
-        stockFile = stockFiles[0];
-      }
-
-      let records = [];
-
-      if (itemFile) {
-        setStatusMessage(`Reading master catalog from ${itemFile.name}...`);
-        const buf = await itemFile.arrayBuffer();
-        const { records: itemRecs } = parseDbfBuffer(buf);
-        records = itemRecs;
-      }
-
-      if (stockFile) {
-        setStatusMessage(`Applying live shop stock from ${stockFile.name}...`);
-        const sBuf = await stockFile.arrayBuffer();
-        const { records: stockRecs } = parseDbfBuffer(sBuf);
-
-        const stockMap = new Map();
-        const batchesMap = new Map();
-
-        stockRecs.forEach(sr => {
-          const code = String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase();
-          const batchQty = parseInt(sr.STOCK || sr.QTY || sr.BALANCE || sr.CL_STOCK || 0, 10) || 0;
-          if (!code) return;
-
-          // CRITICAL: ACCUMULATE multi-batch stock (e.g. 20 + 25 + 5 = 50, not overwriting with 5!)
-          stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
-
-          const batchNo = String(sr.BATCH || sr.BATCH_NO || sr.BAT_NO || 'BN001').trim();
-          const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '').trim();
-          const mrp = parseFloat(sr.MRP || sr.RATE || sr.PRICE || 0) || 0;
-          const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PRATE || 0) || 0;
-          const supplier = String(sr.SUPPLIER || sr.DIST || 'Direct Inward').trim();
-
-          const list = batchesMap.get(code) || [];
-          list.push({
-            batch_no: batchNo,
-            exp_date: expDate,
-            mrp: mrp > 0 ? mrp : undefined,
-            ptr: ptr > 0 ? ptr : undefined,
-            qty: batchQty,
-            stock: batchQty,
-            supplier: supplier
-          });
-          batchesMap.set(code, list);
-        });
-
-        if (records.length > 0) {
-          records = records.map(r => {
-            const code = String(r.IT_CODE || r.CODE || '').trim().toUpperCase();
-            if (stockMap.has(code)) {
-              return { 
-                ...r, 
-                STOCK: stockMap.get(code),
-                BATCHES: batchesMap.get(code)
-              };
-            }
-            return {
-              ...r,
-              STOCK: 0,
-              BATCHES: []
-            };
-          });
-        } else {
-          // If only STK*.DBF was uploaded, synthesize grouped items per unique IT_CODE
-          const grouped = [];
-          for (const [code, totalStock] of stockMap.entries()) {
-            const batches = batchesMap.get(code) || [];
-            const first = stockRecs.find(sr => String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase() === code) || {};
-            grouped.push({
-              ...first,
-              IT_CODE: code,
-              STOCK: totalStock,
-              BATCHES: batches
-            });
-          }
-          records = grouped;
-        }
-      }
-
-      if (records.length === 0) {
-        const anyDbf = files.find(f => f.name.toUpperCase().endsWith('.DBF'));
-        if (anyDbf) {
-          const buf = await anyDbf.arrayBuffer();
-          const { records: r } = parseDbfBuffer(buf);
-          records = r;
-        }
-      }
-
-      if (records.length === 0) {
-        setStatusMessage('No ITEMFILE.DBF or STK*.DBF found in the selected folder.');
-        return;
-      }
-
-      setSelectedFile({ name: `DATA Folder (${files.length} files)` });
-      const normalized = normalizeLegacyMedicineRecords(records, null, companyMap);
-      setParsedRecords(normalized);
-      setStatusMessage(`✓ Loaded ${normalized.length.toLocaleString()} medicines with live counter stock!`);
+      const res = await processDbfFolderFiles(files, setStatusMessage);
+      setParsedRecords(res.medicines);
+      setStatusMessage(`✓ Loaded ${res.totalCount.toLocaleString()} medicines (${res.itemFile || 'ITEMFILE'}). Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
     } catch (err) {
-      console.error('Folder upload error:', err);
-      setStatusMessage(`Error parsing folder: ${err.message || 'Invalid format'}`);
+      console.error('Import error:', err);
+      setStatusMessage(`Error parsing DBF folder: ${err.message || 'Invalid format'}`);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  // Drag & Drop Folder Handler
+  const handleDropFolder = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setIsParsing(true);
+    setStatusMessage('Reading dropped folder...');
+
+    try {
+      const files = await extractFilesFromDrop(e.dataTransfer);
+      if (files.length === 0) {
+        throw new Error('No files detected in dropped item.');
+      }
+      setStatusMessage(`Found ${files.length} files in dropped folder...`);
+      const res = await processDbfFolderFiles(files, setStatusMessage);
+      setParsedRecords(res.medicines);
+      setStatusMessage(`✓ Loaded ${res.totalCount.toLocaleString()} medicines (${res.itemFile || 'ITEMFILE'}). Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
+    } catch (err) {
+      console.error('Drop error:', err);
+      setStatusMessage(`Error reading dropped folder: ${err.message || 'Invalid format'}`);
     } finally {
       setIsParsing(false);
     }
