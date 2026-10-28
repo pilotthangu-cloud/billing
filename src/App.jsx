@@ -403,11 +403,13 @@ export default function App() {
             ...(prevItem || {}),
             ...rec,
             name: safeName,
-            company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (prevItem?.company || existing?.company || master?.company || 'GENERIC'),
+            company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (prevItem?.company || master?.company || 'GENERIC'),
             rack: safeRack,
             mrp: safeMrp,
             stock: rec.stock !== undefined ? rec.stock : 0,
-            stock_shop1: rec.stock !== undefined ? rec.stock : 0
+            stock_shop1: rec.stock !== undefined ? rec.stock : 0,
+            stock_shop2: rec.stock_shop2 !== undefined ? rec.stock_shop2 : (prevItem?.stock_shop2 || master?.stock_shop2 || 0),
+            batches: (Array.isArray(rec.batches) && rec.batches.length > 0) ? rec.batches : (prevItem?.batches || master?.batches || [])
           };
         });
       } else {
@@ -426,15 +428,20 @@ export default function App() {
             const safeMrp = (rec.mrp !== undefined && rec.mrp > 0) ? rec.mrp : (existing.mrp || master?.mrp || 10);
             const safeStock = rec.stock !== undefined ? rec.stock : 0;
 
+            const safeBatches = (Array.isArray(rec.batches) && rec.batches.length > 0)
+              ? rec.batches
+              : (existing.batches || master?.batches || []);
+
             overrides[existing.code] = {
               ...existing,
               ...rec,
               name: safeName,
-            company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (prevItem?.company || existing?.company || master?.company || 'GENERIC'),
+              company: (rec.company && rec.company !== 'GENERIC') ? rec.company : (existing?.company || master?.company || 'GENERIC'),
               rack: safeRack,
               mrp: safeMrp,
               stock: safeStock,
-              stock_shop1: safeStock
+              stock_shop1: safeStock,
+              batches: safeBatches
             };
           } else {
             // New item not in current catalog
@@ -1066,17 +1073,57 @@ export default function App() {
   const handleConfirmSalesReturn = (returnData) => {
     if (!returnData || !returnData.returnedItems || returnData.returnedItems.length === 0) return;
 
-    // 1. Restock returned quantities to shelf inventory
+    // Idempotency check: prevent duplicate restocking if user or modal double-submits
+    const creditNoteId = returnData.creditNoteNo || `CN-${returnData.originalBill?.billNo || Date.now()}`;
+    try {
+      const processedReturns = JSON.parse(localStorage.getItem('beta_pharma_processed_returns') || '{}');
+      if (processedReturns[creditNoteId]) {
+        console.warn(`[GUARD] Return ${creditNoteId} already processed. Skipping duplicate restock.`);
+        return;
+      }
+      processedReturns[creditNoteId] = Date.now();
+      localStorage.setItem('beta_pharma_processed_returns', JSON.stringify(processedReturns));
+    } catch (e) {}
+
+    // 1. Restock returned quantities to shelf inventory and specific batches
     setMedicines(prev => {
-      const updated = [...prev];
+      const updated = prev.map(m => ({
+        ...m,
+        batches: m.batches ? m.batches.map(b => ({ ...b })) : []
+      }));
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
       const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
 
       returnData.returnedItems.forEach(retItem => {
+        const targetBatchNo = String(retItem.batch || retItem.batch_no || '').trim().toUpperCase();
+        const returnQty = parseInt(retItem.returnQty, 10) || 0;
+
         const idx = updated.findIndex(m => m.code === retItem.code || m.name.toLowerCase() === (retItem.name || '').toLowerCase());
         if (idx !== -1) {
           const med = { ...updated[idx] };
-          med[targetStockKey] = (med[targetStockKey] || 0) + (retItem.returnQty || 0);
+          med[targetStockKey] = (med[targetStockKey] || 0) + returnQty;
+          if (targetStockKey === 'stock_shop1') {
+            med.stock = med.stock_shop1;
+          }
+
+          // Mutate or prepend specific batch in med.batches
+          const batches = med.batches ? med.batches.map(b => ({ ...b })) : [];
+          const bIdx = batches.findIndex(b => String(b.batch_no || '').trim().toUpperCase() === targetBatchNo);
+          if (bIdx !== -1) {
+            const curBatchQty = parseInt(batches[bIdx].qty !== undefined ? batches[bIdx].qty : (batches[bIdx].stock || 0), 10);
+            batches[bIdx].qty = curBatchQty + returnQty;
+            batches[bIdx].stock = batches[bIdx].qty;
+          } else if (targetBatchNo) {
+            batches.unshift({
+              batch_no: retItem.batch || `B${med.code.slice(-4)}`,
+              exp_date: retItem.exp || retItem.exp_date || '',
+              mrp: retItem.mrp || med.mrp,
+              per: med.per || 10,
+              qty: returnQty,
+              stock: returnQty
+            });
+          }
+          med.batches = batches;
           updated[idx] = med;
           const key = med.code || med.name.toLowerCase();
           overrides[key] = med;
@@ -1086,6 +1133,9 @@ export default function App() {
       try {
         localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
       } catch (e) {}
+
+      // Write-through to IndexedDB
+      idbCacheMedicines(updated).catch(() => {});
 
       return updated;
     });
@@ -1326,9 +1376,31 @@ export default function App() {
     setActivePage('billing');
   };
 
+  const isCompletingBillRef = useRef(false);
+
   // Complete and Print Bill (Zero redundant preview modal! Direct dot-matrix print & stock deduction)
   const handleCompleteBill = () => {
     if (items.length === 0) return;
+    if (isCompletingBillRef.current) {
+      console.warn('[GUARD] Bill finalization in progress. Ignoring duplicate trigger.');
+      return;
+    }
+    isCompletingBillRef.current = true;
+    setTimeout(() => {
+      isCompletingBillRef.current = false;
+    }, 1500);
+
+    // Bill unique ID for idempotency tracking
+    const billUniqueId = `${billNo}_${billDate}`;
+    try {
+      const processedBills = JSON.parse(localStorage.getItem('beta_pharma_processed_bills') || '{}');
+      if (processedBills[billUniqueId]) {
+        console.warn(`[GUARD] Bill ${billUniqueId} was already finalized. Skipping duplicate stock deduction.`);
+        return;
+      }
+      processedBills[billUniqueId] = Date.now();
+      localStorage.setItem('beta_pharma_processed_bills', JSON.stringify(processedBills));
+    } catch (e) {}
 
     const gross = items.reduce((acc, it) => acc + it.totalValue, 0);
     const net = Math.round(gross);
@@ -1354,9 +1426,12 @@ export default function App() {
 
     setCompletedBillData(billPayload);
 
-    // 1. Deduct sold medicine stock from live inventory for THIS specific shop branch
+    // 1. Deduct sold medicine stock and specific batches for THIS specific shop branch
     setMedicines(prev => {
-      const updated = [...prev];
+      const updated = prev.map(m => ({
+        ...m,
+        batches: m.batches ? m.batches.map(b => ({ ...b })) : []
+      }));
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
       const targetStockKey = activeBranch.stockKey || 'stock_shop1';
 
@@ -1364,11 +1439,32 @@ export default function App() {
         const itemCode = line.medicine ? line.medicine.code : line.code;
         const itemName = line.medicine ? line.medicine.name : line.name;
         const qtySold = parseInt(line.qty, 10) || 1;
+        const targetBatchNo = String(line.batch?.batch_no || line.batch_no || line.batch || '').trim().toUpperCase();
 
         const idx = updated.findIndex(m => m.code === itemCode || m.name.toLowerCase() === (itemName || '').toLowerCase());
         if (idx !== -1) {
           const med = { ...updated[idx] };
           med[targetStockKey] = Math.max(0, (med[targetStockKey] || 0) - qtySold);
+          if (targetStockKey === 'stock_shop1') {
+            med.stock = med.stock_shop1;
+          }
+
+          // Deduct from specific batch in med.batches
+          if (med.batches && med.batches.length > 0) {
+            const batches = med.batches.map(b => ({ ...b }));
+            let bIdx = batches.findIndex(b => String(b.batch_no || '').trim().toUpperCase() === targetBatchNo);
+            if (bIdx === -1) {
+              bIdx = 0; // Fallback to earliest/first batch
+            }
+            if (bIdx !== -1) {
+              const currentBatchQty = parseInt(batches[bIdx].qty !== undefined ? batches[bIdx].qty : (batches[bIdx].stock !== undefined ? batches[bIdx].stock : med[targetStockKey] + qtySold), 10);
+              const newBatchQty = Math.max(0, currentBatchQty - qtySold);
+              batches[bIdx].qty = newBatchQty;
+              batches[bIdx].stock = newBatchQty;
+            }
+            med.batches = batches;
+          }
+
           updated[idx] = med;
           const key = med.code || med.name.toLowerCase();
           overrides[key] = med;
@@ -1378,6 +1474,9 @@ export default function App() {
       try {
         localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
       } catch (e) {}
+
+      // Write-through to IndexedDB
+      idbCacheMedicines(updated).catch(() => {});
 
       return updated;
     });
@@ -1453,6 +1552,7 @@ export default function App() {
   };
 
   const handleNewBill = () => {
+    isCompletingBillRef.current = false;
     const num = parseInt(billNo, 10) + 1;
     const nextBill = num.toString().padStart(6, '0');
     setBillNo(nextBill);
