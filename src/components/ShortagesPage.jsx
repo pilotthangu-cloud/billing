@@ -1,17 +1,34 @@
-import React from 'react';
-import { ArrowLeft, PackageCheck, AlertCircle, ShoppingCart } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ArrowLeft, PackageCheck, AlertCircle, ShoppingCart, Search } from 'lucide-react';
 
 export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
   const isDark = theme === 'dark';
-  const shortages = (medicines || []).filter(m => (m.stock_shop1 || 0) <= (m.ro_level || 5)).slice(0, 50);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // All shortages without 50 cap (Step 7)
+  const allShortages = useMemo(() => {
+    return (medicines || []).filter(m => (m.stock_shop1 || 0) <= (m.ro_level || 5));
+  }, [medicines]);
+
+  // Filtered shortages based on user search
+  const filteredShortages = useMemo(() => {
+    if (!searchTerm.trim()) return allShortages;
+    const q = searchTerm.toLowerCase();
+    return allShortages.filter(m => 
+      (m.name && m.name.toLowerCase().includes(q)) ||
+      (m.company && m.company.toLowerCase().includes(q)) ||
+      (m.rack && String(m.rack).toLowerCase().includes(q))
+    );
+  }, [allShortages, searchTerm]);
 
   const handleGenerateOrder = () => {
-    if (shortages.length === 0) {
+    const listToExport = filteredShortages.length > 0 ? filteredShortages : allShortages;
+    if (listToExport.length === 0) {
       alert('No shortage items below re-order level.');
       return;
     }
     const headers = ['Sr', 'Product Name', 'Salt', 'Shelf Rack', 'Company', 'Current Stock', 'Re-Order Level', 'Suggested Order Units', 'Est PTR Cost'];
-    const rows = shortages.map((med, idx) => {
+    const rows = listToExport.map((med, idx) => {
       const stock = med.stock_shop1 || 0;
       const roLevel = med.ro_level || 5;
       const suggested = Math.max(10, roLevel * 2 - stock);
@@ -36,7 +53,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert(`Purchase Order Draft exported with ${shortages.length} shortage items!`);
+    alert(`Purchase Order Draft exported with ${listToExport.length} shortage items!`);
   };
 
   return (
@@ -70,7 +87,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
                   ? 'bg-rose-950 text-rose-300 border-rose-800' 
                   : 'bg-rose-100 text-rose-950 border-rose-300'
               }`}>
-                {shortages.length} Shortages
+                {filteredShortages.length} / {allShortages.length} Shortages
               </span>
             </div>
             <p className={`text-xs font-mono mt-0.5 font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
@@ -79,13 +96,29 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
           </div>
         </div>
 
-        <button 
-          onClick={handleGenerateOrder}
-          className="py-2 px-3.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg text-xs flex items-center space-x-1.5 shadow"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          <span>Generate Supplier Order List</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Quick Search */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search shortages..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`pl-8 pr-3 py-1.5 rounded-lg border text-xs font-mono font-semibold focus:outline-hidden ${
+                isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-slate-300 text-slate-900'
+              }`}
+            />
+          </div>
+
+          <button 
+            onClick={handleGenerateOrder}
+            className="py-2 px-3.5 bg-sky-600 hover:bg-sky-500 text-white font-black rounded-lg text-xs flex items-center space-x-1.5 shadow"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Generate Supplier Order List</span>
+          </button>
+        </div>
       </div>
 
       {/* Shortages Table */}
@@ -108,7 +141,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-inherit">
-            {shortages.map((med, idx) => {
+            {filteredShortages.map((med, idx) => {
               const stock = med.stock_shop1 || 0;
               const roLevel = med.ro_level || 5;
               const suggested = Math.max(10, roLevel * 2 - stock);
@@ -181,7 +214,7 @@ export default function ShortagesPage({ theme, medicines, onBackToBilling }) {
                 </tr>
               );
             })}
-            {shortages.length === 0 && (
+            {filteredShortages.length === 0 && (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-500 font-bold text-sm">
                   ✓ All stock levels are healthy. No items currently below re-order threshold.

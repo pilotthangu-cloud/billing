@@ -32,7 +32,12 @@ import BackupManagerModal from './components/BackupManagerModal';
 import { syncEngine } from './utils/syncEngine';
 import { idbCacheMedicines, idbClearMedicines } from './utils/indexedDb';
 import { autoRepairCorruptedMedicines } from './utils/dbfReader';
-import { pushSalesBillToSupabase, getCloudStorageEstimate } from './utils/supabaseClient';
+import { 
+  pushSalesBillToSupabase, 
+  getCloudStorageEstimate,
+  uploadMedicinesCatalogToSupabase,
+  fetchMedicinesCatalogFromSupabase 
+} from './utils/supabaseClient';
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
 
 import initialMedicines from './data/medicines.json';
@@ -453,6 +458,13 @@ export default function App() {
       // Cache to IndexedDB for offline resilience
       idbCacheMedicines(updated).catch(() => {});
 
+      // Step 5: Background Cloud Catalog Sync to Supabase
+      setTimeout(() => {
+        uploadMedicinesCatalogToSupabase(updated).catch(err => {
+          console.warn('Background Supabase catalog upload note:', err);
+        });
+      }, 1000);
+
       return updated;
     });
   };
@@ -788,6 +800,23 @@ export default function App() {
     if (medicines && medicines.length > 0) {
       idbCacheMedicines(medicines).catch(err => console.warn('IndexedDB medicine caching note:', err));
     }
+
+    // Step 5: Check if cloud catalog has medicines to auto-load on new device
+    const checkCloudCatalog = async () => {
+      try {
+        const hasLocalImport = localStorage.getItem('beta_pharma_setup_completed') === 'true';
+        if (!hasLocalImport) {
+          const res = await fetchMedicinesCatalogFromSupabase();
+          if (res && res.success && res.medicines && res.medicines.length > 0) {
+            console.log(`Auto-hydrating ${res.medicines.length} medicines from Supabase cloud catalog!`);
+            handleImportMedicines(res.medicines, 'replace');
+          }
+        }
+      } catch (err) {
+        console.warn('Cloud catalog auto-hydration note:', err);
+      }
+    };
+    checkCloudCatalog();
   }, []);
 
   // Global Keyboard shortcuts
@@ -1067,6 +1096,15 @@ export default function App() {
       const cnHistory = JSON.parse(localStorage.getItem('beta_pharma_credit_notes') || '[]');
       cnHistory.unshift(returnData);
       localStorage.setItem('beta_pharma_credit_notes', JSON.stringify(cnHistory));
+
+    // Offline-first delta sync push for sales return / credit note
+    syncEngine.recordCreditNote({
+      creditNoteNo: returnData.creditNoteNo,
+      customerName: returnData.customerName || returnData.originalBill?.patientName || 'CUSTOMER',
+      refundAmount: returnData.refundAmount,
+      items: returnData.returnedItems,
+      branchId: activeBranch?.id || 'shop1'
+    });
     } catch (e) {}
 
     alert(`✅ ${returnData.creditNoteNo} issued! ${returnData.returnedItems.length} item(s) restocked to ${activeBranch?.short || 'shelf'}. Refund/Credit Amount: ₹${returnData.refundAmount.toFixed(2)}`);
@@ -1158,6 +1196,16 @@ export default function App() {
       };
       payables.unshift(newPayable);
       localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(payables));
+
+    // Offline-first delta sync push for purchase inward
+    const invoiceTotal = importedData.items.reduce((acc, it) => acc + ((it.ptr || it.mrp * 0.78) * it.qty), 0);
+    syncEngine.recordPurchaseInward({
+      supplierName: importedData.distributor || 'General Pharma Distributor',
+      invoiceDate: importedData.invoiceDate || billDate,
+      totalAmount: invoiceTotal,
+      items: importedData.items,
+      branchId: activeBranch?.id || 'shop1'
+    });
     } catch (e) {}
 
     alert(`🎉 Purchase Invoice Inwarded! ${importedData.items.length} items successfully updated into live inventory.`);
@@ -1416,6 +1464,18 @@ export default function App() {
       const history = JSON.parse(localStorage.getItem('beta_pharma_shift_history') || '[]');
       history.unshift(completedShiftRecord);
       localStorage.setItem('beta_pharma_shift_history', JSON.stringify(history));
+
+    // Offline-first delta sync push for shift handover record
+    syncEngine.recordShift({
+      shiftId: completedShiftRecord.shiftId,
+      staffName: completedShiftRecord.staffName,
+      closingCash: completedShiftRecord.closingCash,
+      totalSales: completedShiftRecord.totalSales,
+      startBill: completedShiftRecord.startBillNo,
+      endBill: completedShiftRecord.endBillNo,
+      notes: `Staff: ${completedShiftRecord.staffName}, Next: ${completedShiftRecord.nextStaffName}, Cash: Rs.${completedShiftRecord.closingCash}`,
+      branchId: activeBranch?.id || 'shop1'
+    });
     } catch (e) {
       console.error('Error saving shift handover history', e);
     }

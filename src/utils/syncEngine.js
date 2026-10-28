@@ -4,14 +4,20 @@
  * in the background when connectivity is active.
  */
 
-import { pushSalesBillToSupabase, pushStockTransferToSupabase } from './supabaseClient';
+import { 
+  pushSalesBillToSupabase, 
+  pushStockTransferToSupabase,
+  pushPurchaseInwardToSupabase,
+  pushCreditNoteToSupabase,
+  pushShiftRecordToSupabase 
+} from './supabaseClient.js';
 import { 
   idbEnqueueDelta, 
   idbGetPendingDeltas, 
   idbRemoveDelta,
   idbSaveBill,
   idbSaveStockTransfer
-} from './indexedDb';
+} from './indexedDb.js';
 
 class DeltaSyncEngine {
   constructor() {
@@ -143,6 +149,66 @@ class DeltaSyncEngine {
   }
 
   /**
+   * Queue a purchase inward: writes to local queue and pushes to Supabase
+   */
+  async recordPurchaseInward(purchasePayload) {
+    if (this.isOnline) {
+      try {
+        const res = await pushPurchaseInwardToSupabase(purchasePayload);
+        if (res && res.success) {
+          this.lastSyncTime = new Date().toLocaleTimeString();
+          this.notifySubscribers();
+          return { success: true, synced: true };
+        }
+      } catch (err) {}
+    }
+
+    await idbEnqueueDelta('PURCHASE_INWARD', purchasePayload);
+    await this.refreshPendingCount();
+    return { success: true, queued: true };
+  }
+
+  /**
+   * Queue a credit note / sales return
+   */
+  async recordCreditNote(creditPayload) {
+    if (this.isOnline) {
+      try {
+        const res = await pushCreditNoteToSupabase(creditPayload);
+        if (res && res.success) {
+          this.lastSyncTime = new Date().toLocaleTimeString();
+          this.notifySubscribers();
+          return { success: true, synced: true };
+        }
+      } catch (err) {}
+    }
+
+    await idbEnqueueDelta('CREDIT_NOTE', creditPayload);
+    await this.refreshPendingCount();
+    return { success: true, queued: true };
+  }
+
+  /**
+   * Queue a staff shift handover record
+   */
+  async recordShift(shiftPayload) {
+    if (this.isOnline) {
+      try {
+        const res = await pushShiftRecordToSupabase(shiftPayload);
+        if (res && res.success) {
+          this.lastSyncTime = new Date().toLocaleTimeString();
+          this.notifySubscribers();
+          return { success: true, synced: true };
+        }
+      } catch (err) {}
+    }
+
+    await idbEnqueueDelta('SHIFT_RECORD', shiftPayload);
+    await this.refreshPendingCount();
+    return { success: true, queued: true };
+  }
+
+  /**
    * Flush pending delta queue to Supabase
    */
   async flushQueue() {
@@ -166,6 +232,12 @@ class DeltaSyncEngine {
             pushRes = await pushSalesBillToSupabase(item.payload);
           } else if (item.actionType === 'STOCK_TRANSFER') {
             pushRes = await pushStockTransferToSupabase(item.payload);
+          } else if (item.actionType === 'PURCHASE_INWARD') {
+            pushRes = await pushPurchaseInwardToSupabase(item.payload);
+          } else if (item.actionType === 'CREDIT_NOTE') {
+            pushRes = await pushCreditNoteToSupabase(item.payload);
+          } else if (item.actionType === 'SHIFT_RECORD') {
+            pushRes = await pushShiftRecordToSupabase(item.payload);
           }
 
           if (pushRes && (pushRes.success || pushRes.data)) {
