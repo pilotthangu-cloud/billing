@@ -36,7 +36,8 @@ import {
   pushSalesBillToSupabase, 
   getCloudStorageEstimate,
   uploadMedicinesCatalogToSupabase,
-  fetchMedicinesCatalogFromSupabase 
+  fetchMedicinesCatalogFromSupabase,
+  fetchLiveCloudSalesBills 
 } from './utils/supabaseClient';
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
 
@@ -817,7 +818,38 @@ export default function App() {
       }
     };
     checkCloudCatalog();
+    refreshLiveCloudBills();
   }, []);
+
+  // Step 6: Multi-Device Live Cloud Bills Synchronization
+  const refreshLiveCloudBills = async () => {
+    try {
+      const res = await fetchLiveCloudSalesBills(300);
+      if (res && res.success && res.bills && res.bills.length > 0) {
+        setRecentBills(prev => {
+          const existingMap = new Map(prev.map(b => [String(b.billNo).trim(), b]));
+          for (const cb of res.bills) {
+            if (!existingMap.has(String(cb.billNo).trim())) {
+              existingMap.set(String(cb.billNo).trim(), cb);
+            }
+          }
+          const merged = Array.from(existingMap.values()).sort((a, b) => {
+            return (parseInt(b.billNo, 10) || 0) - (parseInt(a.billNo, 10) || 0);
+          });
+          return merged;
+        });
+      }
+    } catch (err) {
+      console.warn('Live cloud bills pull note:', err);
+    }
+  };
+
+  // Re-fetch live cloud bills whenever entering Admin or Sales Register
+  useEffect(() => {
+    if (activePage === 'admin' || activePage === 'sales-register') {
+      refreshLiveCloudBills();
+    }
+  }, [activePage]);
 
   // Global Keyboard shortcuts
   useEffect(() => {
@@ -1708,6 +1740,7 @@ export default function App() {
               billDate={billDate}
               onOpenInvoiceImport={() => setIsInvoiceImportOpen(true)}
               onTransferStock={handleTransferStock}
+              onRefreshCloudBills={refreshLiveCloudBills}
               storeConfig={storeConfig}
               onUpdateStoreConfig={(newCfg) => {
                 setStoreConfig(newCfg);

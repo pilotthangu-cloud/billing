@@ -323,3 +323,104 @@ export async function fetchMedicinesCatalogFromSupabase(onProgress) {
   }
 }
 
+// Fetch live sales bills from Supabase (Step 6 Admin HQ Multi-Device Live Pull)
+export async function fetchLiveCloudSalesBills(limit = 300) {
+  try {
+    const { data, error } = await supabase
+      .from('sales_bills')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Supabase fetchLiveCloudSalesBills notice:', error.message);
+      return { success: false, bills: [] };
+    }
+
+    const bills = (data || []).map(r => ({
+      billNo: r.bill_no,
+      date: r.bill_date,
+      time: r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00 PM',
+      patientName: r.patient_name || 'CUSTOMER',
+      customerPhone: '',
+      doctorName: r.doctor_name || 'Self / OTC',
+      paymentMode: r.payment_mode || 'cash',
+      items: Array.isArray(r.items_json) ? r.items_json : [],
+      grossTotal: Number(r.gross_total || 0),
+      netPayable: Number(r.net_payable || 0),
+      store: r.store_branch || 'Beta Pharmacy',
+      source: 'CLOUD_SYNC'
+    }));
+
+    return { success: true, bills };
+  } catch (err) {
+    console.warn('Error fetching live sales bills:', err.message);
+    return { success: false, bills: [] };
+  }
+}
+
+// Fetch live purchase inwards from Supabase (Step 6 Admin HQ Multi-Device Live Pull)
+export async function fetchLiveCloudPurchases(limit = 100) {
+  try {
+    const { data, error } = await supabase
+      .from('purchase_inwards')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Supabase fetchLiveCloudPurchases notice:', error.message);
+      return { success: false, purchases: [] };
+    }
+
+    const purchases = (data || []).map(r => ({
+      id: r.id,
+      billNo: `INV-${String(r.id).padStart(4, '0')}`,
+      name: r.supplier_name || 'General Distributor',
+      supplier: r.supplier_name,
+      date: r.bill_date,
+      amount: Number(r.total_amount || 0),
+      itemsCount: Array.isArray(r.items_json) ? r.items_json.length : 0,
+      items: r.items_json || [],
+      status: 'PAID',
+      source: 'CLOUD_SYNC'
+    }));
+
+    return { success: true, purchases };
+  } catch (err) {
+    console.warn('Error fetching live cloud purchases:', err.message);
+    return { success: false, purchases: [] };
+  }
+}
+
+// Fetch live shift records from Supabase (Step 6 Admin HQ Multi-Device Live Pull)
+export async function fetchLiveCloudShifts(limit = 50) {
+  try {
+    const { data, error } = await supabase
+      .from('shift_records')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Supabase fetchLiveCloudShifts notice:', error.message);
+      return { success: false, shifts: [] };
+    }
+
+    const shifts = (data || []).map(r => ({
+      id: r.id,
+      shiftId: r.shift_id,
+      closingCash: Number(r.closing_cash || 0),
+      notes: r.notes || '',
+      branchId: r.branch_id,
+      createdAt: r.created_at,
+      source: 'CLOUD_SYNC'
+    }));
+
+    return { success: true, shifts };
+  } catch (err) {
+    console.warn('Error fetching live cloud shifts:', err.message);
+    return { success: false, shifts: [] };
+  }
+}
+
