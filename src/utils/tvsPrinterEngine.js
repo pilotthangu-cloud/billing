@@ -81,7 +81,7 @@ export function formatTvsBillLines(billData) {
     storeInfo = {}
   } = billData || {};
 
-  const headerStyle = storeInfo.headerStyle || 'FULL_PHARMACY';
+  const headerStyle = storeInfo.headerStyle || storeInfo.receiptStyle || 'FULL_PHARMACY';
   const storeName = storeInfo.name || 'BETA PHARMACY';
   const modeLabel = paymentMode.toUpperCase() === 'CREDIT' ? 'Credit Bill' : 'Cash Bill';
   const storeAddr = storeInfo.address || 'Sadanada Pai Road, Chirakkara, Thalassery.';
