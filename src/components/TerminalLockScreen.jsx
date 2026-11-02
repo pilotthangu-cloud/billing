@@ -64,11 +64,8 @@ export default function TerminalLockScreen({
       return;
     }
 
-    // Require PIN (1536 or any 4-digit counter passcode)
-    if (!pin || pin.length < 4) {
-      setErrorMsg('Please enter a valid 4-digit Counter/Staff PIN.');
-      return;
-    }
+    // Staff counter login - PIN removed for instant counter speed
+    // (Admin PIN remains strictly for Sales & Margin inspection in Manager tab)
 
     // Initialize clean shift
     const shiftPayload = {
@@ -231,7 +228,7 @@ export default function TerminalLockScreen({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1.5">
-                    Counter PIN
+                    Counter PIN (Optional)
                   </label>
                   <input
                     type="password"

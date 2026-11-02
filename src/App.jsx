@@ -62,12 +62,10 @@ import { isBatchExpired } from './utils/billUtils';
 import initialMedicines from './data/medicines.json';
 
 // Protected modules requiring Administrator PIN authentication
+// Protected modules requiring Administrator PIN authentication (Restricted strictly to Sales & Margins)
 export const PROTECTED_PAGES = {
   'admin': { title: 'Owner Admin HQ', description: 'Enter Admin PIN to view executive financial telemetry & margins.' },
-  'sales-register': { title: 'Daily Sales & Margin Register', description: 'Enter Admin PIN to view store revenue, COGS, and gross margins.' },
-  'distributor-payments': { title: 'Distributor Payments & Cheque Register', description: 'Enter Admin PIN to access payables ledger & bank cheques.' },
-  'product-master': { title: 'Product Catalog Master', description: 'Enter Admin PIN to access master catalog pricing & PTR rates.' },
-  'tax-master': { title: 'Tax & GST Master', description: 'Enter Admin PIN to modify statutory GST tax slabs.' }
+  'sales-register': { title: 'Daily Sales & Margin Register', description: 'Enter Admin PIN to view store revenue, COGS, and gross margins.' }
 };
 
 // URL-based direct routing (e.g. /admin or #admin directly opens the Admin Dashboard!)
@@ -317,14 +315,6 @@ export default function App() {
   });
 
   const handleSelectBranch = (branchId) => {
-    if (authenticatedRole !== 'MANAGER') {
-      setPasswordModalInfo({
-        title: 'Switch Branch Machine Identity',
-        description: 'Enter Admin PIN (1536) to change physical shop configuration for this counter.'
-      });
-      setIsPasswordModalOpen(true);
-      return;
-    }
     const found = AVAILABLE_BRANCHES.find(b => b.id === branchId);
     if (!found) return;
     setActiveBranch(found);
@@ -2501,7 +2491,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'product-master' && authenticatedRole === 'MANAGER' && (
+      {activePage === 'product-master' && (
         <ProductCatalogPage
           theme={theme}
           medicines={medicines}
@@ -2539,7 +2529,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'tax-master' && authenticatedRole === 'MANAGER' && (
+      {activePage === 'tax-master' && (
         <TaxMasterPage
           theme={theme}
           medicines={medicines}
@@ -2606,7 +2596,7 @@ export default function App() {
         />
       )}
 
-      {activePage === 'distributor-payments' && authenticatedRole === 'MANAGER' && (
+      {activePage === 'distributor-payments' && (
         <DistributorPaymentsPage
           theme={theme}
           onBackToBilling={() => setActivePage('billing')}

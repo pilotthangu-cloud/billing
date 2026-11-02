@@ -100,12 +100,6 @@ export default function TopNavigationMenu({
             </span>
             <button
               onClick={() => {
-                if (authenticatedRole !== 'MANAGER') {
-                  if (onOpenPasswordModal) {
-                    onOpenPasswordModal('Switch Branch Machine Identity', 'Enter Authorized Admin PIN to switch physical shop configuration.');
-                  }
-                  return;
-                }
                 const otherBranch = availableBranches.find(b => b.id !== activeBranch?.id);
                 if (otherBranch && onSelectBranch) {
                   if (window.confirm(`Switch active machine counter to ${otherBranch.name}?`)) {
@@ -206,12 +200,6 @@ export default function TopNavigationMenu({
                   <button 
                     onClick={() => {
                       setOpenDropdown(null);
-                      if (authenticatedRole !== 'MANAGER') {
-                        if (onOpenPasswordModal) {
-                          onOpenPasswordModal('Database Migration', 'Enter Admin PIN to import or overwrite catalog data.');
-                        }
-                        return;
-                      }
                       if (onOpenImportModal) onOpenImportModal();
                     }} 
                     className={`w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between font-bold border-t ${
