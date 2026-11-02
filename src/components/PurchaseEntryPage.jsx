@@ -1140,6 +1140,13 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
                     setSupplierSearchQuery(e.target.value);
                     if (!isSupplierDropdownOpen) setIsSupplierDropdownOpen(true);
                   }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      if (supplierSearchQuery.trim()) {
+                        handleCommitSupplier(supplierSearchQuery);
+                      }
+                    }, 150);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === 'Tab') {
                       if (supplierSearchQuery.trim()) {
