@@ -57,7 +57,7 @@ export default function ShiftReconciliationModal({
 
   // Sync with activeShift, targetIncomingStaff, and bill range when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !completedRecord) {
       setStep('cashier_count');
       const current = activeShift?.staffName || staffList[0] || 'Counter Staff';
       setOutgoingStaff(current);

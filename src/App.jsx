@@ -405,7 +405,19 @@ export default function App() {
     }
 
     if (cashier) {
-      handleSelectActiveStaff(cashier);
+      const newShift = {
+        shiftId: 'SHIFT-' + Date.now().toString().slice(-6),
+        staffName: cashier,
+        counter: counter || 'Counter 01',
+        startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        startTimestamp: Date.now(),
+        openingFloat: 2000
+      };
+      setActiveShift(newShift);
+      try {
+        localStorage.setItem('beta_pharma_active_shift', JSON.stringify(newShift));
+      } catch (e) {}
+      setStaffList(prev => prev.includes(cashier) ? prev : [...prev, cashier]);
     }
 
     if (restoredMeds && restoredMeds.length > 0) {
@@ -2355,6 +2367,7 @@ export default function App() {
     }, 8000);
 
     setActivePage('billing');
+    setIsShiftModalOpen(false);
   };
 
   return (
