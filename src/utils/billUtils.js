@@ -126,3 +126,25 @@ export function triggerWhatsAppBillShare(billData, fallbackPhone = '') {
   const url = getWhatsAppShareUrl(phone, text);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
+
+/**
+ * Regulatory expiry checker under Drugs and Cosmetics Act (Section 18)
+ * @param {string} expStr Expiry string formatted as MM/YY, MM/YYYY, or MM-YY
+ * @returns {boolean} True if expired relative to current calendar month/year
+ */
+export function isBatchExpired(expStr) {
+  if (!expStr || typeof expStr !== 'string') return false;
+  const parts = expStr.trim().split(/[\/\-]/);
+  if (parts.length >= 2) {
+    let month = parseInt(parts[0], 10);
+    let year = parseInt(parts[1], 10);
+    if (year < 100) year += 2000;
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+    if (year < curYear || (year === curYear && month < curMonth)) {
+      return true;
+    }
+  }
+  return false;
+}

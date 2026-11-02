@@ -22,7 +22,8 @@ import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
 import SubstituteRadarModal from './SubstituteRadarModal';
 import { fuzzySearchMedicines } from '../utils/fuzzySearch';
-import { triggerWhatsAppBillShare } from '../utils/billUtils';
+import { triggerWhatsAppBillShare, isBatchExpired } from '../utils/billUtils';
+import { syncEngine } from '../utils/syncEngine';
 
 export default function FastBillingTerminal({
   theme,
@@ -55,7 +56,8 @@ export default function FastBillingTerminal({
   onAddStaff,
   onOpenShiftModal,
   handoverNotice,
-  setHandoverNotice
+  setHandoverNotice,
+  authenticatedRole = null
 }) {
   // Input refs
   const searchInputRef = useRef(null);
@@ -140,6 +142,34 @@ export default function FastBillingTerminal({
     return () => window.removeEventListener('keydown', handleGlobalTyping);
   }, []);
 
+  // Automatic search refocus: on terminal mount, cart clear (new bill), or afterprint event.
+  // Cashier never has to touch the mouse between customers!
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      focusSearchInput();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      const timer = setTimeout(() => {
+        focusSearchInput();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [items.length, billNo]);
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setTimeout(() => {
+        focusSearchInput();
+      }, 60);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
+
   // Global Function key shortcuts inside terminal
   useEffect(() => {
     const handleKeys = (e) => {
@@ -207,17 +237,42 @@ export default function FastBillingTerminal({
 
   // DIRECT ENTER: Clicking medicine immediately enters it into the bill table with FEFO sorting!
   const handleDirectAddMedicine = (med) => {
-    // FEFO: Sort batches by earliest expiry date first so older stock is dispensed first
-    const sortedBatches = med.batches && med.batches.length > 0 
-      ? [...med.batches].sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date))
-      : [];
+    if (syncEngine.isMedicineBlocked(med.code, activeBranch?.id)) {
+      const conflict = syncEngine.getMedicineConflict(med.code, activeBranch?.id);
+      if (authenticatedRole !== 'MANAGER') {
+        alert(
+          `[INVENTORY BLOCKED: CONCURRENCY CONFLICT]\n\n` +
+          `Medicine: ${med.name} (${med.code})\n` +
+          `Branch: ${activeBranch?.name || activeBranch?.id || 'Current Branch'}\n` +
+          `Deficit: ${conflict?.oversoldUnits || 'Oversold'} units negative stock detected across terminals.\n\n` +
+          `Physical stock is exhausted or disputed. Dispensing is strictly blocked.\n` +
+          `Only an authorized Manager logged into Admin HQ can reconcile this conflict (via Inward Purchase, Stock Transfer, or Stock Adjustment).`
+        );
+        return;
+      }
+      const confirmOverride = window.confirm(
+        `[MANAGER EMERGENCY OVERRIDE]\n\n` +
+        `Medicine "${med.name}" (${med.code}) has an active conflict (${conflict?.oversoldUnits || 'Oversold'} units deficit).\n` +
+        `As authorized Manager, do you confirm dispensing this item under emergency override?`
+      );
+      if (!confirmOverride) return;
+    }
 
-    const chosenBatch = sortedBatches.length > 0 ? sortedBatches[0] : {
+    // FEFO: Prioritize eligible in-stock, unexpired batches first so fresh saleable stock is dispensed
+    const eligibleBatches = (med.batches || []).filter(b => {
+      const bQty = b.qty !== undefined ? b.qty : (b.stock !== undefined ? b.stock : 0);
+      return bQty > 0 && !isBatchExpired(b.exp_date);
+    }).sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
+
+    // Fall back to all batches sorted by earliest expiry only if no eligible in-stock unexpired batch exists
+    const sortedBatches = (med.batches || []).slice().sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
+
+    const chosenBatch = eligibleBatches.length > 0 ? eligibleBatches[0] : (sortedBatches.length > 0 ? sortedBatches[0] : {
       batch_no: 'B' + med.code.slice(-4),
       exp_date: '',
       mrp: med.mrp,
       per: med.per || 10
-    };
+    });
 
     // Check if near expiry (< 60 days)
     const isShortExpiry = (() => {
@@ -262,6 +317,27 @@ export default function FastBillingTerminal({
   const handleAddLineItem = (e) => {
     if (e) e.preventDefault();
     if (!activeMedicine || !activeBatch || entryQty <= 0) return;
+
+    if (syncEngine.isMedicineBlocked(activeMedicine.code, activeBranch?.id)) {
+      const conflict = syncEngine.getMedicineConflict(activeMedicine.code, activeBranch?.id);
+      if (authenticatedRole !== 'MANAGER') {
+        alert(
+          `[INVENTORY BLOCKED: CONCURRENCY CONFLICT]\n\n` +
+          `Medicine: ${activeMedicine.name} (${activeMedicine.code})\n` +
+          `Branch: ${activeBranch?.name || activeBranch?.id || 'Current Branch'}\n` +
+          `Deficit: ${conflict?.oversoldUnits || 'Oversold'} units negative stock detected across terminals.\n\n` +
+          `Physical stock is exhausted or disputed. Dispensing is strictly blocked.\n` +
+          `Only an authorized Manager logged into Admin HQ can reconcile this conflict (via Inward Purchase, Stock Transfer, or Stock Adjustment).`
+        );
+        return;
+      }
+      const confirmOverride = window.confirm(
+        `[MANAGER EMERGENCY OVERRIDE]\n\n` +
+        `Medicine "${activeMedicine.name}" (${activeMedicine.code}) has an active conflict (${conflict?.oversoldUnits || 'Oversold'} units deficit).\n` +
+        `As authorized Manager, do you confirm dispensing this item under emergency override?`
+      );
+      if (!confirmOverride) return;
+    }
 
     const lineVal = (activeBatch.mrp / (activeBatch.per || 10)) * entryQty;
     const newLine = {
@@ -516,6 +592,7 @@ export default function FastBillingTerminal({
               <Search className="w-4 h-4" />
             </div>
             <input
+              id="fast-billing-search-input"
               ref={searchInputRef}
               type="text"
               value={searchQuery}
@@ -564,6 +641,7 @@ export default function FastBillingTerminal({
                     const isSelected = idx === selectedMedIndex;
                     const stock = med[stockKey] !== undefined ? med[stockKey] : (med.stock_shop1 || 0);
                     const isOut = stock <= 0;
+                    const isBlocked = syncEngine.isMedicineBlocked(med.code, activeBranch?.id);
 
                     return (
                       <div
@@ -600,6 +678,12 @@ export default function FastBillingTerminal({
                             {med.schedule && med.schedule !== 'Normal' && (
                               <span className="text-[9px] font-mono font-bold px-1 rounded bg-purple-900 text-purple-200">
                                 {med.schedule}
+                              </span>
+                            )}
+
+                            {isBlocked && (
+                              <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-rose-600 text-white animate-pulse">
+                                [CONFLICT / OVERSOLD]
                               </span>
                             )}
                           </div>

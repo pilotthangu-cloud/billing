@@ -19,6 +19,7 @@ import {
 export default function ShiftReconciliationModal({
   isOpen,
   onClose,
+  activeBranch,
   activeShift,
   onSaveShiftHandover,
   recentBills = [],
@@ -77,7 +78,8 @@ export default function ShiftReconciliationModal({
         setStartBillNo(earliest);
         setEndBillNo(latest);
       } else {
-        const nextNo = localStorage.getItem('beta_pharma_next_bill_no') || '000001';
+        const branchId = activeBranch?.id || 'MAIN';
+        const nextNo = localStorage.getItem(`beta_pharma_next_bill_no_${branchId}`) || localStorage.getItem('beta_pharma_next_bill_no') || '000001';
         setStartBillNo(nextNo);
         setEndBillNo(nextNo);
       }

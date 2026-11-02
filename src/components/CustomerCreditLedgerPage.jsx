@@ -19,9 +19,10 @@ import {
   Calendar 
 } from 'lucide-react';
 
-export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
+export default function CustomerCreditLedgerPage({ theme, onBackToBilling, activeBranch }) {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL'); // 'ALL', 'PENDING', 'SETTLED'
+  const [filterBranch, setFilterBranch] = useState('ALL'); // 'ALL', 'MAIN', 'POLYCLINIC'
   const [activeTab, setActiveTab] = useState('bills'); // 'bills' or 'customers'
   const [selectedBillForPayment, setSelectedBillForPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -43,6 +44,8 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
             phone: b.phone || b.customerPhone || '',
             location: b.location || 'Thalassery',
             doctor: b.doctor || b.doctorName || 'GENERAL OTC',
+            branchId: b.branchId || 'MAIN',
+            store: b.store || 'Beta Pharmacy',
             totalAmount: parseFloat(b.totalAmount !== undefined ? b.totalAmount : b.amount) || 0,
             paidAmount: parseFloat(b.paidAmount || (b.amount - (b.balance !== undefined ? b.balance : b.amount))) || 0,
             dueAmount: parseFloat(b.dueAmount !== undefined ? b.dueAmount : (b.balance !== undefined ? b.balance : b.amount)) || 0,
@@ -74,7 +77,8 @@ export default function CustomerCreditLedgerPage({ theme, onBackToBilling }) {
       b.location.toLowerCase().includes(q);
 
     const matchesStatus = filterStatus === 'ALL' || b.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesBranch = filterBranch === 'ALL' || b.branchId === filterBranch;
+    return matchesSearch && matchesStatus && matchesBranch;
   });
 
   // Open Receive Payment Modal

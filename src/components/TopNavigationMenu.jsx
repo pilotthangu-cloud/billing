@@ -102,7 +102,7 @@ export default function TopNavigationMenu({
               onClick={() => {
                 if (authenticatedRole !== 'MANAGER') {
                   if (onOpenPasswordModal) {
-                    onOpenPasswordModal('Switch Branch Machine Identity', 'Enter Admin PIN (1536) to switch physical shop configuration.');
+                    onOpenPasswordModal('Switch Branch Machine Identity', 'Enter Authorized Admin PIN to switch physical shop configuration.');
                   }
                   return;
                 }
@@ -177,6 +177,13 @@ export default function TopNavigationMenu({
                   >
                     <span>Company / Pharma Master [MAS003]</span>
                     <span className="text-[10px] font-mono opacity-70">923</span>
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('doctor-master')} 
+                    className="w-full text-left px-3 py-1.5 hover:bg-sky-600 hover:text-white flex items-center justify-between"
+                  >
+                    <span>Doctor / Clinic Master [MAS004]</span>
+                    <span className="text-[10px] font-mono opacity-70">DOCS</span>
                   </button>
                   <button 
                     onClick={() => navigateTo('tax-master')} 
@@ -549,26 +556,40 @@ export default function TopNavigationMenu({
             className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 cursor-pointer transition ${
               syncStatus && !syncStatus.isOnline
                 ? (isDark ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-amber-100 text-amber-900 border-amber-300')
+                : syncStatus?.syncState === 'RLS_BLOCKED'
+                ? (isDark ? 'bg-amber-950/60 text-amber-400 border-amber-700/60' : 'bg-amber-50 text-amber-800 border-amber-300')
                 : syncStatus?.isSyncing
                 ? (isDark ? 'bg-sky-950 text-sky-300 border-sky-800' : 'bg-sky-100 text-sky-900 border-sky-300')
+                : syncStatus?.pendingCount > 0
+                ? (isDark ? 'bg-amber-950 text-amber-300 border-amber-800' : 'bg-amber-100 text-amber-900 border-amber-300')
                 : (isDark ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-emerald-100 text-emerald-900 border-emerald-300')
             }`}
-            title={`Supabase Cloud Sync • Pending deltas: ${syncStatus?.pendingCount || 0} • Click to flush`}
+            title={`Supabase Cloud Sync • Status: ${syncStatus?.syncState || 'ACTIVE'} • Pending deltas: ${syncStatus?.pendingCount || 0} • Click to flush`}
           >
             {syncStatus && !syncStatus.isOnline ? (
               <>
                 <WifiOff className={`w-3 h-3 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
-                <span>OFFLINE ({syncStatus.pendingCount || 0} Q'd)</span>
+                <span>OFFLINE (${syncStatus.pendingCount || 0} Q'd)</span>
+              </>
+            ) : syncStatus?.syncState === 'RLS_BLOCKED' ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>LOCAL ONLY (${syncStatus.pendingCount || 0} PENDING)</span>
               </>
             ) : syncStatus?.isSyncing ? (
               <>
                 <Wifi className="w-3 h-3 text-sky-400 animate-pulse" />
                 <span>SYNCING...</span>
               </>
+            ) : syncStatus?.pendingCount > 0 ? (
+              <>
+                <Wifi className="w-3 h-3 text-amber-400" />
+                <span>PENDING (${syncStatus.pendingCount})</span>
+              </>
             ) : (
               <>
                 <Wifi className={`w-3 h-3 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <span>{syncStatus?.pendingCount > 0 ? `SYNCING (${syncStatus.pendingCount})` : 'CLOUD SYNC: ACTIVE'}</span>
+                <span>CLOUD SYNC: ACTIVE</span>
               </>
             )}
           </button>

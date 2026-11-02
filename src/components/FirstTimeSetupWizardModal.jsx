@@ -22,9 +22,15 @@ import {
   Zap,
   ArrowRightCircle,
   Lock,
-  X
+  X,
+  Cloud,
+  CloudDownload,
+  FileUp,
+  RefreshCw
 } from 'lucide-react';
 import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords, processDbfFolderFiles, extractFilesFromDrop } from '../utils/dbfReader';
+import { fetchLatestVerifiedCloudBackup } from '../utils/supabaseClient';
+import { restoreFromVerifiedCloudBackup, restoreFromLocalBackupJson } from '../utils/backupEngine';
 
 export default function FirstTimeSetupWizardModal({
   isOpen,
@@ -58,6 +64,13 @@ export default function FirstTimeSetupWizardModal({
   const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
+  const [restoredMeds, setRestoredMeds] = useState([]);
+  const [restoredBills, setRestoredBills] = useState([]);
+  const [cloudBackupMeta, setCloudBackupMeta] = useState(null);
+  const [isFetchingCloudBackup, setIsFetchingCloudBackup] = useState(false);
+  const [cloudFetchError, setCloudFetchError] = useState(null);
+  const [isRestoringData, setIsRestoringData] = useState(false);
+  const [restoreSuccessMsg, setRestoreSuccessMsg] = useState('');
 
   // Step 3: Feature Tour Active Tab
   const [activeFeatureTab, setActiveFeatureTab] = useState('billing');
@@ -125,6 +138,84 @@ export default function FirstTimeSetupWizardModal({
     }
   };
 
+  const handleFetchCloudBackup = async () => {
+    setIsFetchingCloudBackup(true);
+    setCloudFetchError(null);
+    setCloudBackupMeta(null);
+    try {
+      const res = await fetchLatestVerifiedCloudBackup(selectedBranchId);
+      if (res.success && res.backup) {
+        setCloudBackupMeta(res.backup);
+      } else {
+        setCloudFetchError(res.error || 'No verified backups found in Supabase for this branch.');
+      }
+    } catch (err) {
+      setCloudFetchError(err.message || 'Error connecting to Supabase');
+    } finally {
+      setIsFetchingCloudBackup(false);
+    }
+  };
+
+  const handleRestoreCloudBackup = async () => {
+    setIsRestoringData(true);
+    setRestoreSuccessMsg('');
+    setCloudFetchError(null);
+    try {
+      let res = await restoreFromVerifiedCloudBackup(selectedBranchId);
+      if (!res.success && res.isRegression) {
+        if (confirm(`${res.error}\n\nDo you want to FORCE overwrite your local data with this cloud backup?`)) {
+          res = await restoreFromVerifiedCloudBackup(selectedBranchId, { force: true });
+        } else {
+          setIsRestoringData(false);
+          return;
+        }
+      }
+
+      if (res.success) {
+        setRestoredMeds(res.meds || []);
+        setRestoredBills(res.bills || []);
+        setRestoreSuccessMsg(res.message);
+      } else {
+        setCloudFetchError(res.error || 'Cloud restore failed.');
+      }
+    } catch (err) {
+      setCloudFetchError(err.message || 'Restore exception');
+    } finally {
+      setIsRestoringData(false);
+    }
+  };
+
+  const handleLocalBackupSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsRestoringData(true);
+    setRestoreSuccessMsg('');
+    try {
+      const text = await file.text();
+      let res = await restoreFromLocalBackupJson(text);
+      if (!res.success && res.isRegression) {
+        if (confirm(`${res.error}\n\nDo you want to FORCE overwrite local data with this older backup?`)) {
+          res = await restoreFromLocalBackupJson(text, { force: true });
+        } else {
+          setIsRestoringData(false);
+          return;
+        }
+      }
+
+      if (res.success) {
+        setRestoredMeds(res.meds || []);
+        setRestoredBills(res.bills || []);
+        setRestoreSuccessMsg(res.message);
+      } else {
+        alert(`Backup validation failed: ${res.error}`);
+      }
+    } catch (err) {
+      alert(`Failed to read backup file: ${err.message}`);
+    } finally {
+      setIsRestoringData(false);
+    }
+  };
+
   // Trigger PWA Desktop App Installation
   const handleTriggerInstall = async () => {
     if (installPrompt) {
@@ -161,7 +252,9 @@ export default function FirstTimeSetupWizardModal({
       counter: counterName.trim() || 'Counter 01',
       cashier: cashierName.trim() || 'Counter Staff',
       catalogType: catalogChoice,
-      importedMeds: catalogChoice === 'import' ? importedMeds : []
+      importedMeds: catalogChoice === 'import' ? importedMeds : [],
+      restoredMeds: (catalogChoice === 'cloud' || catalogChoice === 'local_json') ? restoredMeds : null,
+      restoredBills: (catalogChoice === 'cloud' || catalogChoice === 'local_json') ? restoredBills : null
     });
 
     onClose();
@@ -292,6 +385,21 @@ export default function FirstTimeSetupWizardModal({
                   <span className="text-[11px] text-slate-500">Staff can change or hand over shifts anytime at the top bar.</span>
                 </div>
               </div>
+
+              {/* Single-Profile Storage Boundary Info */}
+              <div className={`p-3.5 rounded-xl border text-xs flex items-start space-x-3 ${
+                isDark ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+              }`}>
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="space-y-1 text-[11px] leading-relaxed">
+                  <div className="font-bold">Important Data Boundary: Single-Profile Browser Storage</div>
+                  <div>Beta Pharmacy POS stores all counter bills, daily stock, and inventory inside this computer profile's private IndexedDB sandbox.</div>
+                  <ul className="list-disc list-inside space-y-0.5 text-slate-500 dark:text-zinc-400">
+                    <li><strong>Dedicated Terminal:</strong> Always launch the application using the same browser profile or Desktop App shortcut (PWA). Opening in an Incognito window or different browser profile will show a blank terminal.</li>
+                    <li><strong>Terminal Migration:</strong> To move your pharmacy setup to a new PC or counter, use the Backup & Restore Hub (F8 or Cloud Backup).</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
 
@@ -360,6 +468,64 @@ export default function FirstTimeSetupWizardModal({
                   </div>
                   <div className="mt-4 pt-3 border-t border-slate-200/40 text-[11px] font-mono text-emerald-600 font-bold">
                     ✓ Stock increments automatically when invoices are scanned.
+                  </div>
+                </div>
+
+                {/* Option C: Supabase Cloud Backup Restore */}
+                <div
+                  onClick={() => setCatalogChoice('cloud')}
+                  className={`p-5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                    catalogChoice === 'cloud'
+                      ? 'border-emerald-500 bg-emerald-500/10 shadow-md ring-1 ring-emerald-500'
+                      : (isDark ? 'border-zinc-800 hover:border-zinc-700 bg-zinc-800/40' : 'border-slate-200 hover:border-slate-300 bg-slate-50')
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-extrabold text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 uppercase tracking-wider">
+                        Option C (Cloud Sync)
+                      </span>
+                      {catalogChoice === 'cloud' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                    </div>
+                    <h4 className="font-bold text-base mb-1 flex items-center space-x-1.5">
+                      <Cloud className="w-4 h-4 text-emerald-600" />
+                      <span>Restore from Supabase Cloud</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Download latest double-blind verified backup from Supabase. Restores catalog, batches, and bills with zero manual entry.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-200/40 text-[11px] font-mono text-emerald-600 font-bold">
+                    ✓ Double-blind verified snapshot restoration
+                  </div>
+                </div>
+
+                {/* Option D: Local Backup File (.json) */}
+                <div
+                  onClick={() => setCatalogChoice('local_json')}
+                  className={`p-5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                    catalogChoice === 'local_json'
+                      ? 'border-amber-500 bg-amber-500/10 shadow-md ring-1 ring-amber-500'
+                      : (isDark ? 'border-zinc-800 hover:border-zinc-700 bg-zinc-800/40' : 'border-slate-200 hover:border-slate-300 bg-slate-50')
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-extrabold text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-900 uppercase tracking-wider">
+                        Option D (File / USB)
+                      </span>
+                      {catalogChoice === 'local_json' && <CheckCircle className="w-5 h-5 text-amber-500" />}
+                    </div>
+                    <h4 className="font-bold text-base mb-1 flex items-center space-x-1.5">
+                      <FileUp className="w-4 h-4 text-amber-600" />
+                      <span>Restore from Local Backup (.json)</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Select a backup JSON file exported from another terminal or pen drive. Validates schema and checksum before hydrating.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-200/40 text-[11px] font-mono text-amber-600 font-bold">
+                    ✓ Offline USB migration without cloud dependency
                   </div>
                 </div>
               </div>
@@ -472,6 +638,137 @@ export default function FirstTimeSetupWizardModal({
                       3. Select <strong>ITEMFILE.DBF</strong>. Your medicines and stock will be loaded instantly!
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* If Master Catalog Selected */}
+              {catalogChoice === 'master' && (
+                <div className={`p-5 rounded-xl border space-y-2 animate-fade-in ${
+                  isDark ? 'bg-zinc-950/70 border-zinc-800' : 'bg-sky-50 border-sky-200'
+                }`}>
+                  <h4 className="text-sm font-bold text-sky-600 flex items-center space-x-2">
+                    <Database className="w-4 h-4" />
+                    <span>Kerala 24k Master Drug Catalogue Selected</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    The full master catalogue with 24,665 medicines, manufacturer brands, schedule designations, and standard pricing is initialized. You can immediately search medicines with <strong>Ctrl+F</strong> or scan barcodes at the billing counter.
+                  </p>
+                </div>
+              )}
+
+              {/* If Cloud Backup Selected */}
+              {catalogChoice === 'cloud' && (
+                <div className={`p-5 rounded-xl border space-y-4 animate-fade-in ${
+                  isDark ? 'bg-zinc-950/70 border-zinc-800' : 'bg-emerald-50/50 border-emerald-200'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold flex items-center space-x-2 text-emerald-600">
+                        <Cloud className="w-4 h-4" />
+                        <span>Supabase Cloud Backup Retrieval</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Fetch the latest double-blind verified backup stored for branch: <strong>{selectedBranchId}</strong>.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleFetchCloudBackup}
+                      disabled={isFetchingCloudBackup}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isFetchingCloudBackup ? 'animate-spin' : ''}`} />
+                      <span>{isFetchingCloudBackup ? 'Querying...' : 'Fetch Latest Backup'}</span>
+                    </button>
+                  </div>
+
+                  {cloudFetchError && (
+                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs font-mono">
+                      {cloudFetchError}
+                    </div>
+                  )}
+
+                  {cloudBackupMeta && (
+                    <div className={`p-4 rounded-xl border text-xs font-mono space-y-3 ${
+                      isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200'
+                    }`}>
+                      <div className="flex items-center justify-between font-bold text-emerald-600 pb-2 border-b border-inherit">
+                        <span>✓ Verified Snapshot Found</span>
+                        <span>Date: {cloudBackupMeta.date}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-sans">
+                        <div className="p-2 rounded bg-emerald-500/10">
+                          <span className="text-slate-400 block text-[10px] uppercase">Medicines</span>
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400">{cloudBackupMeta.recordCounts?.medicines || 0}</span>
+                        </div>
+                        <div className="p-2 rounded bg-emerald-500/10">
+                          <span className="text-slate-400 block text-[10px] uppercase">Bills</span>
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400">{cloudBackupMeta.recordCounts?.bills || 0}</span>
+                        </div>
+                        <div className="p-2 rounded bg-emerald-500/10 col-span-2 sm:col-span-1">
+                          <span className="text-slate-400 block text-[10px] uppercase">Checksum</span>
+                          <span className="font-bold font-mono text-[10px] text-emerald-700 dark:text-emerald-400 truncate block">{cloudBackupMeta.checksum || 'N/A'}</span>
+                        </div>
+                      </div>
+
+                      {!restoreSuccessMsg ? (
+                        <button
+                          onClick={handleRestoreCloudBackup}
+                          disabled={isRestoringData}
+                          className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-md cursor-pointer disabled:opacity-50"
+                        >
+                          <CloudDownload className="w-4 h-4" />
+                          <span>{isRestoringData ? 'Hydrating IndexedDB...' : 'Restore This Snapshot Into Local Terminal'}</span>
+                        </button>
+                      ) : (
+                        <div className="p-3 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center space-x-2 font-mono">
+                          <CheckCircle className="w-4 h-4 text-emerald-500" />
+                          <span>{restoreSuccessMsg}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* If Local Backup Selected */}
+              {catalogChoice === 'local_json' && (
+                <div className={`p-5 rounded-xl border space-y-4 animate-fade-in ${
+                  isDark ? 'bg-zinc-950/70 border-zinc-800' : 'bg-amber-50/50 border-amber-200'
+                }`}>
+                  <div>
+                    <h4 className="text-sm font-bold flex items-center space-x-2 text-amber-600">
+                      <FileUp className="w-4 h-4" />
+                      <span>Select Local Backup JSON File</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Select a <code>BetaPharma_Backup_*.json</code> file exported from another counter or USB backup archive.
+                    </p>
+                  </div>
+
+                  <div className={`border-2 border-dashed rounded-xl p-6 text-center ${
+                    isDark ? 'border-zinc-700 bg-zinc-900/60' : 'border-amber-300 bg-white'
+                  }`}>
+                    <label className="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition cursor-pointer inline-flex items-center space-x-2">
+                      <FileUp className="w-4 h-4" />
+                      <span>Browse Backup File (.json)</span>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleLocalBackupSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="block text-xs text-slate-400 mt-2">
+                      Validates medicines count, bill records, and content checksum before restoring
+                    </span>
+                  </div>
+
+                  {restoreSuccessMsg && (
+                    <div className="p-3 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center space-x-2 font-mono">
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                      <span>{restoreSuccessMsg}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

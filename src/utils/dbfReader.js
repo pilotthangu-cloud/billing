@@ -256,9 +256,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     const rawCoCode = String(r.CO_CODE || r.COMPANY_CODE || r.MFG_CODE || '').trim().toUpperCase();
     let company = (companyMap && rawCoCode && companyMap.get(rawCoCode)) ||
       String(r.CO_NAME || r.COMPANY || r.MFG || r.MFGR || '').trim().toUpperCase();
-    if (!company || company === 'GENERIC') {
-      company = master?.company || 'GENERIC';
-    }
+    // Option B: Preserved verbatim without master catalogue substitution
 
     let generic = String(r.GEN_NAME || r.GENERIC || r.COMPOSITION || r.SALT || '').trim().toUpperCase();
     if (!generic && master?.generic) {

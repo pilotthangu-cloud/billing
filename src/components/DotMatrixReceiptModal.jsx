@@ -1,6 +1,19 @@
-import React, { useRef, useEffect } from 'react';
-import { Printer, X, FileText, ArrowLeft, Check, History, RefreshCcw, Share2, Download } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { 
+  Printer, 
+  X, 
+  FileText, 
+  ArrowLeft, 
+  Check, 
+  History, 
+  RefreshCcw, 
+  Share2, 
+  Download,
+  Terminal,
+  Cpu
+} from 'lucide-react';
 import PrintableReceipt from './PrintableReceipt';
+import VirtualTvsHardwareInspector from './VirtualTvsHardwareInspector';
 import { triggerWhatsAppBillShare } from '../utils/billUtils';
 import { generateTvsEscPosStream } from '../utils/tvsPrinterEngine';
 
@@ -13,7 +26,18 @@ export default function DotMatrixReceiptModal({
   recentBills = [],
   onSelectBill
 }) {
+  const [activeTab, setActiveTab] = useState('receipt'); // 'receipt' | 'inspector'
   const receiptRef = useRef(null);
+
+  const focusSearchBox = () => {
+    setTimeout(() => {
+      const el = document.getElementById('fast-billing-search-input');
+      if (el) {
+        el.focus();
+        el.select?.();
+      }
+    }, 60);
+  };
 
   const handleWhatsAppShare = () => {
     if (!billData) return;
@@ -47,6 +71,14 @@ export default function DotMatrixReceiptModal({
     }
     // 3. Close preview
     onClose();
+
+    // 4. Refocus search box immediately so cashier never touches mouse
+    focusSearchBox();
+  };
+
+  const handleModalClose = () => {
+    onClose();
+    focusSearchBox();
   };
 
   // Keyboard navigation inside modal (Enter = Print, Esc = Back)
@@ -59,7 +91,7 @@ export default function DotMatrixReceiptModal({
         handlePrint();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        handleModalClose();
       }
     };
 
@@ -75,9 +107,9 @@ export default function DotMatrixReceiptModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col my-auto">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col my-auto">
         {/* Modal Top Bar */}
-        <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between no-print">
+        <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between no-print gap-3">
           <div className="flex items-center space-x-2.5">
             <FileText className={`w-4 h-4 ${isReprint ? 'text-amber-400' : 'text-emerald-400'}`} />
             <h3 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
@@ -88,12 +120,37 @@ export default function DotMatrixReceiptModal({
                 </span>
               )}
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-              ESC/P 80-Col Ready
-            </span>
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center space-x-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800 ml-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('receipt')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition flex items-center space-x-1.5 ${
+                  activeTab === 'receipt' 
+                    ? 'bg-sky-600 text-white shadow' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Paper Preview</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('inspector')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition flex items-center space-x-1.5 ${
+                  activeTab === 'inspector' 
+                    ? 'bg-emerald-600 text-white shadow' 
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>TVS Hardware Stream Inspector</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2">
             {/* Quick Bill Selector if multiple recent bills exist */}
             {recentBills && recentBills.length > 1 && onSelectBill && (
               <div className="flex items-center space-x-1 font-mono text-xs">
@@ -151,7 +208,7 @@ export default function DotMatrixReceiptModal({
 
             {/* Cancel/Close Button */}
             <button
-              onClick={onClose}
+              onClick={handleModalClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
               title="Close (Esc)"
             >
@@ -160,9 +217,24 @@ export default function DotMatrixReceiptModal({
           </div>
         </div>
 
-        {/* The Continuous Stationery Canvas */}
-        <div className="p-6 bg-slate-950 flex justify-center overflow-x-auto">
-          <PrintableReceipt billData={billData} isReprint={isReprint} />
+        {/* Modal Main Content Area */}
+        <div className="p-6 bg-slate-950 flex justify-center overflow-x-auto max-h-[75vh]">
+          {activeTab === 'receipt' ? (
+            <PrintableReceipt billData={billData} isReprint={isReprint} />
+          ) : (
+            <div className="w-full">
+              <VirtualTvsHardwareInspector 
+                billData={billData} 
+                onAfterSimulatePrint={() => {
+                  if (!isReprint && onNewBill) {
+                    onNewBill();
+                  }
+                  onClose();
+                  focusSearchBox();
+                }} 
+              />
+            </div>
+          )}
         </div>
 
         {/* Modal Bottom Action Bar */}
@@ -174,7 +246,7 @@ export default function DotMatrixReceiptModal({
           </span>
           <div className="flex items-center space-x-2">
             <button
-              onClick={onClose}
+              onClick={handleModalClose}
               className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />

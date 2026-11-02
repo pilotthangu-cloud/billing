@@ -39,8 +39,8 @@ export const DAILY_TOKEN_CAP = 245000;
 export const HARDCAPPED_MODEL = 'gpt-4o-mini';
 
 export const OPENAI_API_KEY = 
-  import.meta.env.VITE_OPENAI_API_KEY || 
-  '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';
+  (typeof window !== 'undefined' ? (localStorage.getItem('beta_pharma_openai_key') || '') : '') || 
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY ? import.meta.env.VITE_OPENAI_API_KEY : '');
 
 export function getDailyTokenUsage() {
   try {
@@ -270,15 +270,67 @@ export default function PurchaseEntryPage({
   const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
   const supplierDropdownRef = useRef(null);
 
+  // Handle committing or creating a custom distributor on the fly
+  const handleCommitSupplier = (rawVal) => {
+    const raw = (rawVal !== undefined ? rawVal : supplierSearchQuery).trim();
+    if (!raw) {
+      setIsSupplierDropdownOpen(false);
+      return;
+    }
+
+    // 1. Check if exact or case-insensitive match already exists
+    const found = allSuppliers.find(s => 
+      s.code.toLowerCase() === raw.toLowerCase() || 
+      s.name.toLowerCase() === raw.toLowerCase() ||
+      `${s.code} - ${s.name}`.toLowerCase() === raw.toLowerCase()
+    );
+
+    if (found) {
+      setSupplierCode(found.code);
+      setSupplierSearchQuery('');
+      setIsSupplierDropdownOpen(false);
+      return;
+    }
+
+    // 2. It's a new distributor name entered by the pharmacist!
+    const cleanName = raw.toUpperCase();
+    const newCode = `D${(allSuppliers.length + 101).toString().slice(-4)}`;
+    const newSupplier = {
+      code: newCode,
+      name: cleanName,
+      address: 'LOCAL DISTRIBUTOR',
+      phone: '',
+      creditDays: 21
+    };
+
+    const updated = [newSupplier, ...allSuppliers];
+    setAllSuppliers(updated);
+    setSupplierCode(newCode);
+    setSupplierSearchQuery('');
+    setIsSupplierDropdownOpen(false);
+
+    try {
+      const custom = JSON.parse(localStorage.getItem('beta_pharma_custom_suppliers') || '[]');
+      custom.unshift(newSupplier);
+      localStorage.setItem('beta_pharma_custom_suppliers', JSON.stringify(custom));
+    } catch (e) {}
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (supplierDropdownRef.current && !supplierDropdownRef.current.contains(e.target)) {
-        setIsSupplierDropdownOpen(false);
+        if (isSupplierDropdownOpen) {
+          if (supplierSearchQuery.trim()) {
+            handleCommitSupplier(supplierSearchQuery);
+          } else {
+            setIsSupplierDropdownOpen(false);
+          }
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isSupplierDropdownOpen, supplierSearchQuery, allSuppliers]);
 
   const currentSupplier = allSuppliers.find(s => s.code === supplierCode) || allSuppliers[0];
 
@@ -860,7 +912,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
         }).filter(it => it.totalUnits > 0);
 
         if (deltaItems.length > 0) {
-          onUpdateCatalogStock(deltaItems);
+          onUpdateCatalogStock(deltaItems, updatedVoucher);
         }
       }
 
@@ -904,7 +956,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
 
     // Update live stock in App catalog!
     if (onUpdateCatalogStock) {
-      onUpdateCatalogStock(purchaseItems);
+      onUpdateCatalogStock(purchaseItems, newVoucher);
     }
 
     setSaveSuccessToast(`Purchase Voucher #${voucherNumber} posted! Added ${totalInwardUnits} units to stock.`);
@@ -1078,16 +1130,29 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  value={isSupplierDropdownOpen ? supplierSearchQuery : `${currentSupplier.code} - ${currentSupplier.name}`}
-                  onFocus={() => {
+                  value={isSupplierDropdownOpen ? supplierSearchQuery : (currentSupplier ? `${currentSupplier.code} - ${currentSupplier.name}` : '')}
+                  onFocus={(e) => {
                     setIsSupplierDropdownOpen(true);
-                    setSupplierSearchQuery('');
+                    setSupplierSearchQuery(currentSupplier ? currentSupplier.name : '');
+                    e.target.select();
                   }}
                   onChange={(e) => {
                     setSupplierSearchQuery(e.target.value);
                     if (!isSupplierDropdownOpen) setIsSupplierDropdownOpen(true);
                   }}
-                  placeholder="Type distributor name or code to search..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Tab') {
+                      if (supplierSearchQuery.trim()) {
+                        e.preventDefault();
+                        handleCommitSupplier(supplierSearchQuery);
+                        document.getElementById('dist-bill-no-input')?.focus();
+                      }
+                    } else if (e.key === 'Escape') {
+                      setIsSupplierDropdownOpen(false);
+                      setSupplierSearchQuery('');
+                    }
+                  }}
+                  placeholder="Type distributor name or code to search or add new..."
                   className={`w-full py-1.5 pl-8 pr-7 rounded border font-bold text-xs focus:ring-2 focus:ring-sky-500 font-mono ${
                     isDark ? 'bg-zinc-950 border-zinc-700 text-white' : 'bg-white border-slate-400 text-slate-950 shadow-sm'
                   }`}
@@ -1110,8 +1175,28 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
                   <div className={`px-2 py-1 text-[10px] font-bold border-b uppercase ${
                     isDark ? 'bg-zinc-950 border-zinc-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
                   }`}>
-                    Showing {filteredSuppliers.length} of {allSuppliers.length} distributors (Type to filter)
+                    Showing {filteredSuppliers.length} of {allSuppliers.length} distributors (Type to filter or add new)
                   </div>
+
+                  {/* One-click option to add custom distributor if user typed something */}
+                  {supplierSearchQuery.trim().length > 0 && (
+                    <div
+                      onClick={() => handleCommitSupplier(supplierSearchQuery)}
+                      className={`px-3 py-2 cursor-pointer flex items-center justify-between border-b transition ${
+                        isDark ? 'bg-sky-950/80 text-sky-200 hover:bg-sky-900 border-sky-800' : 'bg-sky-100 text-sky-900 hover:bg-sky-200 border-sky-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Plus className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span className="font-bold">
+                          Use / Add "<span className="text-emerald-400 font-black">{supplierSearchQuery.trim().toUpperCase()}</span>" as New Distributor
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-sky-600 text-white shrink-0">
+                        Press Enter
+                      </span>
+                    </div>
+                  )}
                   {filteredSuppliers.map((s, idx) => {
                     const isSelected = s.code === supplierCode;
                     return (
@@ -1160,6 +1245,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
                 Dist. Bill No [BILL_NO]
               </label>
               <input
+                id="dist-bill-no-input"
                 type="text"
                 value={invoiceNo}
                 onChange={(e) => setInvoiceNo(e.target.value)}

@@ -20,7 +20,9 @@ import {
   CheckCircle2, 
   Share2, 
   Zap,
-  Repeat
+  Repeat,
+  UserCheck,
+  Truck
 } from 'lucide-react';
 import { fuzzySearchMedicines } from '../utils/fuzzySearch';
 
@@ -59,6 +61,9 @@ export default function CommandPaletteModal({
     { id: 'nav-admin', title: 'Admin HQ Executive Portal', category: 'Navigation', icon: Building2, action: () => onNavigate('admin'), hint: 'Ctrl+H' },
     { id: 'nav-purchases', title: 'Purchase Entry (Stock Inward)', category: 'Navigation', icon: ShoppingCart, action: () => onNavigate('purchases') },
     { id: 'nav-catalog', title: 'Product Catalog Master', category: 'Navigation', icon: Package, action: () => onNavigate('product-master') },
+    { id: 'nav-doctor', title: 'Doctor & Clinic Master', category: 'Navigation', icon: UserCheck, action: () => onNavigate('doctor-master') },
+    { id: 'nav-company', title: 'Company / Pharma Master', category: 'Navigation', icon: Building2, action: () => onNavigate('company-master') },
+    { id: 'nav-supplier', title: 'Supplier & Distributor Master', category: 'Navigation', icon: Truck, action: () => onNavigate('supplier-master') },
     { id: 'nav-sales-reg', title: 'Daily Sales Register & Cash Tally', category: 'Navigation', icon: FileText, action: () => onNavigate('sales-register') },
     { id: 'nav-udhaar', title: 'Customer Credit Ledger (Khata)', category: 'Navigation', icon: CreditCard, action: () => onNavigate('due-bills') },
     { id: 'nav-multistore', title: 'Multi-Store Inventory Radar', category: 'Navigation', icon: Store, action: () => onNavigate('radar') },

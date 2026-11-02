@@ -225,5 +225,8 @@ export function generateTvsEscPosStream(billData) {
     bytes.push(0x0D, 0x0A);
   });
 
+  // 5. Form Feed (0x0C) to advance paper directly to the half-sheet tear-off perforation
+  bytes.push(...ESC_P.FORM_FEED);
+
   return new Uint8Array(bytes);
 }

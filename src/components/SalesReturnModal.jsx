@@ -104,10 +104,18 @@ export default function SalesReturnModal({
   };
 
   // Calculate total refund amount
-  const selectedReturns = returnItems.filter(it => it.isSelected && it.returnQty > 0);
+  const selectedReturns = returnItems
+    .filter(it => it.isSelected && it.returnQty > 0)
+    .map(it => {
+      const unitPrice = it.mrp / (it.per || 10);
+      return {
+        ...it,
+        unitPrice,
+        totalRefund: unitPrice * it.returnQty
+      };
+    });
   const totalRefundAmount = selectedReturns.reduce((acc, it) => {
-    const unitPrice = it.mrp / (it.per || 10);
-    return acc + (unitPrice * it.returnQty);
+    return acc + (it.totalRefund || 0);
   }, 0);
 
   const handleSubmitReturn = (e) => {
@@ -119,6 +127,7 @@ export default function SalesReturnModal({
 
     const returnPayload = {
       creditNoteNo: 'CN-' + Math.floor(100000 + Math.random() * 900000),
+      originalBill: selectedBill,
       originalBillNo: selectedBill.billNo,
       billDate: selectedBill.date,
       returnDate: new Date().toLocaleDateString('en-GB'),
@@ -127,8 +136,10 @@ export default function SalesReturnModal({
       customerPhone: selectedBill.customerPhone || '',
       doctorName: selectedBill.doctorName || 'GENERAL OTC',
       items: selectedReturns,
+      returnedItems: selectedReturns,
       refundAmount: Math.round(totalRefundAmount),
       refundMode,
+      action: refundMode === 'CREDIT_NOTE' ? 'credit_note' : 'cash_refund',
       reason: returnReason,
       store: activeBranch?.name || 'Beta Pharmacy',
       branchId: activeBranch?.id || 'MAIN'

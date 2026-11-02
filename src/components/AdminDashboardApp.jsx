@@ -41,7 +41,8 @@ import {
   Coins,
   TrendingDown,
   FileCheck,
-  CheckCheck
+  CheckCheck,
+  Printer
 } from 'lucide-react';
 import initialMedicines from '../data/medicines.json';
 import supplierList from '../data/suppliers.json';
@@ -90,8 +91,7 @@ export default function AdminDashboardApp({
 
   const handleSaveHeaderConfig = () => {
     if (onUpdateStoreConfig) {
-      onUpdateStoreConfig,
-  onRefreshCloudBills(headerForm);
+      onUpdateStoreConfig(headerForm);
     }
     setToastMessage('✓ Receipt Header Configuration saved! Counter terminal updated.');
   };

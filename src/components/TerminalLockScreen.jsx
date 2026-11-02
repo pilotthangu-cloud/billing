@@ -66,7 +66,7 @@ export default function TerminalLockScreen({
 
     // Require PIN (1536 or any 4-digit counter passcode)
     if (!pin || pin.length < 4) {
-      setErrorMsg('Please enter a valid 4-digit Counter/Staff PIN (Default: 1536).');
+      setErrorMsg('Please enter a valid 4-digit Counter/Staff PIN.');
       return;
     }
 
@@ -231,7 +231,7 @@ export default function TerminalLockScreen({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1.5">
-                    Counter PIN (1536)
+                    Counter PIN
                   </label>
                   <input
                     type="password"
