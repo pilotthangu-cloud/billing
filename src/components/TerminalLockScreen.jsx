@@ -11,7 +11,9 @@ import {
   CheckCircle2, 
   Plus, 
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Upload,
+  FolderUp
 } from 'lucide-react';
 
 export default function TerminalLockScreen({
@@ -19,7 +21,9 @@ export default function TerminalLockScreen({
   activeBranch,
   staffList = [],
   onUnlockTerminal,
-  onAddStaff
+  onAddStaff,
+  onOpenImportModal,
+  onOpenSetupWizard
 }) {
   const isDark = theme === 'dark';
   
@@ -306,8 +310,37 @@ export default function TerminalLockScreen({
             </form>
           )}
 
+          {/* Direct First-Time Upload & Setup Actions (Accessible without logging in) */}
+          <div className={`mt-5 pt-3.5 border-t flex flex-col sm:flex-row items-center justify-between gap-2 ${
+            isDark ? 'border-zinc-800' : 'border-slate-200'
+          }`}>
+            {onOpenImportModal && (
+              <button
+                type="button"
+                onClick={onOpenImportModal}
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg border text-xs font-bold font-mono transition flex items-center justify-center space-x-1.5 cursor-pointer bg-purple-600/10 border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-600/20"
+                title="Upload old software DATA folder or ITEMFILE.DBF & STK*.DBF directly"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>📁 Upload DATA Folder (.DBF)</span>
+              </button>
+            )}
+
+            {onOpenSetupWizard && (
+              <button
+                type="button"
+                onClick={onOpenSetupWizard}
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg border text-xs font-bold font-mono transition flex items-center justify-center space-x-1.5 cursor-pointer bg-sky-600/10 border-sky-500/30 text-sky-600 dark:text-sky-300 hover:bg-sky-600/20"
+                title="Launch guided First-Time Setup Wizard"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>🚀 Setup Wizard</span>
+              </button>
+            )}
+          </div>
+
           {/* Footer Safety Notice */}
-          <div className="mt-5 pt-4 border-t border-inherit text-center">
+          <div className="mt-3 text-center">
             <p className="text-[11px] text-slate-400 font-medium">
               🔒 Counter locked to prevent unauthorized sales. Press <strong>Ctrl+L</strong> at any time to lock.
             </p>

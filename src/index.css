@@ -165,20 +165,22 @@
     overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
   .no-print, header, nav, .btn-no-print {
     display: none !important;
   }
 
-  /* Isolate and pin the receipt directly to top-left (0,0) */
-  body:has(#printable-receipt-area) * {
+  /* Isolate strictly to the single dedicated off-screen print target to guarantee exactly 1 page and prevent duplicate pages */
+  body * {
     visibility: hidden;
   }
-  body:has(#printable-receipt-area) #printable-receipt-area,
-  body:has(#printable-receipt-area) #printable-receipt-area * {
+  #single-print-target,
+  #single-print-target * {
     visibility: visible !important;
   }
-  #printable-receipt-area {
+  #single-print-target {
     position: fixed !important;
     left: 0 !important;
     top: 0 !important;
@@ -187,21 +189,31 @@
     height: 5.5in !important;
     max-height: 5.5in !important;
     margin: 0 !important;
-    padding: 0.1in 0.25in !important;
+    padding: 0.05in 0.2in !important;
     background: white !important;
     color: black !important;
     border: none !important;
     box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
-    font-size: 9.5pt !important;
-    line-height: 1.15 !important;
+    font-size: 9pt !important;
+    line-height: 1.12 !important;
     white-space: pre !important;
     page-break-after: avoid !important;
     page-break-inside: avoid !important;
     page-break-before: avoid !important;
+    break-after: avoid !important;
+    break-inside: avoid !important;
     overflow: hidden !important;
     display: block !important;
     z-index: 999999 !important;
+  }
+  #single-print-target #printable-receipt-area {
+    visibility: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 9pt !important;
+    line-height: 1.12 !important;
+    white-space: pre !important;
   }
 }
 

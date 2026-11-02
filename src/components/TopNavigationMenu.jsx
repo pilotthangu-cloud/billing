@@ -107,6 +107,19 @@ export default function TopNavigationMenu({
               <Building2 className="w-3 h-3 text-sky-600" />
               <span>{activeBranch?.location ? `${activeBranch.location} • Counter 01` : 'Main Counter 01'}</span>
             </div>
+            {onOpenImportModal && (
+              <button
+                type="button"
+                onClick={onOpenImportModal}
+                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
+                  isDark ? 'bg-purple-950 text-purple-200 border-purple-700 hover:bg-purple-900' : 'bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100'
+                }`}
+                title="1-Click Upload old pharmacy DATA folder or ITEMFILE.DBF & STK*.DBF"
+              >
+                <Upload className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                <span>📁 Upload DATA (.DBF)</span>
+              </button>
+            )}
           </div>
 
           <span className="text-slate-400">|</span>
@@ -714,6 +727,17 @@ export default function TopNavigationMenu({
             <ShoppingCart className="w-3.5 h-3.5" />
             <span>Sale Billing (POS)</span>
           </button>
+
+          {onOpenImportModal && (
+            <button
+              onClick={onOpenImportModal}
+              className="px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 bg-purple-700 hover:bg-purple-600 text-white shadow-sm cursor-pointer whitespace-nowrap shrink-0"
+              title="1-Click Upload old software DATA folder or ITEMFILE.DBF & STK*.DBF"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>📁 Upload DATA / DBF</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

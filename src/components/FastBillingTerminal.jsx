@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Zap,
   Share2,
-  MessageSquare
+  MessageSquare,
+  Upload
 } from 'lucide-react';
 import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
@@ -57,7 +58,8 @@ export default function FastBillingTerminal({
   onOpenShiftModal,
   handoverNotice,
   setHandoverNotice,
-  authenticatedRole = null
+  authenticatedRole = null,
+  onOpenImportModal
 }) {
   // Input refs
   const searchInputRef = useRef(null);
@@ -197,11 +199,14 @@ export default function FastBillingTerminal({
         e.preventDefault();
         if (onOpenSalesReturn) onOpenSalesReturn();
       }
-      if (e.key === 'Delete' && selectedRowIndex !== null && items[selectedRowIndex]) {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+      if (e.key === 'Delete' && !isTyping && selectedRowIndex !== null && items[selectedRowIndex]) {
         e.preventDefault();
         handleRemoveItem(selectedRowIndex);
       }
-      if (e.key === '*' || (e.ctrlKey && e.key === 'p') || e.key === 'F10') {
+      if (!isTyping && (e.key === '*' || (e.ctrlKey && e.key === 'p') || e.key === 'F10')) {
         if (items.length > 0) {
           e.preventDefault();
           onCompleteBill();
@@ -848,6 +853,23 @@ export default function FastBillingTerminal({
             <PlusCircle className="w-4 h-4 text-sky-600" />
             <span>+ New Med</span>
           </button>
+
+          {/* 1-Click Upload Old DATA Folder / DBF */}
+          {onOpenImportModal && (
+            <button
+              type="button"
+              onClick={onOpenImportModal}
+              className={`py-2 px-3 rounded-lg border text-xs font-bold font-mono flex items-center space-x-1 transition cursor-pointer ${
+                theme === 'dark' 
+                  ? 'border-purple-800 bg-purple-950/70 hover:bg-purple-900 text-purple-300' 
+                  : 'border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-800 shadow-sm'
+              }`}
+              title="1-Click Upload old pharmacy DATA folder or ITEMFILE.DBF & STK*.DBF"
+            >
+              <Upload className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>📁 Upload DBF</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -1570,7 +1570,8 @@ export default function App() {
 
   // Sales Return / Credit Note Handler: Restocks medicines to current branch and issues Credit Note
   const handleConfirmSalesReturn = async (returnData) => {
-    if (!returnData || !returnData.returnedItems || returnData.returnedItems.length === 0) return;
+    const itemsToReturn = returnData?.returnedItems || returnData?.items || [];
+    if (!returnData || itemsToReturn.length === 0) return;
 
     // Idempotency check: prevent duplicate restocking if user or modal double-submits
     const creditNoteId = returnData.creditNoteNo 
@@ -2330,18 +2331,20 @@ export default function App() {
     if (!repeatItems || repeatItems.length === 0) return;
 
     const formatted = repeatItems.map(it => {
-      const found = medicines.find(m => m.code === it.code || m.name.toLowerCase() === it.name.toLowerCase());
+      const itName = it.name || it.medicine?.name || '';
+      const itCode = it.code || it.medicine?.code || '';
+      const found = medicines.find(m => (itCode && m.code === itCode) || (itName && (m.name || '').toLowerCase() === itName.toLowerCase()));
       const batchObj = found?.batches?.[0] || {
-        batch_no: it.batch || 'BN001',
-        exp_date: it.exp || it.exp_date || '',
-        mrp: it.mrp || 30,
-        per: 10
+        batch_no: it.batch?.batch_no || it.batch || 'BN001',
+        exp_date: it.exp || it.exp_date || it.batch?.exp_date || '',
+        mrp: it.mrp || it.batch?.mrp || 30,
+        per: it.per || it.batch?.per || 10
       };
       return {
-        medicine: found || { name: it.name, code: it.code || 'M9999', company: 'GEN', rack: 1 },
+        medicine: found || { name: itName || 'Medicine', code: itCode || 'M9999', company: 'GEN', rack: 1 },
         batch: batchObj,
-        qty: it.qty || 10,
-        totalValue: it.totalValue || ((batchObj.mrp / (batchObj.per || 10)) * (it.qty || 10))
+        qty: parseInt(it.qty, 10) || 10,
+        totalValue: it.totalValue || ((batchObj.mrp / (batchObj.per || 10)) * (parseInt(it.qty, 10) || 10))
       };
     });
 
@@ -2488,6 +2491,7 @@ export default function App() {
           handoverNotice={handoverNotice}
           setHandoverNotice={setHandoverNotice}
           onOpenSalesReturn={() => setIsSalesReturnOpen(true)}
+          onOpenImportModal={() => setIsImportModalOpen(true)}
         />
       )}
 
@@ -2761,7 +2765,7 @@ export default function App() {
 
       {/* Off-screen Direct Print Target (Ensures 1-Click Print Bill directly outputs 1:1 ESC/P dot-matrix receipt without opening popup) */}
       {!isSalesReturnOpen && (
-        <div className="hidden print:block">
+        <div id="single-print-target" className="hidden print:block">
           <PrintableReceipt billData={{ ...(completedBillData || recentBills[0] || {}), storeInfo: storeConfig }} isReprint={isReprintMode} />
         </div>
       )}
@@ -2787,14 +2791,16 @@ export default function App() {
         onTriggerSync={() => syncEngine.triggerManualSync()}
       />
 
-      {/* Terminal Lock & Shift Sign-In Gate (Blocks unauthorized visitors & secures cash counter) */}
-      {isTerminalLocked && (
+      {/* Terminal Lock & Shift Sign-In Gate (Never blocks initial Onboarding/Setup Wizard) */}
+      {isTerminalLocked && !isSetupWizardOpen && (
         <TerminalLockScreen
           theme={theme}
           activeBranch={activeBranch}
           staffList={staffList}
           onUnlockTerminal={handleUnlockTerminal}
           onAddStaff={handleAddStaff}
+          onOpenImportModal={() => setIsImportModalOpen(true)}
+          onOpenSetupWizard={() => setIsSetupWizardOpen(true)}
         />
       )}
 
