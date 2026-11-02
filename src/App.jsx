@@ -202,7 +202,7 @@ function getInitialBillNo() {
 // Multi-Shop Branch Machine Identifiers (Configured per physical shop counter)
 export const AVAILABLE_BRANCHES = [
   { id: 'MAIN', name: 'Beta Pharmacy', location: 'Main Pharmacy', short: 'Beta Pharmacy', prefix: 'BP', stockKey: 'stock_shop1' },
-  { id: 'POLYCLINIC', name: 'Beta Polyclinic', location: 'Polyclinic Division', short: 'Beta Polyclinic', prefix: 'BPC', stockKey: 'stock_shop2' }
+  { id: 'POLYCLINIC', name: 'Beta Polyclinic Pharmacy', location: 'Polyclinic Division', short: 'Beta Polyclinic Pharmacy', prefix: 'BPC', stockKey: 'stock_shop2' }
 ];
 
 function getInitialBranch() {
@@ -286,8 +286,23 @@ export default function App() {
   // Persistent Store Profile & Receipt Header Configuration (Admin Managed)
   const [storeConfig, setStoreConfig] = useState(() => {
     try {
+      const branchId = localStorage.getItem('beta_pharma_branch_id') || 'MAIN';
+      const branchCfg = localStorage.getItem('beta_pharma_store_config_' + branchId);
+      if (branchCfg) return JSON.parse(branchCfg);
       const saved = localStorage.getItem('beta_pharma_store_config');
       if (saved) return JSON.parse(saved);
+      if (branchId === 'POLYCLINIC') {
+        return {
+          headerStyle: 'COMPACT_MEMO',
+          name: 'BETA POLYCLINIC PHARMACY',
+          address: 'Beta Polyclinic, Thalassery.',
+          phone: 'Tel - 0490-2325049',
+          mobile: 'Mob - 9497172662',
+          dlNo: 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.',
+          memoTitle: 'BETA POLYCLINIC PHARMACY',
+          city: 'THALASSERY'
+        };
+      }
     } catch (e) {}
     return {
       headerStyle: 'FULL_PHARMACY', // 'FULL_PHARMACY' or 'COMPACT_MEMO'
@@ -319,6 +334,28 @@ export default function App() {
       const branchCfg = localStorage.getItem('beta_pharma_store_config_' + found.id);
       if (branchCfg) {
         setStoreConfig(JSON.parse(branchCfg));
+      } else if (found.id === 'POLYCLINIC') {
+        setStoreConfig({
+          headerStyle: 'COMPACT_MEMO',
+          name: 'BETA POLYCLINIC PHARMACY',
+          address: 'Beta Polyclinic, Thalassery.',
+          phone: 'Tel - 0490-2325049',
+          mobile: 'Mob - 9497172662',
+          dlNo: 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.',
+          memoTitle: 'BETA POLYCLINIC PHARMACY',
+          city: 'THALASSERY'
+        });
+      } else {
+        setStoreConfig({
+          headerStyle: 'FULL_PHARMACY',
+          name: 'BETA PHARMACY',
+          address: 'Sadanada Pai Road, Chirakkara, Thalassery.',
+          phone: 'Tel - 0490-2325049',
+          mobile: 'Mob - 9497172662',
+          dlNo: 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.',
+          memoTitle: 'CASH MEMO',
+          city: 'THALASSERY'
+        });
       }
       // Load branch-specific bill sequence
       // Load branch-specific held bills

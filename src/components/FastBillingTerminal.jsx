@@ -706,7 +706,7 @@ export default function FastBillingTerminal({
                                 {med.stock_shop1 || 0}
                               </strong>
                               <span className="text-slate-300 dark:text-zinc-700 mx-1">|</span>
-                              <span className={isSelected ? 'text-sky-200' : 'text-slate-500'}>Polyclinic: </span>
+                              <span className={isSelected ? 'text-sky-200' : 'text-slate-500'}>Polyclinic Pharmacy: </span>
                               <strong className={(med.stock_shop2 || 0) > 0 ? (isSelected ? 'text-white' : 'text-purple-700 dark:text-purple-400') : 'text-rose-500 font-bold'}>
                                 {med.stock_shop2 || 0}
                               </strong>
@@ -717,7 +717,7 @@ export default function FastBillingTerminal({
                                   ? 'bg-purple-900 text-purple-200 border-purple-400' 
                                   : 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950 dark:text-purple-300'
                               }`}>
-                                ↳ In Stock at {stockKey === 'stock_shop1' ? 'Polyclinic' : 'Beta Pharmacy'}
+                                ↳ In Stock at {stockKey === 'stock_shop1' ? 'Polyclinic Pharmacy' : 'Beta Pharmacy'}
                               </div>
                             )}
                           </div>

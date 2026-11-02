@@ -22,7 +22,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
           fromBranchId: 'MAIN',
           fromBranchName: 'Beta Pharmacy (Main)',
           toBranchId: 'POLYCLINIC',
-          toBranchName: 'Beta Polyclinic',
+          toBranchName: 'Beta Polyclinic Pharmacy',
           fromStock: shop1,
           toStock: shop2,
           transferQty: Math.min(Math.floor(shop1 / 2), 10)
@@ -34,7 +34,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
           generic: m.generic || '',
           rack: m.rack || 'GN',
           fromBranchId: 'POLYCLINIC',
-          fromBranchName: 'Beta Polyclinic',
+          fromBranchName: 'Beta Polyclinic Pharmacy',
           toBranchId: 'MAIN',
           toBranchName: 'Beta Pharmacy (Main)',
           fromStock: shop2,
@@ -226,7 +226,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
                 Beta Pharmacy (Main)
               </th>
               <th className="py-2.5 px-3 text-center border-r border-inherit w-48 font-black">
-                Beta Polyclinic
+                Beta Polyclinic Pharmacy
               </th>
               <th className="py-2.5 px-3 text-center w-36">Inter-Store Action</th>
             </tr>
@@ -273,7 +273,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
                   </span>
                 </td>
 
-                {/* Beta Polyclinic (Shop 2) */}
+                {/* Beta Polyclinic Pharmacy (Shop 2) */}
                 <td className="py-2.5 px-3 text-center border-r border-inherit">
                   <span className={`px-2 py-0.5 rounded font-black text-xs ${
                     med.stock_shop2 > 0 
@@ -288,7 +288,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
                 <td className="py-2.5 px-3 text-center">
                   {med.stock_shop1 <= 0 && med.stock_shop2 > 0 ? (
                     <button
-                      onClick={() => handleTransfer(med, 'Beta Polyclinic', 'Beta Pharmacy', 5)}
+                      onClick={() => handleTransfer(med, 'Beta Polyclinic Pharmacy', 'Beta Pharmacy', 5)}
                       className="py-1 px-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded text-xs flex items-center space-x-1 mx-auto shadow"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -296,7 +296,7 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
                     </button>
                   ) : med.stock_shop2 <= 0 && med.stock_shop1 > 0 ? (
                     <button
-                      onClick={() => handleTransfer(med, 'Beta Pharmacy', 'Beta Polyclinic', 5)}
+                      onClick={() => handleTransfer(med, 'Beta Pharmacy', 'Beta Polyclinic Pharmacy', 5)}
                       className="py-1 px-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded text-xs flex items-center space-x-1 mx-auto shadow"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5" />

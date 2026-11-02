@@ -93,7 +93,7 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
         }`}>
           <div className="flex items-center space-x-3 text-[11px]">
             <div className="text-center">
-              <span className="text-[9px] text-slate-500 font-bold block">{activeBranch?.id === 'POLYCLINIC' ? 'Polyclinic' : 'Beta Pharma'}</span>
+              <span className="text-[9px] text-slate-500 font-bold block">{activeBranch?.id === 'POLYCLINIC' ? 'Polyclinic Pharmacy' : 'Beta Pharma'}</span>
               <span className={`font-black ${currentStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {currentStock} strips
               </span>
@@ -101,7 +101,7 @@ export default function MedicineDetailRadar({ selectedMed, theme, onOpenSubstitu
             <span className={isDark ? 'text-zinc-700' : 'text-slate-300'}>|</span>
             <div className="text-center">
               <span className="text-[9px] text-slate-500 font-bold block">
-                {activeBranch?.id === 'POLYCLINIC' ? 'Beta Pharma' : 'Polyclinic'}
+                {activeBranch?.id === 'POLYCLINIC' ? 'Beta Pharma' : 'Polyclinic Pharmacy'}
               </span>
               <span className={`font-bold ${
                 (activeBranch?.id === 'POLYCLINIC' ? (selectedMed.stock_shop1 || 0) : (selectedMed.stock_shop2 || 0)) > 0

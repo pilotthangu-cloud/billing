@@ -95,7 +95,8 @@ export function formatTvsBillLines(billData) {
 
   // Header (Lines 1 to 5)
   if (headerStyle === 'COMPACT_MEMO') {
-    lines.push(padRight(memoTitle, 80));
+    const memoHeader = (storeInfo.name && storeInfo.name !== 'BETA PHARMACY') ? storeInfo.name : memoTitle;
+    lines.push(padRight(memoHeader, 80));
     lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date:${date}`, 25));
     lines.push(padRight(`Pr by ${doctorName.toUpperCase()}`, 35) + padCenter(city, 20) + padLeft(`Bill No.${billNo}`, 25));
     lines.push(' '.repeat(80));

@@ -328,7 +328,7 @@ export default function FirstTimeSetupWizardModal({
                 </p>
               </div>
 
-              {/* Branch Selection Cards: Beta Pharmacy & Beta Polyclinic */}
+              {/* Branch Selection Cards: Beta Pharmacy & Beta Polyclinic Pharmacy */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {availableBranches.map((b) => {
                   const isSelected = selectedBranchId === b.id;
@@ -859,7 +859,7 @@ export default function FirstTimeSetupWizardModal({
                     }`}>
                       <div className="font-bold text-emerald-600">✓ Multi-Branch Radar Built-In:</div>
                       <p className="text-[11px] leading-relaxed">
-                        If an item is out of stock in <strong>Beta Pharmacy</strong>, the radar instantly shows whether it is available in <strong>Beta Polyclinic</strong> or <strong>FN Branch</strong> so you can transfer it immediately.
+                        If an item is out of stock in <strong>Beta Pharmacy</strong>, the radar instantly shows whether it is available in <strong>Beta Polyclinic Pharmacy</strong> or <strong>FN Branch</strong> so you can transfer it immediately.
                       </p>
                     </div>
                   </div>
