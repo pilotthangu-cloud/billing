@@ -98,23 +98,15 @@ export default function TopNavigationMenu({
             <span className="font-black text-sm tracking-wider text-sky-600 font-mono">
               {activeBranch?.name?.toUpperCase() || 'BETA PHARMACY'}
             </span>
-            <button
-              onClick={() => {
-                const otherBranch = availableBranches.find(b => b.id !== activeBranch?.id);
-                if (otherBranch && onSelectBranch) {
-                  if (window.confirm(`Switch active machine counter to ${otherBranch.name}?`)) {
-                    onSelectBranch(otherBranch.id);
-                  }
-                }
-              }}
-              className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border text-[11px] font-mono font-bold transition cursor-pointer ${
-                isDark ? 'bg-zinc-950 border-zinc-700 text-zinc-300 hover:border-zinc-500' : 'bg-white border-slate-300 text-slate-800 shadow-xs hover:border-slate-400'
+            <div
+              className={`flex items-center space-x-1.5 px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold select-none cursor-default ${
+                isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-400' : 'bg-slate-100 border-slate-300 text-slate-700 shadow-xs'
               }`} 
-              title="Physical Branch Locked to Machine Configuration • Click with Admin PIN to Switch"
+              title="Physical Counter Identity: Permanently assigned to this terminal."
             >
-              <Lock className="w-3 h-3 text-amber-500" />
+              <Building2 className="w-3 h-3 text-sky-600" />
               <span>{activeBranch?.location ? `${activeBranch.location} • Counter 01` : 'Main Counter 01'}</span>
-            </button>
+            </div>
           </div>
 
           <span className="text-slate-400">|</span>
