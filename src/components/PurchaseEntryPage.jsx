@@ -40,7 +40,8 @@ export const HARDCAPPED_MODEL = 'gpt-4o-mini';
 
 export const OPENAI_API_KEY = 
   (typeof window !== 'undefined' ? (localStorage.getItem('beta_pharma_openai_key') || '') : '') || 
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY ? import.meta.env.VITE_OPENAI_API_KEY : '');
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY ? import.meta.env.VITE_OPENAI_API_KEY : '') ||
+  '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';
 
 export function getDailyTokenUsage() {
   try {
