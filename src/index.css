@@ -155,6 +155,12 @@
     margin: 0 !important;
   }
 
+  /* Hide ALL UI elements, overlays, modals, nav, everything */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
   /* Hide all UI elements inside #root except the single print target */
   #root > *:not(#single-print-target) {
     display: none !important;

@@ -841,7 +841,7 @@ export default function App() {
             el.select?.();
           }
         }, 100);
-      }, 50);
+      }, 150);
     }
   }, [completedBillData, isReprintMode]);
 

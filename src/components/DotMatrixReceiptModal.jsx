@@ -60,9 +60,20 @@ export default function DotMatrixReceiptModal({
     }
   };
 
-  // Unified Print Action
+  // Unified Print Action — MUST close modal first so overlay is gone before window.print() fires
   const handlePrint = async () => {
-    // 1. Trigger dot-matrix printer (Native silent hardware spool if Electron, standard if browser)
+    // 1. Close the modal overlay FIRST so it's gone from DOM before print dialog opens
+    onClose();
+
+    // 2. Advance bill counter immediately (non-reprint)
+    if (!isReprint && onNewBill) {
+      onNewBill();
+    }
+
+    // 3. Wait one frame for React to remove the modal from DOM, then print
+    // The #single-print-target div in App.jsx is always rendered off-screen and contains the latest bill
+    await new Promise(resolve => setTimeout(resolve, 80));
+
     if (window.electronAPI?.isElectron) {
       try {
         await window.electronAPI.printSilent({ printerName: 'TVS MSP 250 Star' });
@@ -72,13 +83,6 @@ export default function DotMatrixReceiptModal({
     } else {
       window.print();
     }
-
-    // 2. If this was a brand new checkout, advance bill counter
-    if (!isReprint && onNewBill) {
-      onNewBill();
-    }
-    // 3. Close preview
-    onClose();
 
     // 4. Refocus search box immediately so cashier never touches mouse
     focusSearchBox();
