@@ -61,9 +61,17 @@ export default function DotMatrixReceiptModal({
   };
 
   // Unified Print Action
-  const handlePrint = () => {
-    // 1. Trigger dot-matrix printer
-    window.print();
+  const handlePrint = async () => {
+    // 1. Trigger dot-matrix printer (Native silent hardware spool if Electron, standard if browser)
+    if (window.electronAPI?.isElectron) {
+      try {
+        await window.electronAPI.printSilent({ printerName: 'TVS MSP 250 Star' });
+      } catch (e) {
+        window.print();
+      }
+    } else {
+      window.print();
+    }
 
     // 2. If this was a brand new checkout, advance bill counter
     if (!isReprint && onNewBill) {

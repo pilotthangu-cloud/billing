@@ -33,3 +33,7 @@ dist-ssr
 
 # Local temporary scratch scripts
 scratch/
+
+# Electron packaging
+release/
+*.exe

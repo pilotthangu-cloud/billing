@@ -812,13 +812,21 @@ export default function App() {
   const pendingInstantPrintRef = useRef(false);
   const isCompletingBillRef = useRef(false);
 
-  // Deterministic 1-click print: triggers window.print once the exact bill is committed to DOM
+  // Deterministic 1-click print: triggers native silent print or window.print once exact bill is committed to DOM
   useEffect(() => {
     if (pendingInstantPrintRef.current && completedBillData) {
       pendingInstantPrintRef.current = false;
       // Micro-task delay to ensure CSS continuous media print styles are applied
-      setTimeout(() => {
-        window.print();
+      setTimeout(async () => {
+        if (window.electronAPI?.isElectron) {
+          try {
+            await window.electronAPI.printSilent({ printerName: 'TVS MSP 250 Star' });
+          } catch (e) {
+            window.print();
+          }
+        } else {
+          window.print();
+        }
         if (!isReprintMode) {
           handleNewBill();
         }
