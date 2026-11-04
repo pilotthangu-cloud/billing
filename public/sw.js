@@ -1,5 +1,5 @@
 // Beta Pharmacy POS — Production Offline-First Service Worker
-const CACHE_NAME = 'beta-pos-cache-v3';
+const CACHE_NAME = 'beta-pos-cache-v5';
 
 const STATIC_ASSETS = [
   '/',

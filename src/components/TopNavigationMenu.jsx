@@ -135,6 +135,32 @@ export default function TopNavigationMenu({
                 <span>⬇️ Download Counter App</span>
               </a>
             )}
+
+            {/* Force-clear service worker cache and reload fresh — use after any update */}
+            {!window.electronAPI?.isElectron && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map(r => r.unregister()));
+                    }
+                    if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map(k => caches.delete(k)));
+                    }
+                  } catch(e) {}
+                  window.location.reload(true);
+                }}
+                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
+                  isDark ? 'bg-red-950 text-red-300 border-red-800 hover:bg-red-900' : 'bg-red-50 text-red-800 border-red-300 hover:bg-red-100'
+                }`}
+                title="Clear cached old version and reload latest update from server"
+              >
+                <span>🔄 Load Update</span>
+              </button>
+            )}
           </div>
 
           <span className="text-slate-400">|</span>
