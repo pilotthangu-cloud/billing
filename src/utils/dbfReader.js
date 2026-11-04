@@ -405,17 +405,36 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     });
   }
 
-  // 3. Locate Stock File (STKFILE.DBF or newest STK*.DBF)
+  // 3. Locate Stock File (Chronological STK<DD><MM>.DBF, STKFILE.DBF, STOCK*.DBF, BATCH*.DBF)
   const stockFiles = files.filter(f => {
     const n = f.name.toUpperCase();
-    return n.startsWith('STK') && n.endsWith('.DBF');
+    return (n.startsWith('STK') || n.startsWith('STOCK') || n.startsWith('BATCH')) && n.endsWith('.DBF');
   });
+
+  function getStkFilePriorityScore(file) {
+    const n = file.name.toUpperCase();
+    // Daily closing stock pattern: STK<DD><MM>.DBF (e.g. STK0411.DBF = Nov 04, STK2610.DBF = Oct 26)
+    const match = n.match(/^STK(\d{2})(\d{2})\.DBF$/i);
+    if (match) {
+      const day = parseInt(match[1], 10) || 1;
+      const month = parseInt(match[2], 10) || 1;
+      return 10000 + (month * 100 + day);
+    }
+    if (n === 'STKFILE.DBF') return 5000;
+    if (n.startsWith('STK')) return 4000;
+    if (n.startsWith('STOCK')) return 3000;
+    if (n.startsWith('BATCH')) return 2000;
+    return 1000;
+  }
+
   let stockFile = null;
   if (stockFiles.length > 0) {
     stockFiles.sort((a, b) => {
-      if (a.name.toUpperCase() === 'STKFILE.DBF') return -1;
-      if (b.name.toUpperCase() === 'STKFILE.DBF') return 1;
-      return (b.lastModified || 0) - (a.lastModified || 0) || b.name.localeCompare(a.name);
+      const scoreA = getStkFilePriorityScore(a);
+      const scoreB = getStkFilePriorityScore(b);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      // Fallback to lastModified timestamp if scores are identical
+      return (b.lastModified || 0) - (a.lastModified || 0);
     });
     stockFile = stockFiles[0];
   }

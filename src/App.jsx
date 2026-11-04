@@ -497,7 +497,9 @@ export default function App() {
             stock: rec.stock !== undefined ? rec.stock : 0,
             stock_shop1: rec.stock !== undefined ? rec.stock : 0,
             stock_shop2: rec.stock_shop2 !== undefined ? rec.stock_shop2 : (prevItem?.stock_shop2 || master?.stock_shop2 || 0),
-            batches: (Array.isArray(rec.batches) && rec.batches.length > 0) ? rec.batches : (prevItem?.batches || master?.batches || [])
+            batches: (rec.stock === 0)
+              ? []
+              : ((Array.isArray(rec.batches) && rec.batches.length > 0) ? rec.batches : (prevItem?.batches || master?.batches || []))
           };
         });
       } else {
@@ -516,9 +518,11 @@ export default function App() {
             const safeMrp = (rec.mrp !== undefined && rec.mrp > 0) ? rec.mrp : (existing.mrp || master?.mrp || 10);
             const safeStock = rec.stock !== undefined ? rec.stock : 0;
 
-            const safeBatches = (Array.isArray(rec.batches) && rec.batches.length > 0)
-              ? rec.batches
-              : (existing.batches || master?.batches || []);
+            const safeBatches = (safeStock === 0)
+              ? []
+              : ((Array.isArray(rec.batches) && rec.batches.length > 0)
+                ? rec.batches
+                : (existing.batches || master?.batches || []));
 
             overrides[existing.code] = {
               ...existing,

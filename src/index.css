@@ -155,12 +155,12 @@
     margin: 0 !important;
   }
 
-  /* Hide ALL body children first, then only show the single print target */
-  body > * {
+  /* Hide all UI elements inside #root except the single print target */
+  #root > *:not(#single-print-target) {
     display: none !important;
   }
-  body > #single-print-target {
-    display: block !important;
+  body > *:not(#root) {
+    display: none !important;
   }
 
   html, body {
