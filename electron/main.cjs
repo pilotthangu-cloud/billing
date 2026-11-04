@@ -71,7 +71,7 @@ ipcMain.handle('print-raw-tvs', async (event, payload = {}) => {
     } else if (payload.rawText && typeof payload.rawText === 'string') {
       bufferToWrite = Buffer.from(payload.rawText, 'ascii');
     } else {
-      bufferToWrite = Buffer.from("EMPTY PRINT JOB\r\n\x0C", 'ascii');
+      bufferToWrite = Buffer.from("EMPTY PRINT JOB\r\n", 'ascii');
     }
 
     fs.writeFileSync(tempPrnPath, bufferToWrite);

@@ -813,44 +813,29 @@ export default function App() {
     });
   };
 
-  const pendingInstantPrintRef = useRef(false);
   const isCompletingBillRef = useRef(false);
 
-  // Deterministic 1-click print: triggers native silent RAW winspool.drv print (100% Clipper/DOS parity)
-  useEffect(() => {
-    if (pendingInstantPrintRef.current && completedBillData) {
-      pendingInstantPrintRef.current = false;
-      const currentBill = { ...completedBillData, storeInfo: storeConfig };
-      setTimeout(async () => {
-        if (window.electronAPI?.isElectron) {
-          try {
-            const { generateTvsEscPosStream, formatTvsBillLines } = await import('./utils/tvsPrinterEngine');
-            const escpBytes = Array.from(generateTvsEscPosStream(currentBill));
-            const rawText = formatTvsBillLines(currentBill).join('\r\n') + '\r\n\x0C';
-            await window.electronAPI.printRawTvs({
-              printerName: 'TVS MSP 250 Star',
-              rawBytes: escpBytes,
-              rawText: rawText
-            });
-          } catch (e) {
-            console.error('Instant raw print failed:', e);
-          }
-        } else {
-          window.print();
-        }
-        if (!isReprintMode) {
-          handleNewBill();
-        }
-        setTimeout(() => {
-          const el = document.getElementById('fast-billing-search-input');
-          if (el) {
-            el.focus();
-            el.select?.();
-          }
-        }, 100);
-      }, 80);
+  // Direct TVS MSP 250 Native Spooler Print Engine (Zero Form-Feed, Exact 33 Lines, Condensed ESC/P)
+  const executeTvsPrint = async (billData, isReprint = false) => {
+    const currentBill = { ...billData, storeInfo: storeConfig };
+    if (window.electronAPI?.isElectron) {
+      try {
+        const { generateTvsEscPosStream, formatTvsBillLines } = await import('./utils/tvsPrinterEngine');
+        const escpBytes = Array.from(generateTvsEscPosStream(currentBill));
+        const rawText = formatTvsBillLines(currentBill).join('\r\n') + '\r\n';
+        await window.electronAPI.printRawTvs({
+          printerName: 'TVS MSP 250 Star',
+          rawBytes: escpBytes,
+          rawText: rawText
+        });
+        console.log(`[PRINT] Sent ${isReprint ? 'reprint' : 'bill'} #${currentBill.billNo} to TVS MSP 250`);
+      } catch (e) {
+        console.error('[PRINT] Instant raw TVS print failed:', e);
+      }
+    } else {
+      window.print();
     }
-  }, [completedBillData, isReprintMode, storeConfig]);
+  };
 
   // Sales Return (F8) & Distributor Invoice Import Modals
   const [isSalesReturnOpen, setIsSalesReturnOpen] = useState(false);
@@ -965,18 +950,38 @@ export default function App() {
   };
 
   // F7 Recall & Reprint Most Recent Completed Bill (e.g. paper tear / jam reprint)
-  const handleReprintLastBill = () => {
-    if (recentBills.length === 0) {
-      alert('No recently completed bills available in recall memory to reprint.');
+  const handleReprintLastBill = async () => {
+    let candidateBill = null;
+    if (recentBills && recentBills.length > 0) {
+      candidateBill = recentBills[0];
+    } else {
+      try {
+        const stored = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
+        if (stored && stored.length > 0) {
+          candidateBill = stored[0];
+          setRecentBills(stored);
+        }
+      } catch (_) {}
+    }
+
+    if (!candidateBill) {
+      alert('No recently completed bills available in recall memory to reprint.\nPlease complete a bill first.');
       return;
     }
-    setCompletedBillData(recentBills[0]);
+
+    const reprintPayload = {
+      ...candidateBill,
+      isReprint: true,
+      reprintTimestamp: Date.now()
+    };
+
+    // 1. Show the bill modal on screen so user SEES the previous bill!
+    setCompletedBillData(reprintPayload);
     setIsReprintMode(true);
-    if (isInstantPrint) {
-      pendingInstantPrintRef.current = true;
-    } else {
-      setIsReceiptOpen(true);
-    }
+    setIsReceiptOpen(true);
+
+    // 2. Automatically print it to TVS MSP 250 printer!
+    await executeTvsPrint(reprintPayload, true);
   };
 
   // Step 5: Robust Startup Hydration from local IndexedDB (Durable Inventory Restoration)
@@ -2170,11 +2175,12 @@ export default function App() {
             // Genuine retry or post-commit recovery: Restore receipt, clear cart, advance bill sequence
             console.warn(`[RECOVERY] Bill ${billPayload.billNo} was already committed in database. Restoring state without duplicate stock deduction.`);
             alert(`Notice: Bill ${billPayload.billNo} was already committed in the database.\n\nRestoring receipt and advancing bill without duplicate stock deduction.`);
-            setCompletedBillData(stored || billPayload);
+            const restoredBill = stored || billPayload;
+            setCompletedBillData(restoredBill);
             setItems([]);
             handleNewBill();
             if (isInstantPrint) {
-              pendingInstantPrintRef.current = true;
+              await executeTvsPrint(restoredBill, false);
             } else {
               setIsReceiptOpen(true);
             }
@@ -2316,7 +2322,8 @@ export default function App() {
     }
 
     if (isInstantPrint) {
-      pendingInstantPrintRef.current = true;
+      await executeTvsPrint(billPayload, false);
+      handleNewBill();
     } else {
       // 4. Open clean Dot-Matrix Receipt Modal: Cashier can preview voucher, press Enter to print, send WhatsApp, or press Esc
       setIsReceiptOpen(true);

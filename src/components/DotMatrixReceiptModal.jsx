@@ -72,7 +72,7 @@ export default function DotMatrixReceiptModal({
     if (window.electronAPI?.isElectron) {
       try {
         const escpBytes = Array.from(generateTvsEscPosStream(billData));
-        const rawText = formatTvsBillLines(billData).join('\r\n') + '\r\n\x0C';
+        const rawText = formatTvsBillLines(billData).join('\r\n') + '\r\n';
         await window.electronAPI.printRawTvs({
           printerName: 'TVS MSP 250 Star',
           rawBytes: escpBytes,

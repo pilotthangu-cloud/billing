@@ -1,22 +1,23 @@
 /**
  * TVS Electronics MSP 250 STAR Native ESC/P Print Engine
  * Generates raw 80-column character streams and byte arrays for:
- * - Half-Sheet Continuous Tractor Paper (Fanfold, ~5.5" / 6" page height)
- * - 33 Lines per invoice (matches tear-off perforation exactly)
- * - Built-in Hardware ESC/P control codes (Draft, Condensed, Bold)
+ * - Half-Sheet Continuous Tractor Paper (Fanfold, 8.5" x 5.5", 11 tractor holes)
+ * - Exactly 33 Lines per invoice (matches 5.5" tear-off perforation at 6 LPI)
+ * - Built-in Hardware ESC/P control codes (Condensed 17.14 CPI, Bold)
  * - Zero browser canvas rasterization, zero blurry dots, zero A4 driver scaling bugs
+ * - Zero Form Feed (0x0C) to prevent 11-inch/22-hole driver overfeed & tractor jamming
  */
 
 // ESC/P Byte Constants for TVS MSP 250 Star
 export const ESC_P = {
   INIT: [0x1B, 0x40],             // ESC @ : Initialize hardware / clear buffer
-  PAGE_LEN_33: [0x1B, 0x43, 33],  // ESC C 33 : Set page length to 33 lines (half-sheet)
-  LINE_SPACING_6LPI: [0x1B, 0x32],// ESC 2 : Standard 6 lines per inch
+  PAGE_LEN_33: [0x1B, 0x43, 33],  // ESC C 33 : Set page length to 33 lines (half-sheet backup)
+  LINE_SPACING_6LPI: [0x1B, 0x32],// ESC 2 : Standard 6 lines per inch (1/6" feed per line)
   BOLD_ON: [0x1B, 0x45],          // ESC E : Bold on
   BOLD_OFF: [0x1B, 0x46],         // ESC F : Bold off
-  CONDENSED_ON: [0x0F],           // SI (0x0F) : 17.14 CPI Condensed text
+  CONDENSED_ON: [0x0F, 0x1B, 0x0F], // SI (0x0F) & ESC SI : 17.14 CPI Condensed text
   CONDENSED_OFF: [0x12],          // DC2 (0x12) : 10 CPI Normal text
-  FORM_FEED: [0x0C]               // FF : Eject / advance to exact perforation
+  FORM_FEED: [0x0C]               // FF : Hardware Form Feed
 };
 
 /**
@@ -65,6 +66,7 @@ export function numberToWordsIndian(num) {
 
 /**
  * Generates an exact 80-column, 33-line formatted ASCII bill
+ * Perfectly mirrors legacy Clipper/DOS Indian retail pharmacy half-sheet continuous tractor bills
  * @param {Object} billData The invoice details
  * @returns {Array<string>} Exactly 33 lines of 80-column strings
  */
@@ -97,7 +99,7 @@ export function formatTvsBillLines(billData) {
   if (headerStyle === 'COMPACT_MEMO') {
     const memoHeader = (storeInfo.name && storeInfo.name !== 'BETA PHARMACY') ? storeInfo.name : memoTitle;
     lines.push(padRight(memoHeader, 80));
-    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date:${date}`, 25));
+    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date: ${date}`, 25));
     lines.push(padRight(`Pr by ${doctorName.toUpperCase()}`, 35) + padCenter(city, 20) + padLeft(`Bill No.${billNo}`, 25));
     lines.push(' '.repeat(80));
     lines.push(' '.repeat(80));
@@ -105,39 +107,41 @@ export function formatTvsBillLines(billData) {
     lines.push(padRight(`${storeName} (${modeLabel})`, 80));
     lines.push(padRight(storeAddr, 55) + padLeft(storePhone, 25));
     lines.push(padRight(storeDl, 55) + padLeft(storeMob, 25));
-    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date:${date}`, 25));
+    lines.push(padRight(`Sold to  ${patientName.toUpperCase()}`, 55) + padLeft(`Date: ${date}`, 25));
     lines.push(padRight(`Pr by ${doctorName.toUpperCase()}`, 55) + padLeft(`Bill No.${billNo}`, 25));
   }
 
   // Dividers & Column Headers (Lines 6 to 8)
   lines.push('-'.repeat(80));
   const colHeader = 
-    padRight('Sr', 3) + ' ' +
-    padRight('Product', 24) + ' ' +
-    padRight('Mfr', 4) + ' ' +
-    padRight('Batch', 11) + ' ' +
-    padRight('Expiry', 7) + ' ' +
+    padRight('Sr', 3) +
+    padRight('Product', 24) +
+    padRight('Mfr', 4) +
+    padRight('Batch', 12) +
+    padRight('Expiry', 8) +
     padLeft('M R P/Per', 9) + ' ' +
-    padLeft('Qty', 5) + ' ' +
+    padLeft('Qty', 4) + ' ' +
     padLeft('Value', 10);
-  lines.push(colHeader);
+  lines.push(padRight(colHeader, 80));
   lines.push('-'.repeat(80));
 
-  // Items rows - dynamic compact rendering so items directly connect with totals
+  // Item Rows (Lines 9 to 26: exactly 18 lines)
+  const MAX_ITEM_LINES = 18;
+  const itemsToRender = Array.isArray(items) && items.length > 0 ? items.slice(0, MAX_ITEM_LINES) : [];
   let runningSubtotal = 0;
-  const itemsToRender = Array.isArray(items) && items.length > 0 ? items.slice(0, 16) : [];
 
+  const itemRows = [];
   itemsToRender.forEach((it, slot) => {
     const sr = String(slot + 1).padStart(2, ' ');
     const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1';
     let rawName = (it.medicine?.name || it.name || 'ITEM').toUpperCase();
-    let prodName = rawName.slice(0, isSchedule ? 21 : 24);
+    let prodName = rawName.slice(0, isSchedule ? 21 : 23);
     if (isSchedule) prodName = padRight(prodName, 22) + '*';
     prodName = padRight(prodName, 24);
 
-    const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 4).toUpperCase(), 4);
-    const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 11);
-    const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 7);
+    const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 3).toUpperCase(), 4);
+    const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 12);
+    const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 8);
     const qty = parseInt(it.quantity || it.qty || 1, 10);
     const mrpValue = parseFloat(it.mrp || it.rate || 0);
     const packSize = it.packSize || it.pack || 1;
@@ -148,88 +152,94 @@ export function formatTvsBillLines(billData) {
     const itemAmount = parseFloat(it.amount || it.total || (qty * ratePerUnit));
     runningSubtotal += itemAmount;
 
-    const qtyCol = padLeft(String(qty), 5);
+    const qtyCol = padLeft(String(qty), 4);
     const valCol = padLeft(itemAmount.toFixed(2), 10);
 
     const row = 
-      padRight(sr, 3) + ' ' +
-      prodName + ' ' +
-      mfr + ' ' +
-      batch + ' ' +
-      exp + ' ' +
+      padRight(sr, 3) +
+      prodName +
+      mfr +
+      batch +
+      exp +
       mrpCol + ' ' +
       qtyCol + ' ' +
       valCol;
-    lines.push(row);
+    itemRows.push(padRight(row, 80));
   });
 
-  // If empty invoice, render one placeholder row
-  if (itemsToRender.length === 0) {
-    lines.push(padRight(' 1 (NO ITEMS CHARGED)', 80));
+  if (itemRows.length === 0) {
+    itemRows.push(padRight(' 1 (NO ITEMS CHARGED)', 80));
   }
 
-  // Divider (Immediately after last item)
-  lines.push('-'.repeat(80));
+  // Push items + fill blank lines up to exactly MAX_ITEM_LINES (18 lines)
+  for (let i = 0; i < MAX_ITEM_LINES; i++) {
+    if (i < itemRows.length) {
+      lines.push(itemRows[i]);
+    } else {
+      lines.push(' '.repeat(80));
+    }
+  }
 
-  // Footer: Totals, terms, pharmacist signature
+  // Footer: Anchored cleanly at the bottom (Lines 27 to 33)
   const netValStr = (netPayable > 0 ? parseFloat(netPayable) : runningSubtotal).toFixed(2);
 
-  lines.push(padRight('We undertake to refund any excess', 80));
-  lines.push(padRight('collected by oversight. E &.O.E.', 55) + padLeft(`Net: ${netValStr}`, 25));
+  // Line 27: Divider
+  lines.push('-'.repeat(80));
+  // Line 28: Net Payable right-aligned under Value column
+  lines.push(padRight(padLeft(netValStr, 76), 80));
+  // Line 29: Terms part 1 + dashed line
+  lines.push(padRight(padRight('We undertake to refund any excess', 54) + padLeft('------------------', 22), 80));
+  // Line 30: Terms part 2 + Pharmacist Signature
+  lines.push(padRight(padRight('collected by oversight. E &.O.E.', 50) + padLeft('Signature - Pharmacist', 26), 80));
+  // Line 31: Return policy
   lines.push(padRight('Sale return will be entertained only within 7 days of bill date.', 80));
-  lines.push(padRight(' ', 40) + padLeft('Signature - Pharmacist', 40));
-  lines.push(padRight(time, 30) + padCenter('** GET WELL SOON **', 20) + ' '.repeat(30));
-
-  // Trailing paper-feed padding: advance exactly to the 33-line perforation (5.5in half-sheet)
-  const TOTAL_LINES_PER_SHEET = 33;
-  while (lines.length < TOTAL_LINES_PER_SHEET - 1) {
-    lines.push(' '.repeat(80));
-  }
-
-  // Perforation line (Line 33)
-  lines.push('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ');
+  // Line 32: Time & Get Well Soon
+  lines.push(padRight(padRight(time, 20) + padCenter('** GET WELL SOON **', 40) + ' '.repeat(20), 80));
+  // Line 33: Blank line at the exact 5.5" perforation
+  lines.push(' '.repeat(80));
 
   return lines;
 }
 
 /**
  * Generates raw ESC/P byte buffer for TVS MSP 250 Star (9-Pin Dot Matrix)
- * Adheres strictly to ICAO/AAI & Indian retail pharmacy half-sheet tractor feed (5.5" / 33 lines).
+ * Adheres strictly to Indian retail pharmacy half-sheet tractor feed (8.5" x 5.5" / 33 lines).
+ * 
  * Hardware sequence:
- * 1. ESC @ (Initialize printer hardware)
- * 2. ESC 2 (Standard 1/6-inch line spacing)
- * 3. ESC C 33 (Set physical page length to exactly 33 lines = 5.5 inches)
- * 4. Content lines (Header, items, totals, pharmacist sign)
- * 5. FORM FEED (0x0C) - cleanly advances from current line to the 33rd line perforation and stops.
+ * 1. ESC @ (Initialize printer hardware & clear buffer)
+ * 2. ESC 2 (Standard 1/6-inch line spacing = 6 LPI)
+ * 3. ESC C 33 (Set physical page length to exactly 33 lines)
+ * 4. 0x0F & ESC SI (Condensed Mode ON = 17.14 CPI - fits 80 cols within 4.66" without cut-off)
+ * 5. Content lines (Exactly 33 lines followed by CRLF 0x0D 0x0A)
+ *    - 33 lines * 1/6" = exactly 5.5 inches (11 tractor holes)
+ *    - Print head stops dead at the tear-off perforation line!
+ * 6. ZERO FORM FEED (0x0C): Omitted to eliminate 11-inch driver overfeed and tractor jamming.
+ * 
  * @param {Object} billData 
  * @returns {Uint8Array} Binary print stream
  */
 export function generateTvsEscPosStream(billData) {
-  // Get content lines without trailing blank line padding
-  const rawLines = formatTvsBillLines(billData);
-  // Filter out the artificial trailing padding spaces before sending Form Feed
-  // so Form Feed (0x0C) handles the exact jump to line 33 without double-feeding
-  let lastNonEmptyIndex = rawLines.length - 1;
-  while (lastNonEmptyIndex >= 0 && rawLines[lastNonEmptyIndex].trim() === '') {
-    lastNonEmptyIndex--;
-  }
-  // Take lines up to the footer (strip trailing spaces and artificial dashed perforation)
-  const contentLines = rawLines.slice(0, lastNonEmptyIndex + 1).filter(l => !l.startsWith('- - - - - -'));
-
+  const lines = formatTvsBillLines(billData);
   const bytes = [];
 
   // 1. Initialize hardware / reset buffer
-  bytes.push(...ESC_P.INIT);
-  // 2. Set standard 6 lines per inch (6 LPI)
-  bytes.push(...ESC_P.LINE_SPACING_6LPI);
-  // 3. Set page length to exactly 33 lines (half-sheet 5.5 inches)
-  bytes.push(...ESC_P.PAGE_LEN_33);
+  bytes.push(...ESC_P.INIT); // 0x1B, 0x40
 
-  // 4. Output lines with hardware bolding
-  contentLines.forEach((line, idx) => {
-    // Bold store name and net amount
-    const isStoreName = idx === 0 || idx === 1;
-    const isNetLine = line.includes('Net:');
+  // 2. Set standard 6 lines per inch (6 LPI - each line feed is 1/6 inch)
+  bytes.push(...ESC_P.LINE_SPACING_6LPI); // 0x1B, 0x32
+
+  // 3. Set page length to exactly 33 lines (half-sheet 5.5 inches)
+  bytes.push(...ESC_P.PAGE_LEN_33); // 0x1B, 0x43, 33
+
+  // 4. Set Condensed Mode ON (17.14 CPI)
+  // Both SI (0x0F) and ESC SI (0x1B, 0x0F) are sent for 100% TVS MSP 250 firmware compatibility
+  bytes.push(...ESC_P.CONDENSED_ON);
+
+  // 5. Output exactly 33 lines with hardware bolding
+  lines.forEach((line, idx) => {
+    // Bold store name header (Line 0) and Net total line (Line 27)
+    const isStoreName = (idx === 0);
+    const isNetLine = (idx === 27);
 
     if (isStoreName || isNetLine) {
       bytes.push(...ESC_P.BOLD_ON);
@@ -244,12 +254,12 @@ export function generateTvsEscPosStream(billData) {
       bytes.push(...ESC_P.BOLD_OFF);
     }
 
-    // Carriage Return + Line Feed
+    // Carriage Return + Line Feed: moves platen by 1/6 inch
     bytes.push(0x0D, 0x0A);
   });
 
-  // 5. Form Feed (0x0C): Because ESC C 33 is active, 0x0C advances directly to line 33 (5.5" perforation) and STOPS
-  bytes.push(...ESC_P.FORM_FEED);
+  // ZERO Form Feed (0x0C): The 33 physical line feeds mechanically equal exactly 5.5 inches
+  // (11 tractor holes), stopping the paper directly on the perforation without overfeed.
 
   return new Uint8Array(bytes);
 }

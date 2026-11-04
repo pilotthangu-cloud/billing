@@ -195,6 +195,10 @@ export default function FastBillingTerminal({
         e.preventDefault();
         if (onOpenCustomerHistory) onOpenCustomerHistory();
       }
+      if (e.key === 'F7') {
+        e.preventDefault();
+        if (onReprintLastBill) onReprintLastBill();
+      }
       if (e.key === 'F8') {
         e.preventDefault();
         if (onOpenSalesReturn) onOpenSalesReturn();
@@ -215,7 +219,7 @@ export default function FastBillingTerminal({
     };
     window.addEventListener('keydown', handleKeys);
     return () => window.removeEventListener('keydown', handleKeys);
-  }, [selectedRowIndex, items, onCompleteBill, isDropdownOpen, filtered, selectedMedIndex, activeMedicine, onOpenCustomerHistory, onOpenSalesReturn]);
+  }, [selectedRowIndex, items, onCompleteBill, isDropdownOpen, filtered, selectedMedIndex, activeMedicine, onOpenCustomerHistory, onOpenSalesReturn, onReprintLastBill]);
 
   // Scroll dropdown selection into view
   useEffect(() => {

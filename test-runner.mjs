@@ -172,6 +172,56 @@ assert(!topNav.includes('Doctor & Hospital Master'), 'Doctor Master permanently 
 assert(indexCss.includes('210mm 140mm'), 'Continuous tractor stationery (210mm x 140mm) enforced in @media print');
 assert(!appJsx.includes('Rahul C') && !topNav.includes('Rahul C'), 'Zero dummy staff ("Rahul C") in source files');
 
+// -------------------------------------------------------------
+// TEST SUITE 7: TVS MSP 250 Star ESC/P Hardware Engine Validation
+// -------------------------------------------------------------
+console.log('\n🖨️ Test Suite 7: TVS MSP 250 Star Native ESC/P Engine Validation');
+const { formatTvsBillLines, generateTvsEscPosStream } = await import('./src/utils/tvsPrinterEngine.js');
+
+const sampleBill = {
+  billNo: '026096',
+  date: '04/11/2026',
+  time: '17:15',
+  patientName: 'GIRIJA P.C.',
+  doctorName: 'Dr.MADHUSUDHANAN T',
+  paymentMode: 'cash',
+  netPayable: 27.90,
+  items: [
+    { medicine: { name: 'RANTAC 150MG TAB', company: 'J B' }, batch: { batch_no: 'BR526060', exp_date: '11/27' }, rate: 55.81, packSize: 30, quantity: 15, amount: 27.90 }
+  ],
+  storeInfo: {
+    name: 'BETA PHARMACY',
+    address: 'Sadanada Pai Road, Chirakkara, Thalassery.',
+    phone: 'Tel - 0490-2325049',
+    mobile: 'Mob - 9497172662',
+    dlNo: 'D.L.No.13/134/20/05, 13/135/21/05 Dt 30-08-05.'
+  }
+};
+
+const lines = formatTvsBillLines(sampleBill);
+assert(lines.length === 33, 'Bill formatted to EXACTLY 33 lines (matches 5.5" half-sheet tractor paper)');
+assert(lines.every(l => l.length === 80), 'All 33 lines are strictly 80 characters wide');
+assert(lines[0].startsWith('BETA PHARMACY (Cash Bill)'), 'Header Line 1 contains Store Name and Cash Bill mode');
+assert(lines[6].startsWith('Sr Product'), 'Header Line 7 contains exact column titles');
+assert(lines[8].includes('RANTAC 150MG TAB'), 'Line 9 contains first item matching Clipper layout');
+assert(lines[26].startsWith('--------------------------------------------------------------------------------'), 'Line 27 is the footer separator');
+assert(lines[27].includes('27.90'), 'Line 28 anchors the Net Payable under Value column');
+assert(lines[29].includes('Signature - Pharmacist'), 'Line 30 contains Pharmacist Signature block');
+assert(lines[31].includes('** GET WELL SOON **'), 'Line 32 contains GET WELL SOON memo');
+
+const stream = generateTvsEscPosStream(sampleBill);
+assert(stream instanceof Uint8Array, 'Print stream generated as binary Uint8Array');
+assert(stream.includes(0x0F), 'Print stream contains ASCII 0x0F (SI - Condensed Mode 17.14 CPI)');
+assert(stream.includes(0x1B) && stream.includes(0x40), 'Print stream contains ESC @ (0x1B 0x40) hardware reset');
+assert(stream.includes(0x1B) && stream.includes(0x32), 'Print stream contains ESC 2 (0x1B 0x32) 6 LPI line spacing');
+assert(!stream.includes(0x0C), 'Print stream strictly OMITS 0x0C (Form Feed) to prevent 11-inch/22-hole driver overfeed & paper jamming');
+
+let streamCrlfCount = 0;
+for (let i = 0; i < stream.length - 1; i++) {
+  if (stream[i] === 0x0D && stream[i+1] === 0x0A) streamCrlfCount++;
+}
+assert(streamCrlfCount === 33, 'Print stream contains exactly 33 CRLF advances (33 * 1/6" = exactly 5.5" perforation stop)');
+
 console.log('\n================================================================');
 console.log(`TEST RUN COMPLETE: ${passedTests} / ${totalTests} PASSED (${failedTests} FAILED)`);
 console.log('================================================================');
