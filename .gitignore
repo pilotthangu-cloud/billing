@@ -36,4 +36,5 @@ scratch/
 
 # Electron packaging
 release/
+release*/
 *.exe
