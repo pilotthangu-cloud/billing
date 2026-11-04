@@ -816,17 +816,24 @@ export default function App() {
   const pendingInstantPrintRef = useRef(false);
   const isCompletingBillRef = useRef(false);
 
-  // Deterministic 1-click print: triggers native silent print or window.print once exact bill is committed to DOM
+  // Deterministic 1-click print: triggers native silent RAW winspool.drv print (100% Clipper/DOS parity)
   useEffect(() => {
     if (pendingInstantPrintRef.current && completedBillData) {
       pendingInstantPrintRef.current = false;
-      // Micro-task delay to ensure CSS continuous media print styles are applied
+      const currentBill = { ...completedBillData, storeInfo: storeConfig };
       setTimeout(async () => {
         if (window.electronAPI?.isElectron) {
           try {
-            await window.electronAPI.printSilent({ printerName: 'TVS MSP 250 Star' });
+            const { generateTvsEscPosStream, formatTvsBillLines } = await import('./utils/tvsPrinterEngine');
+            const escpBytes = Array.from(generateTvsEscPosStream(currentBill));
+            const rawText = formatTvsBillLines(currentBill).join('\r\n') + '\r\n\x0C';
+            await window.electronAPI.printRawTvs({
+              printerName: 'TVS MSP 250 Star',
+              rawBytes: escpBytes,
+              rawText: rawText
+            });
           } catch (e) {
-            window.print();
+            console.error('Instant raw print failed:', e);
           }
         } else {
           window.print();
@@ -841,9 +848,9 @@ export default function App() {
             el.select?.();
           }
         }, 100);
-      }, 150);
+      }, 80);
     }
-  }, [completedBillData, isReprintMode]);
+  }, [completedBillData, isReprintMode, storeConfig]);
 
   // Sales Return (F8) & Distributor Invoice Import Modals
   const [isSalesReturnOpen, setIsSalesReturnOpen] = useState(false);

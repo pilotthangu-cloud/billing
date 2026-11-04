@@ -148,10 +148,11 @@
 }
 
 /* Print Output Styles (TVS MSP 250 Star Dot-Matrix Continuous Stationery) */
+/* Standard Indian Fanfold Continuous Stationery: 8.5in width x 5.5in height (210mm 140mm Half-Sheet) */
 @media print {
   @page {
-    /* Standard Indian Fanfold Continuous Stationery: 8.5in width x 5.5in height (210mm 140mm Half-Sheet) */
-    size: 8.5in 5.5in;
+    /* Let the driver/printer handle page length — do NOT hardcode height for dot-matrix tractor feed */
+    size: auto;
     margin: 0 !important;
   }
 
@@ -174,25 +175,18 @@
     padding: 0 !important;
     background: white !important;
     color: black !important;
-    width: 8.5in !important;
-    height: 5.5in !important;
-    max-height: 5.5in !important;
-    overflow: hidden !important;
+    /* NO height/max-height — dot-matrix tractor feed must NOT receive a forced form feed */
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
   }
 
   #single-print-target {
     display: block !important;
     position: static !important;
-    width: 8.5in !important;
-    max-width: 8.5in !important;
-    height: 5.5in !important;
-    max-height: 5.5in !important;
+    width: 100% !important;
     margin: 0 !important;
-    padding: 0.05in 0.15in !important;
+    padding: 2mm 4mm !important;
     background: white !important;
     color: black !important;
     border: none !important;
@@ -201,21 +195,19 @@
     font-size: 8.5pt !important;
     line-height: 1.15 !important;
     letter-spacing: -0.2px !important;
-    white-space: pre !important;
+    /* NO overflow:hidden — let all 33 lines render fully */
+    overflow: visible !important;
     page-break-after: avoid !important;
     page-break-inside: avoid !important;
     page-break-before: avoid !important;
     break-after: avoid !important;
     break-inside: avoid !important;
-    overflow: hidden !important;
-    z-index: 999999 !important;
   }
   #single-print-target * {
     visibility: visible !important;
   }
   #single-print-target #printable-receipt {
     width: 100% !important;
-    max-width: 8.5in !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -231,7 +223,7 @@
     line-height: 1.15 !important;
     letter-spacing: -0.2px !important;
     white-space: pre !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     color: black !important;
   }
 }

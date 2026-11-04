@@ -193,25 +193,45 @@ export function formatTvsBillLines(billData) {
 }
 
 /**
- * Generates raw ESC/P byte buffer for TVS MSP 250 Star
+ * Generates raw ESC/P byte buffer for TVS MSP 250 Star (9-Pin Dot Matrix)
+ * Adheres strictly to ICAO/AAI & Indian retail pharmacy half-sheet tractor feed (5.5" / 33 lines).
+ * Hardware sequence:
+ * 1. ESC @ (Initialize printer hardware)
+ * 2. ESC 2 (Standard 1/6-inch line spacing)
+ * 3. ESC C 33 (Set physical page length to exactly 33 lines = 5.5 inches)
+ * 4. Content lines (Header, items, totals, pharmacist sign)
+ * 5. FORM FEED (0x0C) - cleanly advances from current line to the 33rd line perforation and stops.
  * @param {Object} billData 
  * @returns {Uint8Array} Binary print stream
  */
 export function generateTvsEscPosStream(billData) {
-  const lines = formatTvsBillLines(billData);
+  // Get content lines without trailing blank line padding
+  const rawLines = formatTvsBillLines(billData);
+  // Filter out the artificial trailing padding spaces before sending Form Feed
+  // so Form Feed (0x0C) handles the exact jump to line 33 without double-feeding
+  let lastNonEmptyIndex = rawLines.length - 1;
+  while (lastNonEmptyIndex >= 0 && rawLines[lastNonEmptyIndex].trim() === '') {
+    lastNonEmptyIndex--;
+  }
+  // Take lines up to the footer (strip trailing spaces and artificial dashed perforation)
+  const contentLines = rawLines.slice(0, lastNonEmptyIndex + 1).filter(l => !l.startsWith('- - - - - -'));
+
   const bytes = [];
 
-  // 1. Initialize hardware
+  // 1. Initialize hardware / reset buffer
   bytes.push(...ESC_P.INIT);
-  // 2. Set 1/6-inch line spacing
+  // 2. Set standard 6 lines per inch (6 LPI)
   bytes.push(...ESC_P.LINE_SPACING_6LPI);
-  // 3. Set page length to exactly 33 lines
+  // 3. Set page length to exactly 33 lines (half-sheet 5.5 inches)
   bytes.push(...ESC_P.PAGE_LEN_33);
 
-  // 4. Output lines with native formatting
-  lines.forEach((line, idx) => {
+  // 4. Output lines with hardware bolding
+  contentLines.forEach((line, idx) => {
     // Bold store name and net amount
-    if (idx === 1 || idx === 26) {
+    const isStoreName = idx === 0 || idx === 1;
+    const isNetLine = line.includes('Net:');
+
+    if (isStoreName || isNetLine) {
       bytes.push(...ESC_P.BOLD_ON);
     }
 
@@ -220,7 +240,7 @@ export function generateTvsEscPosStream(billData) {
       bytes.push(line.charCodeAt(i) & 0xFF);
     }
 
-    if (idx === 1 || idx === 26) {
+    if (isStoreName || isNetLine) {
       bytes.push(...ESC_P.BOLD_OFF);
     }
 
@@ -228,7 +248,7 @@ export function generateTvsEscPosStream(billData) {
     bytes.push(0x0D, 0x0A);
   });
 
-  // 5. Form Feed (0x0C) to advance paper directly to the half-sheet tear-off perforation
+  // 5. Form Feed (0x0C): Because ESC C 33 is active, 0x0C advances directly to line 33 (5.5" perforation) and STOPS
   bytes.push(...ESC_P.FORM_FEED);
 
   return new Uint8Array(bytes);

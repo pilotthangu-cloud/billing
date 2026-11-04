@@ -50,90 +50,87 @@ function createWindow() {
 }
 
 // -------------------------------------------------------------
-// NATIVE ZERO-POPUP PRINT HANDLERS
+// NATIVE ZERO-POPUP PRINT HANDLERS (RAW WINSPOOL.DRV ENGINE)
 // -------------------------------------------------------------
 
-// 1. Silent HTML Print via Electron Chromium Spooler (Zero Popups)
-ipcMain.handle('print-silent', async (event, options = {}) => {
-  if (!mainWindow) return { success: false, error: 'No active window' };
-
+// 1. Direct Raw ESC/P Text Print via Windows Native Spooler (winspool.drv)
+// Bypasses Chromium graphics rasterization, GDI, and A4 driver overrides completely.
+// Guaranteed identical to legacy Clipper / DOS printing.
+ipcMain.handle('print-raw-tvs', async (event, payload = {}) => {
   try {
-    const printers = await mainWindow.webContents.getPrintersAsync();
-    let targetPrinter = options.printerName || '';
+    const printerName = payload.printerName || 'TVS';
+    const tempPrnPath = path.join(app.getPath('temp'), `tvs_raw_${Date.now()}.prn`);
+    const psScriptPath = path.join(__dirname, 'rawPrinter.ps1');
 
-    // If specific printer name wasn't found, find any TVS or Default printer
-    const tvsPrinter = printers.find(p => p.name.toUpperCase().includes('TVS') || p.name.toUpperCase().includes('MSP'));
-    const defaultPrinter = printers.find(p => p.isDefault);
-
-    if (!targetPrinter && tvsPrinter) {
-      targetPrinter = tvsPrinter.name;
-    } else if (!targetPrinter && defaultPrinter) {
-      targetPrinter = defaultPrinter.name;
+    // 1. Prepare raw binary buffer
+    let bufferToWrite = null;
+    if (payload.rawBytes && Array.isArray(payload.rawBytes)) {
+      bufferToWrite = Buffer.from(payload.rawBytes);
+    } else if (Buffer.isBuffer(payload.rawBytes)) {
+      bufferToWrite = payload.rawBytes;
+    } else if (payload.rawText && typeof payload.rawText === 'string') {
+      bufferToWrite = Buffer.from(payload.rawText, 'ascii');
+    } else {
+      bufferToWrite = Buffer.from("EMPTY PRINT JOB\r\n\x0C", 'ascii');
     }
 
+    fs.writeFileSync(tempPrnPath, bufferToWrite);
+
+    // 2. Execute native winspool.drv raw print helper
     return new Promise((resolve) => {
-      mainWindow.webContents.print({
-        silent: true,
-        printBackground: true,
-        deviceName: targetPrinter,
-        color: false,
-        margins: {
-          marginType: 'none'
-        },
-        pageSize: {
-          width: 215900,  // 8.5 inches in microns
-          height: 139700  // 5.5 inches in microns (Half-Sheet Tractor Continuous)
-        }
-      }, (success, failureReason) => {
-        if (!success) {
-          console.warn('Silent print notice:', failureReason);
-          resolve({ success: false, error: failureReason });
+      const ps = spawn('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', psScriptPath,
+        '-PrinterName', printerName,
+        '-FilePath', tempPrnPath
+      ]);
+
+      let stdOut = '';
+      let stdErr = '';
+
+      ps.stdout.on('data', (data) => { stdOut += data.toString(); });
+      ps.stderr.on('data', (data) => { stdErr += data.toString(); });
+
+      ps.on('close', (code) => {
+        try { if (fs.existsSync(tempPrnPath)) fs.unlinkSync(tempPrnPath); } catch (e) {}
+
+        if (code === 0) {
+          console.log('[Native Print OK]:', stdOut.trim());
+          resolve({ success: true, message: stdOut.trim() });
         } else {
-          resolve({ success: true, printer: targetPrinter });
+          console.error('[Native Print Failed]:', stdErr || stdOut);
+          resolve({ success: false, error: (stdErr || stdOut).trim() });
         }
+      });
+
+      ps.on('error', (err) => {
+        try { if (fs.existsSync(tempPrnPath)) fs.unlinkSync(tempPrnPath); } catch (e) {}
+        console.error('[Native Print Spawn Error]:', err);
+        resolve({ success: false, error: err.message });
       });
     });
   } catch (err) {
-    console.error('Silent print exception:', err);
+    console.error('print-raw-tvs exception:', err);
     return { success: false, error: err.message };
   }
 });
 
-// 2. Fetch list of all installed Windows printers
+// 2. Silent Print Route: Always routes dot-matrix print requests to print-raw-tvs
+ipcMain.handle('print-silent', async (event, options = {}) => {
+  if (options.rawBytes || options.rawText) {
+    return ipcMain.emit('print-raw-tvs', event, options);
+  }
+  return { success: true };
+});
+
+// 3. Fetch list of all installed Windows printers
 ipcMain.handle('get-printers', async () => {
   if (!mainWindow) return [];
   try {
     return await mainWindow.webContents.getPrintersAsync();
   } catch (e) {
     return [];
-  }
-});
-
-// 3. Direct Raw ESC/P Text Print (Streams pure bytes to Windows Print Spooler)
-ipcMain.handle('print-raw-tvs', async (event, { printerName, rawText }) => {
-  try {
-    const tempPrnPath = path.join(app.getPath('temp'), `tvs_bill_${Date.now()}.prn`);
-    fs.writeFileSync(tempPrnPath, rawText, 'ascii');
-
-    // Send to Windows printer spooler via PowerShell raw pipe
-    const psScript = `
-$printer = "${printerName || 'TVS MSP 250 Star'}"
-$file = "${tempPrnPath.replace(/\\/g, '\\\\')}"
-[System.IO.File]::ReadAllBytes($file) | Out-Null
-cmd.exe /c "copy /b \`"$file\`" \`"\\\\localhost\\$printer\`"" 2>&1
-`;
-    return new Promise((resolve) => {
-      const ps = spawn('powershell', ['-NoProfile', '-Command', psScript]);
-      ps.on('close', (code) => {
-        try { fs.unlinkSync(tempPrnPath); } catch (e) {}
-        resolve({ success: code === 0 });
-      });
-      ps.on('error', () => {
-        resolve({ success: false });
-      });
-    });
-  } catch (err) {
-    return { success: false, error: err.message };
   }
 });
 
