@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3000,
     host: true,
     watch: {
-      ignored: ['**/release/**', '**/dist/**', '**/.git/**']
+      ignored: ['**/release*/**', '**/dist/**', '**/.git/**', '**/*.exe', '**/*.tmp/**']
     }
   }
 })
