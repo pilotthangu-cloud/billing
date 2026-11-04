@@ -123,66 +123,68 @@ export function formatTvsBillLines(billData) {
   lines.push(colHeader);
   lines.push('-'.repeat(80));
 
-  // Items slots (Lines 9 to 22 = 14 slots for half-sheet)
-  const MAX_ITEM_SLOTS = 14;
+  // Items rows - dynamic compact rendering so items directly connect with totals
   let runningSubtotal = 0;
+  const itemsToRender = Array.isArray(items) && items.length > 0 ? items.slice(0, 16) : [];
 
-  for (let slot = 0; slot < MAX_ITEM_SLOTS; slot++) {
-    if (slot < items.length) {
-      const it = items[slot];
-      const sr = String(slot + 1).padStart(2, ' ');
-      const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1';
-      let rawName = (it.medicine?.name || it.name || 'ITEM').toUpperCase();
-      let prodName = rawName.slice(0, isSchedule ? 21 : 24);
-      if (isSchedule) prodName = padRight(prodName, 22) + '*';
-      prodName = padRight(prodName, 24);
+  itemsToRender.forEach((it, slot) => {
+    const sr = String(slot + 1).padStart(2, ' ');
+    const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1';
+    let rawName = (it.medicine?.name || it.name || 'ITEM').toUpperCase();
+    let prodName = rawName.slice(0, isSchedule ? 21 : 24);
+    if (isSchedule) prodName = padRight(prodName, 22) + '*';
+    prodName = padRight(prodName, 24);
 
-      const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 4).toUpperCase(), 4);
-      const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 11);
-      const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 7);
-      const qty = parseInt(it.quantity || it.qty || 1, 10);
-      const mrpValue = parseFloat(it.mrp || it.rate || 0);
-      const packSize = it.packSize || it.pack || 1;
-      const mrpPerStr = packSize > 1 ? `${mrpValue.toFixed(2)}/${packSize}` : mrpValue.toFixed(2);
-      const mrpCol = padLeft(mrpPerStr.slice(0, 9), 9);
+    const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 4).toUpperCase(), 4);
+    const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 11);
+    const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 7);
+    const qty = parseInt(it.quantity || it.qty || 1, 10);
+    const mrpValue = parseFloat(it.mrp || it.rate || 0);
+    const packSize = it.packSize || it.pack || 1;
+    const mrpPerStr = packSize > 1 ? `${mrpValue.toFixed(2)}/${packSize}` : mrpValue.toFixed(2);
+    const mrpCol = padLeft(mrpPerStr.slice(0, 9), 9);
 
-      const ratePerUnit = packSize > 1 ? (mrpValue / packSize) : (parseFloat(it.rate || it.mrp || 0));
-      const itemAmount = parseFloat(it.amount || it.total || (qty * ratePerUnit));
-      runningSubtotal += itemAmount;
+    const ratePerUnit = packSize > 1 ? (mrpValue / packSize) : (parseFloat(it.rate || it.mrp || 0));
+    const itemAmount = parseFloat(it.amount || it.total || (qty * ratePerUnit));
+    runningSubtotal += itemAmount;
 
-      const qtyCol = padLeft(String(qty), 5);
-      const valCol = padLeft(itemAmount.toFixed(2), 10);
+    const qtyCol = padLeft(String(qty), 5);
+    const valCol = padLeft(itemAmount.toFixed(2), 10);
 
-      const row = 
-        padRight(sr, 3) + ' ' +
-        prodName + ' ' +
-        mfr + ' ' +
-        batch + ' ' +
-        exp + ' ' +
-        mrpCol + ' ' +
-        qtyCol + ' ' +
-        valCol;
-      lines.push(row);
-    } else {
-      lines.push(' '.repeat(80));
-    }
+    const row = 
+      padRight(sr, 3) + ' ' +
+      prodName + ' ' +
+      mfr + ' ' +
+      batch + ' ' +
+      exp + ' ' +
+      mrpCol + ' ' +
+      qtyCol + ' ' +
+      valCol;
+    lines.push(row);
+  });
+
+  // If empty invoice, render one placeholder row
+  if (itemsToRender.length === 0) {
+    lines.push(padRight(' 1 (NO ITEMS CHARGED)', 80));
   }
 
-  // Divider (Line 23)
+  // Divider (Immediately after last item)
   lines.push('-'.repeat(80));
 
-  // Footer (Lines 24 to 32)
+  // Footer: Totals, terms, pharmacist signature
   const netValStr = (netPayable > 0 ? parseFloat(netPayable) : runningSubtotal).toFixed(2);
 
   lines.push(padRight('We undertake to refund any excess', 80));
-  lines.push(padRight('collected by oversight. E &.O.E.', 55) + padLeft(netValStr, 25));
+  lines.push(padRight('collected by oversight. E &.O.E.', 55) + padLeft(`Net: ${netValStr}`, 25));
   lines.push(padRight('Sale return will be entertained only within 7 days of bill date.', 80));
   lines.push(padRight(' ', 40) + padLeft('Signature - Pharmacist', 40));
   lines.push(padRight(time, 30) + padCenter('** GET WELL SOON **', 20) + ' '.repeat(30));
-  lines.push(' '.repeat(80));
-  lines.push(' '.repeat(80));
-  lines.push(' '.repeat(80));
-  lines.push(' '.repeat(80));
+
+  // Trailing paper-feed padding: advance exactly to the 33-line perforation (5.5in half-sheet)
+  const TOTAL_LINES_PER_SHEET = 33;
+  while (lines.length < TOTAL_LINES_PER_SHEET - 1) {
+    lines.push(' '.repeat(80));
+  }
 
   // Perforation line (Line 33)
   lines.push('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ');

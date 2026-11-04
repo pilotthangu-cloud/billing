@@ -11,7 +11,7 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
   return (
     <div 
       id="printable-receipt"
-      className="paper-continuous w-[680px] rounded p-4 font-mono text-[10.5px] leading-[1.2] select-text relative border border-slate-300 bg-white text-slate-900 shadow-xl"
+      className="paper-continuous w-[680px] print:w-full print:max-w-none print:shadow-none print:border-none print:p-0 print:m-0 rounded p-4 font-mono text-[10.5px] leading-[1.2] select-text relative border border-slate-300 bg-white text-slate-900 shadow-xl"
     >
       {/* Left Tractor Feed Holes */}
       <div className="absolute left-1.5 top-0 bottom-0 flex flex-col justify-between py-2 select-none pointer-events-none opacity-40 no-print">
@@ -37,7 +37,7 @@ export default function PrintableReceipt({ billData, isReprint = false }) {
       {/* Monospace 80-Column Receipt Body */}
       <pre 
         id="printable-receipt-area"
-        className="px-6 text-slate-900 font-mono text-[10px] leading-[1.25] overflow-x-auto whitespace-pre selection:bg-amber-200"
+        className="px-6 print:px-0 print:m-0 text-slate-900 font-mono text-[10px] leading-[1.25] overflow-x-auto whitespace-pre selection:bg-amber-200"
       >
         {formattedText}
       </pre>
