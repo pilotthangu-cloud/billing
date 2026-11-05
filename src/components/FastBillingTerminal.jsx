@@ -281,7 +281,8 @@ export default function FastBillingTerminal({
       const bQty = b.qty !== undefined ? b.qty : (b.stock !== undefined ? b.stock : 0);
       const batchNo = String(b.batch_no || '').trim();
       const expiry = normalizeExpiry(b.exp_date);
-      return bQty > 0 && batchNo && batchNo !== 'BN001' && expiry && !isBatchExpired(expiry);
+      const batchBranch = b.branch_id || 'MAIN';
+      return batchBranch === (activeBranch?.id || 'MAIN') && bQty > 0 && batchNo && batchNo !== 'BN001' && expiry && !isBatchExpired(expiry);
     }).sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
 
     if (eligibleBatches.length === 0) {

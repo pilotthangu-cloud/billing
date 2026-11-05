@@ -433,8 +433,10 @@ export async function idbEnqueueDelta(actionType, payload) {
       const localQ = JSON.parse(localStorage.getItem('beta_pharma_offline_sync_q') || '[]');
       localQ.push(record);
       localStorage.setItem('beta_pharma_offline_sync_q', JSON.stringify(localQ));
-    } catch (e) {}
-    return;
+      return record.timestamp;
+    } catch (e) {
+      return null;
+    }
   }
 
   return new Promise((resolve) => {

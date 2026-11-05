@@ -464,6 +464,7 @@ export default function App() {
     }
 
     const targetStockKey = requestedStockKey || activeBranch?.stockKey || 'stock_shop1';
+    const importBranchId = targetStockKey === 'stock_shop2' ? 'POLYCLINIC' : 'MAIN';
     const masterMap = new Map(initialMedicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
     const currentMap = new Map(medicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
 
@@ -491,7 +492,7 @@ export default function App() {
         stock_shop2: targetStockKey === 'stock_shop2' ? safeStock : Number(existing?.stock_shop2 || 0),
         // Never keep an old/master batch when the imported snapshot supplied no
         // batch evidence. That was producing new stock under stale batches.
-        batches: Array.isArray(rec.batches) ? rec.batches : [],
+        batches: Array.isArray(rec.batches) ? rec.batches.map(batch => ({ ...batch, branch_id: importBranchId })) : [],
         isImported: true
       };
     };
@@ -1129,9 +1130,9 @@ export default function App() {
                 code: delta.code,
                 name: delta.name,
                 company: delta.company || '',
-                mrp: delta.mrp || 10,
-                rack: delta.rack || 'GN',
-                schedule: delta.schedule || 'Normal',
+                mrp: Number(delta.mrp || 0),
+                rack: delta.rack || '',
+                schedule: delta.schedule || '',
                 [targetStockKey]: incomingStock,
                 stock: incomingStock,
                 stock_shop1: delta.stock_shop1 || 0,
@@ -1268,8 +1269,8 @@ export default function App() {
   };
 
   // Update stock when Purchase Invoice is saved with Batch increments, IndexedDB & Cloud Sync
-  const handleUpdateCatalogStock = (purchaseItems, purchaseVoucher) => {
-    if (!purchaseItems || purchaseItems.length === 0) return;
+  const handleUpdateCatalogStock = async (purchaseItems, purchaseVoucher) => {
+    if (!purchaseItems || purchaseItems.length === 0) return { success: false, error: 'No purchase items.' };
     const targetBranchId = activeBranch?.id || 'MAIN';
     const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
 
@@ -1291,8 +1292,7 @@ export default function App() {
       return { success: false, errors: validationErrors };
     }
 
-    setMedicines(prev => {
-      const updated = [...prev];
+    const updated = [...medicines];
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
       const modifiedMeds = [];
 
@@ -1308,9 +1308,11 @@ export default function App() {
           // Only combine if it is the EXACT same batch from the same supplier and invoice!
           const bIdx = existingBatches.findIndex(b => {
             const batchMatch = String(b.batch_no || b.batch || '').trim().toUpperCase() === String(item.batch || '').trim().toUpperCase();
+            const batchBranch = b.branch_id || 'MAIN';
+            const branchMatch = batchBranch === targetBranchId;
             const invMatch = !purchaseVoucher?.invoiceNo || !b.invoice_no || String(b.invoice_no).trim() === String(purchaseVoucher.invoiceNo).trim();
             const suppMatch = !purchaseVoucher?.supplierName || !b.supplier_name || String(b.supplier_name).trim().toLowerCase() === String(purchaseVoucher.supplierName).trim().toLowerCase();
-            return batchMatch && invMatch && suppMatch;
+            return batchMatch && branchMatch && invMatch && suppMatch;
           });
 
           if (bIdx !== -1) {
@@ -1319,6 +1321,7 @@ export default function App() {
             const newQty = oldQty + unitsToAdd;
             existingBatches[bIdx] = {
               ...b,
+              branch_id: targetBranchId,
               exp_date: normalizeExpiry(item.exp),
               mrp: Number(item.mrp),
               purchase_price: item.ptr || item.rate || b.purchase_price || 0,
@@ -1346,7 +1349,9 @@ export default function App() {
           }
 
           med.batches = existingBatches;
-          med.stock = existingBatches.reduce((acc, b) => acc + (parseInt(b.qty !== undefined ? b.qty : b.stock, 10) || 0), 0);
+          med.stock = existingBatches
+            .filter(b => (b.branch_id || 'MAIN') === targetBranchId)
+            .reduce((acc, b) => acc + (parseInt(b.qty !== undefined ? b.qty : b.stock, 10) || 0), 0);
           if (targetStockKey === 'stock_shop1' || targetBranchId === 'MAIN') {
             med.stock_shop1 = med.stock;
           }
@@ -1401,37 +1406,36 @@ export default function App() {
         }
       }
 
-      try {
-        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-        if (targetBranchId) {
-          localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
-          localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
-        }
-      } catch (e) {}
+    let persistenceResult;
+    try {
+      persistenceResult = await idbUpdateMedicines(modifiedMeds);
+    } catch (err) {
+      persistenceResult = { success: false, error: err.message };
+    }
+    if (!persistenceResult?.success) {
+      const error = persistenceResult?.error || 'IndexedDB write failed';
+      alert(`Purchase was not committed because local database persistence failed: ${error}`);
+      return { success: false, error };
+    }
 
-      // Surgically persist modified medicines to IndexedDB and verify write
-      idbUpdateMedicines(modifiedMeds).then(res => {
-        if (!res || !res.success) {
-          console.error('[STORAGE_ERROR] Failed to persist inwarded stock to IndexedDB:', res?.error);
-          alert(`Storage Warning: Stock updated in active view, but local database persistence encountered an issue: ${res?.error || 'Write error'}. Changes remain preserved in fallback storage.`);
-        }
-      }).catch(err => {
-        console.error('[STORAGE_ERROR] IndexedDB write exception during stock update:', err);
-      });
+    try {
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
+    } catch (e) {
+      console.warn('[STORAGE_WARNING] Purchase fallback cache was not updated:', e);
+    }
+    setMedicines(updated);
 
-      for (const m of modifiedMeds) {
-        syncEngine.recordMedicineDelta(m);
-      }
-
-      return updated;
-    });
+    await Promise.all(modifiedMeds.map(m => syncEngine.recordMedicineDelta(m)));
 
     if (purchaseVoucher) {
-      syncEngine.recordPurchaseInward({
+      await syncEngine.recordPurchaseInward({
         ...purchaseVoucher,
         branchId: targetBranchId
       });
     }
+    return { success: true, modifiedCount: modifiedMeds.length };
   };
 
   // Delete individual batch from catalog and re-sum stock
@@ -1762,129 +1766,50 @@ export default function App() {
   };
 
   // Distributor Purchase Invoice Inward Handler: Updates shelf stock, adds batches, and logs payables
-  const handleInwardDistributorInvoice = (importedData) => {
-    if (!importedData || !importedData.items || importedData.items.length === 0) return;
-    const targetBranchId = activeBranch?.id || 'MAIN';
-    const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+  const handleInwardDistributorInvoice = async (importedData) => {
+    if (!importedData?.items?.length) return { success: false, error: 'No invoice items.' };
 
-    const validationErrors = [];
-    if (!String(importedData.invoiceNo || '').trim()) validationErrors.push('invoice number');
-    if (!String(importedData.distributor || '').trim()) validationErrors.push('distributor name');
-    importedData.items.forEach((item, index) => {
-      const label = `Item ${index + 1} (${item.name || item.code || 'unnamed'})`;
-      const existing = medicines.find(m => m.code === item.code || (item.name && m.name.toLowerCase() === item.name.toLowerCase()));
-      if (!existing && !String(item.code || '').trim()) validationErrors.push(`${label}: product code`);
-      if (!String(item.name || existing?.name || '').trim()) validationErrors.push(`${label}: medicine name`);
-      if (!String(item.batch || '').trim()) validationErrors.push(`${label}: batch number`);
-      if (!normalizeExpiry(item.exp || item.exp_date)) validationErrors.push(`${label}: expiry`);
-      if (!(Number(item.mrp) > 0)) validationErrors.push(`${label}: MRP`);
-      if (!(Number(item.ptr) > 0)) validationErrors.push(`${label}: PTR/purchase rate`);
-      if (!(Number(item.qty) > 0)) validationErrors.push(`${label}: quantity`);
-    });
-    if (validationErrors.length > 0) {
-      alert(`Invoice was not inwarded. Required source data is missing:\n\n- ${validationErrors.join('\n- ')}\n\nCorrect the OCR/import review instead of accepting generated values.`);
-      return { success: false, errors: validationErrors };
-    }
+    // CSV quantity is packs; convert it once to physical units before using the
+    // same verified purchase commit path as manual purchase entry.
+    const purchaseItems = importedData.items.map(item => ({
+      medCode: item.code,
+      name: item.name,
+      batch: item.batch,
+      exp: item.exp || item.exp_date,
+      wQty: Number(item.qty),
+      packSize: Number(item.per),
+      totalUnits: Number(item.qty) * Number(item.per),
+      mrp: Number(item.mrp),
+      ptr: Number(item.ptr),
+      rate: Number(item.ptr),
+      taxPercent: item.gstPercent ?? item.taxPercent ?? null
+    }));
+    const invoiceTotal = purchaseItems.reduce((sum, item) => sum + (item.ptr * item.wQty), 0);
+    const voucher = {
+      billNo: String(importedData.invoiceNo || '').trim(),
+      invoiceNo: String(importedData.invoiceNo || '').trim(),
+      supplier: String(importedData.distributor || '').trim(),
+      supplierName: String(importedData.distributor || '').trim(),
+      date: importedData.invoiceDate || billDate,
+      invoiceDate: importedData.invoiceDate || billDate,
+      amount: invoiceTotal,
+      totalAmount: invoiceTotal,
+      items: purchaseItems,
+      status: 'UNPAID',
+      source: 'INVOICE_IMPORT'
+    };
 
-    // 1. Inward items into catalog
-    setMedicines(prev => {
-      const updated = [...prev];
-      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+    const result = await handleUpdateCatalogStock(purchaseItems, voucher);
+    if (!result?.success) return result;
 
-      importedData.items.forEach(item => {
-        const idx = updated.findIndex(m => m.code === item.code || m.name.toLowerCase() === item.name.toLowerCase());
-        if (idx !== -1) {
-          const med = { ...updated[idx] };
-          med[targetStockKey] = (med[targetStockKey] || 0) + (item.qty || 0);
-          const batches = med.batches ? [...med.batches] : [];
-          const bIdx = batches.findIndex(b => b.batch_no === item.batch);
-          if (bIdx !== -1) {
-            batches[bIdx] = {
-              ...batches[bIdx],
-              exp_date: normalizeExpiry(item.exp || item.exp_date),
-              mrp: Number(item.mrp),
-              stock: (batches[bIdx].stock || 0) + item.qty
-            };
-          } else {
-            batches.unshift({
-              batch_no: String(item.batch).trim(),
-              exp_date: normalizeExpiry(item.exp || item.exp_date),
-              mrp: Number(item.mrp),
-              per: Number(item.per || med.per || 1),
-              stock: item.qty
-            });
-          }
-          med.batches = batches;
-          if (item.ptr) med.ptr = item.ptr;
-          if (item.mrp) med.mrp = item.mrp;
-          updated[idx] = med;
-          const key = med.code || med.name.toLowerCase();
-          overrides[key] = med;
-        } else {
-          // New Medicine
-          const newMedObj = {
-            code: String(item.code).trim(),
-            name: item.name,
-            generic: item.generic || '',
-            mrp: Number(item.mrp),
-            ptr: Number(item.ptr),
-            per: Number(item.per || 1),
-            rack: item.rack || '',
-            tax_percent: item.gstPercent ?? null,
-            stock: Number(item.qty),
-            stock_shop1: targetStockKey === 'stock_shop1' ? item.qty : 0,
-            stock_shop2: targetStockKey === 'stock_shop2' ? item.qty : 0,
-            batches: [{
-              batch_no: String(item.batch).trim(),
-              exp_date: normalizeExpiry(item.exp || item.exp_date),
-              mrp: Number(item.mrp),
-              per: Number(item.per || 1),
-              stock: item.qty
-            }]
-          };
-          updated.unshift(newMedObj);
-          overrides[newMedObj.code] = newMedObj;
-        }
-      });
-
-      try {
-        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-        if (targetBranchId) {
-          localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
-          localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
-        }
-      } catch (e) {}
-
-      return updated;
-    });
-
-    // 2. Record purchase bill in payables
     try {
       const payables = JSON.parse(localStorage.getItem('beta_pharma_purchase_bills') || '[]');
-      const newPayable = {
-        billNo: importedData.invoiceNo,
-        name: importedData.distributor,
-        date: importedData.invoiceDate || billDate,
-        amount: importedData.items.reduce((acc, it) => acc + (Number(it.ptr) * Number(it.qty)), 0),
-        itemsCount: importedData.items.length,
-        status: 'UNPAID',
-        source: 'INVOICE_IMPORT'
-      };
-      payables.unshift(newPayable);
-      localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(payables));
+      localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify([voucher, ...payables]));
+    } catch (err) {
+      console.warn('[STORAGE_WARNING] Purchase payable fallback cache failed:', err);
+    }
 
-    // Offline-first delta sync push for purchase inward
-    const invoiceTotal = importedData.items.reduce((acc, it) => acc + (Number(it.ptr) * Number(it.qty)), 0);
-    syncEngine.recordPurchaseInward({
-      supplierName: importedData.distributor,
-      invoiceDate: importedData.invoiceDate || billDate,
-      totalAmount: invoiceTotal,
-      items: importedData.items,
-      branchId: activeBranch?.id || 'MAIN'
-    });
-    } catch (e) {}
-
-    alert(`🎉 Purchase Invoice Inwarded! ${importedData.items.length} items successfully updated into live inventory.`);
+    alert(`Purchase Invoice Inwarded: ${purchaseItems.length} items and ${purchaseItems.reduce((sum, item) => sum + item.totalUnits, 0)} units committed.`);
     return { success: true };
   };
 
@@ -2034,7 +1959,10 @@ export default function App() {
       }
 
       const batches = Array.isArray(med.batches) ? med.batches : [];
-      const foundBatch = batches.find(b => String(b.batch_no || '').trim().toUpperCase() === targetBatchNo.toUpperCase());
+      const foundBatch = batches.find(b =>
+        String(b.batch_no || '').trim().toUpperCase() === targetBatchNo.toUpperCase() &&
+        (b.branch_id || 'MAIN') === (activeBranch?.id || 'MAIN')
+      );
 
       // Never silently select another batch or deduct from a different batch!
       if (!foundBatch) {
@@ -2057,7 +1985,7 @@ export default function App() {
       }
 
       // Regulatory check: Expired batches cannot be dispensed (Section 18, Drugs and Cosmetics Act)
-      if (isBatchExpired(foundBatch.exp_date)) {
+      if (!normalizeExpiry(foundBatch.exp_date) || isBatchExpired(foundBatch.exp_date)) {
         alert(`Cannot complete bill: Regulatory Restriction.\n\nMedicine: ${itemName}\nBatch "${foundBatch.batch_no}" has expired (${foundBatch.exp_date}).\n\nDispensing expired medicines is strictly prohibited by pharmacy regulations. Please discard or select a valid unexpired batch.`);
         releaseGuard();
         return;
@@ -2131,7 +2059,10 @@ export default function App() {
       if (med) {
         if (med.batches && med.batches.length > 0) {
           const batches = med.batches;
-          const bIdx = batches.findIndex(b => String(b.batch_no || '').trim().toUpperCase() === targetBatchNo);
+          const bIdx = batches.findIndex(b =>
+            String(b.batch_no || '').trim().toUpperCase() === targetBatchNo &&
+            (b.branch_id || 'MAIN') === (activeBranch?.id || 'MAIN')
+          );
           if (bIdx !== -1) {
             const currentBatchQty = parseInt(batches[bIdx].qty !== undefined ? batches[bIdx].qty : (batches[bIdx].stock || 0), 10);
             const newBatchQty = Math.max(0, currentBatchQty - qtySold);
@@ -2140,7 +2071,11 @@ export default function App() {
           }
         }
 
-        med.stock = med.batches ? med.batches.reduce((sum, b) => sum + parseInt(b.qty !== undefined ? b.qty : (b.stock || 0), 10), 0) : Math.max(0, (med[targetStockKey] || 0) - qtySold);
+        med.stock = med.batches
+          ? med.batches
+              .filter(b => (b.branch_id || 'MAIN') === (activeBranch?.id || 'MAIN'))
+              .reduce((sum, b) => sum + parseInt(b.qty !== undefined ? b.qty : (b.stock || 0), 10), 0)
+          : Math.max(0, (med[targetStockKey] || 0) - qtySold);
         med[targetStockKey] = med.stock;
         med.branchId = activeBranch.id;
         med.updatedAt = new Date().toISOString();

@@ -875,7 +875,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
   }, [purchaseItems, parkedPurchases, supplierCode, invoiceNo, billDate, isCash, grossTotal, netPayable, activeTab]);
 
   // Post or Update Purchase Invoice
-  const handlePostPurchase = () => {
+  const handlePostPurchase = async () => {
     if (!invoiceNo.trim()) {
       alert('Please enter Distributor Bill / Invoice Number');
       return;
@@ -906,17 +906,10 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
         revisedAt: new Date().toISOString()
       };
 
-      setSavedVouchers(prev => {
-        const updated = prev.map(v => v.purNo === editingVoucher.purNo ? updatedVoucher : v);
-        try {
-          localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(updated));
-        } catch (e) {}
-        return updated;
-      });
-
-      // Update live stock in App catalog for delta units only!
+      // Calculate inventory delta before changing the saved voucher.
+      let deltaItems = [];
       if (onUpdateCatalogStock) {
-        const deltaItems = purchaseItems.map(item => {
+        deltaItems = purchaseItems.map(item => {
           const orig = (editingVoucher.originalItems || []).find(o => 
             (o.batch === item.batch || o.batch_no === item.batch) && 
             (o.medCode === item.medCode || (o.name && o.name.toLowerCase() === item.name.toLowerCase()))
@@ -927,12 +920,28 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
             ...item,
             totalUnits: diffUnits
           };
-        }).filter(it => it.totalUnits > 0);
+        });
+
+        const reductions = deltaItems.filter(it => it.totalUnits < 0);
+        if (reductions.length > 0) {
+          alert('This revision reduces previously inwarded stock. Use a supplier return/authorized stock adjustment so the reduction has its own audit record. The voucher was not changed.');
+          return;
+        }
+        deltaItems = deltaItems.filter(it => it.totalUnits > 0);
 
         if (deltaItems.length > 0) {
-          onUpdateCatalogStock(deltaItems, updatedVoucher);
+          const result = await onUpdateCatalogStock(deltaItems, updatedVoucher);
+          if (result?.success === false) return;
         }
       }
+
+      setSavedVouchers(prev => {
+        const updated = prev.map(v => v.purNo === editingVoucher.purNo ? updatedVoucher : v);
+        try {
+          localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
 
       setSaveSuccessToast(`✓ Purchase Voucher #${editingVoucher.purNo} revised and updated in stock!`);
       setTimeout(() => setSaveSuccessToast(''), 4500);
@@ -964,6 +973,12 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       status: 'DUE'
     };
 
+    // Commit inventory first; only then record the payable voucher and show success.
+    if (onUpdateCatalogStock) {
+      const result = await onUpdateCatalogStock(purchaseItems, newVoucher);
+      if (result?.success === false) return;
+    }
+
     setSavedVouchers(prev => {
       const updated = [newVoucher, ...prev];
       try {
@@ -971,11 +986,6 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       } catch (e) {}
       return updated;
     });
-
-    // Update live stock in App catalog!
-    if (onUpdateCatalogStock) {
-      onUpdateCatalogStock(purchaseItems, newVoucher);
-    }
 
     setSaveSuccessToast(`Purchase Voucher #${voucherNumber} posted! Added ${totalInwardUnits} units to stock.`);
     setTimeout(() => setSaveSuccessToast(''), 4500);

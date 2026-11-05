@@ -280,6 +280,42 @@ class DeltaSyncEngine {
   }
 
   /**
+   * Durable outbox: write locally before any network attempt, then remove the
+   * exact queued record only after the cloud confirms success.
+   */
+  async persistThenPush(actionType, payload, pushFn) {
+    const queueId = await idbEnqueueDelta(actionType, payload);
+    if (queueId === null || queueId === undefined) {
+      this.lastError = 'Could not persist sync event to the local outbox';
+      await this.refreshPendingCount();
+      return { success: false, error: this.lastError };
+    }
+    await this.refreshPendingCount();
+
+    if (this.isOnline) {
+      try {
+        const pushResult = await pushFn();
+        if (pushResult?.success) {
+          await idbRemoveDelta(queueId);
+          this.lastSyncTime = new Date().toLocaleTimeString();
+          this.lastError = null;
+          await this.refreshPendingCount();
+          return { success: true, synced: true, pushResult };
+        }
+        if (pushResult?.rlsBlocked) {
+          this.lastError = pushResult.error;
+          this.syncState = 'RLS_BLOCKED';
+        }
+      } catch (err) {
+        this.lastError = err.message || 'Cloud push failed';
+      }
+    }
+
+    await this.refreshPendingCount();
+    return { success: true, queued: true, queueId };
+  }
+
+  /**
    * Queue a sales bill: writes to local IndexedDB and queues sync
    */
   async recordSalesBill(billPayload) {
@@ -292,27 +328,7 @@ class DeltaSyncEngine {
       console.warn('Could not save bill to IndexedDB', e);
     }
 
-    if (this.isOnline) {
-      try {
-        const res = await pushSalesBillToSupabase(billPayload);
-        if (res && res.success) {
-          this.lastSyncTime = new Date().toLocaleTimeString();
-          this.lastError = null;
-          this.syncState = this.pendingCount > 0 ? 'PENDING' : 'SYNCED';
-          this.notifySubscribers();
-          return { success: true, synced: true };
-        } else if (res && res.rlsBlocked) {
-          this.lastError = res.error;
-          this.syncState = 'RLS_BLOCKED';
-        }
-      } catch (err) {
-        console.warn('Direct push failed, queuing in delta store:', err);
-      }
-    }
-
-    await idbEnqueueDelta('SALES_BILL', billPayload);
-    await this.refreshPendingCount();
-    return { success: true, queued: true };
+    return this.persistThenPush('SALES_BILL', billPayload, () => pushSalesBillToSupabase(billPayload));
   }
 
   /**
@@ -330,21 +346,10 @@ class DeltaSyncEngine {
       eventId
     };
 
-    if (this.isOnline) {
-      try {
-        const res = await pushMedicineDeltaToSupabase(stampedMed, targetBranch);
-        if (res && res.success) {
-          if (res.conflict) {
-            this.addUnresolvedConflict(res.conflict);
-          }
-          return { success: true, synced: true, conflict: res.conflict || null };
-        }
-      } catch (e) {}
-    }
-
-    await idbEnqueueDelta('MEDICINE_DELTA', stampedMed);
-    await this.refreshPendingCount();
-    return { success: true, queued: true, eventId };
+    const result = await this.persistThenPush('MEDICINE_DELTA', stampedMed, () => pushMedicineDeltaToSupabase(stampedMed, targetBranch));
+    const conflict = result.pushResult?.conflict || result.pushResult?.data?.conflict || null;
+    if (conflict) this.addUnresolvedConflict(conflict);
+    return { ...result, eventId, conflict };
   }
 
   /**
@@ -358,20 +363,7 @@ class DeltaSyncEngine {
       await idbSaveStockTransfer(transferPayload);
     } catch (e) {}
 
-    if (this.isOnline) {
-      try {
-        const res = await pushStockTransferToSupabase(transferPayload);
-        if (res && res.success) {
-          this.lastSyncTime = new Date().toLocaleTimeString();
-          this.notifySubscribers();
-          return { success: true, synced: true };
-        }
-      } catch (err) {}
-    }
-
-    await idbEnqueueDelta('STOCK_TRANSFER', transferPayload);
-    await this.refreshPendingCount();
-    return { success: true, queued: true };
+    return this.persistThenPush('STOCK_TRANSFER', transferPayload, () => pushStockTransferToSupabase(transferPayload));
   }
 
   /**
@@ -381,20 +373,7 @@ class DeltaSyncEngine {
     const activeBranchId = (typeof localStorage !== 'undefined' ? localStorage.getItem('beta_pharma_branch_id') : 'MAIN') || 'MAIN';
     purchasePayload.branchId = purchasePayload.branchId || activeBranchId;
 
-    if (this.isOnline) {
-      try {
-        const res = await pushPurchaseInwardToSupabase(purchasePayload);
-        if (res && res.success) {
-          this.lastSyncTime = new Date().toLocaleTimeString();
-          this.notifySubscribers();
-          return { success: true, synced: true };
-        }
-      } catch (err) {}
-    }
-
-    await idbEnqueueDelta('PURCHASE_INWARD', purchasePayload);
-    await this.refreshPendingCount();
-    return { success: true, queued: true };
+    return this.persistThenPush('PURCHASE_INWARD', purchasePayload, () => pushPurchaseInwardToSupabase(purchasePayload));
   }
 
   /**
@@ -404,20 +383,7 @@ class DeltaSyncEngine {
     const activeBranchId = (typeof localStorage !== 'undefined' ? localStorage.getItem('beta_pharma_branch_id') : 'MAIN') || 'MAIN';
     creditPayload.branchId = creditPayload.branchId || activeBranchId;
 
-    if (this.isOnline) {
-      try {
-        const res = await pushCreditNoteToSupabase(creditPayload);
-        if (res && res.success) {
-          this.lastSyncTime = new Date().toLocaleTimeString();
-          this.notifySubscribers();
-          return { success: true, synced: true };
-        }
-      } catch (err) {}
-    }
-
-    await idbEnqueueDelta('CREDIT_NOTE', creditPayload);
-    await this.refreshPendingCount();
-    return { success: true, queued: true };
+    return this.persistThenPush('CREDIT_NOTE', creditPayload, () => pushCreditNoteToSupabase(creditPayload));
   }
 
   /**
@@ -427,20 +393,7 @@ class DeltaSyncEngine {
     const activeBranchId = (typeof localStorage !== 'undefined' ? localStorage.getItem('beta_pharma_branch_id') : 'MAIN') || 'MAIN';
     shiftPayload.branchId = shiftPayload.branchId || activeBranchId;
 
-    if (this.isOnline) {
-      try {
-        const res = await pushShiftRecordToSupabase(shiftPayload);
-        if (res && res.success) {
-          this.lastSyncTime = new Date().toLocaleTimeString();
-          this.notifySubscribers();
-          return { success: true, synced: true };
-        }
-      } catch (err) {}
-    }
-
-    await idbEnqueueDelta('SHIFT_RECORD', shiftPayload);
-    await this.refreshPendingCount();
-    return { success: true, queued: true };
+    return this.persistThenPush('SHIFT_RECORD', shiftPayload, () => pushShiftRecordToSupabase(shiftPayload));
   }
 
   /**
