@@ -125,31 +125,37 @@ export function formatTvsBillLines(billData) {
   lines.push(padRight(colHeader, 80));
   lines.push('-'.repeat(80));
 
-  // Item Rows (Lines 9 to 26: exactly 18 lines)
-  const MAX_ITEM_LINES = 18;
-  const itemsToRender = Array.isArray(items) && items.length > 0 ? items.slice(0, MAX_ITEM_LINES) : [];
+  // Item Rows (Dynamic item count with zero middle blank bloat)
+  const itemsToRender = Array.isArray(items) && items.length > 0 ? items : [];
   let runningSubtotal = 0;
 
   const itemRows = [];
   itemsToRender.forEach((it, slot) => {
     const sr = String(slot + 1).padStart(2, ' ');
-    const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1';
+    const isSchedule = it.isScheduleH || it.schedule === 'H' || it.schedule === 'H1' || it.medicine?.isScheduleH || it.medicine?.schedule === 'H' || it.medicine?.schedule === 'H1';
     let rawName = (it.medicine?.name || it.name || 'ITEM').toUpperCase();
     let prodName = rawName.slice(0, isSchedule ? 21 : 23);
     if (isSchedule) prodName = padRight(prodName, 22) + '*';
     prodName = padRight(prodName, 24);
 
     const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 3).toUpperCase(), 4);
-    const batch = padRight((it.batch?.batch_no || it.batch || 'BT').slice(0, 11), 12);
-    const exp = padRight((it.batch?.exp_date || it.exp || '').slice(0, 7), 8);
+    const batchNo = String(it.batch?.batch_no || it.batch_no || it.batch || 'BN001').trim();
+    const batch = padRight(batchNo.slice(0, 11), 12);
+
+    // Read exp_date from all possible alias fields so it never prints blank
+    const rawExp = String(it.batch?.exp_date || it.batch?.expiry || it.exp_date || it.expiry || it.exp || '').trim();
+    const exp = padRight(rawExp.slice(0, 7), 8);
+
     const qty = parseInt(it.quantity || it.qty || 1, 10);
-    const mrpValue = parseFloat(it.mrp || it.rate || 0);
-    const packSize = it.packSize || it.pack || 1;
+
+    // Read mrp and packSize properly from item, batch, or medicine
+    const mrpValue = parseFloat(it.batch?.mrp ?? it.medicine?.mrp ?? it.mrp ?? it.rate ?? 0);
+    const packSize = parseInt(it.batch?.per ?? it.medicine?.per ?? it.packSize ?? it.pack ?? 1, 10) || 1;
     const mrpPerStr = packSize > 1 ? `${mrpValue.toFixed(2)}/${packSize}` : mrpValue.toFixed(2);
     const mrpCol = padLeft(mrpPerStr.slice(0, 9), 9);
 
-    const ratePerUnit = packSize > 1 ? (mrpValue / packSize) : (parseFloat(it.rate || it.mrp || 0));
-    const itemAmount = parseFloat(it.amount || it.total || (qty * ratePerUnit));
+    const ratePerUnit = packSize > 1 ? (mrpValue / packSize) : (parseFloat(it.rate || mrpValue) || mrpValue);
+    const itemAmount = parseFloat(it.totalValue ?? it.amount ?? it.total ?? (qty * ratePerUnit));
     runningSubtotal += itemAmount;
 
     const qtyCol = padLeft(String(qty), 4);
@@ -171,32 +177,33 @@ export function formatTvsBillLines(billData) {
     itemRows.push(padRight(' 1 (NO ITEMS CHARGED)', 80));
   }
 
-  // Push items + fill blank lines up to exactly MAX_ITEM_LINES (18 lines)
-  for (let i = 0; i < MAX_ITEM_LINES; i++) {
-    if (i < itemRows.length) {
-      lines.push(itemRows[i]);
-    } else {
-      lines.push(' '.repeat(80));
-    }
-  }
+  // Push items directly without injecting artificial blank lines in the middle!
+  itemRows.forEach(row => lines.push(row));
 
-  // Footer: Anchored cleanly at the bottom (Lines 27 to 33)
+  // Footer: Anchored cleanly directly below the items
   const netValStr = (netPayable > 0 ? parseFloat(netPayable) : runningSubtotal).toFixed(2);
 
-  // Line 27: Divider
+  // Line: Divider
   lines.push('-'.repeat(80));
-  // Line 28: Net Payable right-aligned under Value column
+  // Line: Net Payable right-aligned under Value column
   lines.push(padRight(padLeft(netValStr, 76), 80));
-  // Line 29: Terms part 1 + dashed line
+  // Line: Terms part 1 + dashed line
   lines.push(padRight(padRight('We undertake to refund any excess', 54) + padLeft('------------------', 22), 80));
-  // Line 30: Terms part 2 + Pharmacist Signature
+  // Line: Terms part 2 + Pharmacist Signature
   lines.push(padRight(padRight('collected by oversight. E &.O.E.', 50) + padLeft('Signature - Pharmacist', 26), 80));
-  // Line 31: Return policy
+  // Line: Return policy
   lines.push(padRight('Sale return will be entertained only within 7 days of bill date.', 80));
-  // Line 32: Time & Get Well Soon
+  // Line: Time & Get Well Soon
   lines.push(padRight(padRight(time, 20) + padCenter('** GET WELL SOON **', 40) + ' '.repeat(20), 80));
-  // Line 33: Blank line at the exact 5.5" perforation
-  lines.push(' '.repeat(80));
+
+  // Trailing line feeds:
+  // Advance paper so the total lines fill the 5.5" half-sheet (33 lines) tractor perforation.
+  // This pushes the compact bill up past the print head needles so it is fully visible,
+  // and places the horizontal perforation right at the tear bar for clean manual tear-off.
+  const targetPageLines = Math.max(33, Math.ceil(lines.length / 33) * 33);
+  while (lines.length < targetPageLines) {
+    lines.push(' '.repeat(80));
+  }
 
   return lines;
 }
@@ -235,11 +242,11 @@ export function generateTvsEscPosStream(billData) {
   // Both SI (0x0F) and ESC SI (0x1B, 0x0F) are sent for 100% TVS MSP 250 firmware compatibility
   bytes.push(...ESC_P.CONDENSED_ON);
 
-  // 5. Output exactly 33 lines with hardware bolding
+  // 5. Output lines with hardware bolding
   lines.forEach((line, idx) => {
-    // Bold store name header (Line 0) and Net total line (Line 27)
+    // Bold store name header (Line 0) and Net total line (isolated numeric line with decimal)
     const isStoreName = (idx === 0);
-    const isNetLine = (idx === 27);
+    const isNetLine = idx > 7 && /^\s*\d+\.\d{2}\s*$/.test(line);
 
     if (isStoreName || isNetLine) {
       bytes.push(...ESC_P.BOLD_ON);

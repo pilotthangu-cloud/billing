@@ -204,10 +204,10 @@ assert(lines.every(l => l.length === 80), 'All 33 lines are strictly 80 characte
 assert(lines[0].startsWith('BETA PHARMACY (Cash Bill)'), 'Header Line 1 contains Store Name and Cash Bill mode');
 assert(lines[6].startsWith('Sr Product'), 'Header Line 7 contains exact column titles');
 assert(lines[8].includes('RANTAC 150MG TAB'), 'Line 9 contains first item matching Clipper layout');
-assert(lines[26].startsWith('--------------------------------------------------------------------------------'), 'Line 27 is the footer separator');
-assert(lines[27].includes('27.90'), 'Line 28 anchors the Net Payable under Value column');
-assert(lines[29].includes('Signature - Pharmacist'), 'Line 30 contains Pharmacist Signature block');
-assert(lines[31].includes('** GET WELL SOON **'), 'Line 32 contains GET WELL SOON memo');
+assert(lines[9].startsWith('--------------------------------------------------------------------------------'), 'Line 10 is the compact footer separator directly under items');
+assert(lines[10].includes('27.90'), 'Line 11 anchors the Net Payable under Value column');
+assert(lines[12].includes('Signature - Pharmacist'), 'Line 13 contains Pharmacist Signature block');
+assert(lines[14].includes('** GET WELL SOON **'), 'Line 15 contains GET WELL SOON memo');
 
 const stream = generateTvsEscPosStream(sampleBill);
 assert(stream instanceof Uint8Array, 'Print stream generated as binary Uint8Array');

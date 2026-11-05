@@ -278,14 +278,16 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
         qty: parseInt(b.qty || b.stock || 0, 10) || 0,
         supplier: b.supplier || ''
       }));
-    } else if (r.BATCH) {
+    } else if (r.BATCH || r.BATCH_NO || r.BAT_NO || r.BATCHNO || r.LOT_NO || r.LOT || r.EXPIRY || r.EXP_DATE || r.EXPDATE || r.EXPDT || r.EXP || r.EDATE) {
+      const extractedBatch = String(r.BATCH || r.BATCH_NO || r.BAT_NO || r.BATCHNO || r.LOT_NO || r.LOT || `B${code.slice(-4)}`).trim();
+      const extractedExp = String(r.EXPIRY || r.EXP_DATE || r.EXPDATE || r.EXPDT || r.EXP_DT || r.EXP || r.EDATE || r.DT_EXP || '').trim();
       batches = [{
-        batch_no: String(r.BATCH).trim(),
-        exp_date: r.EXPIRY ? String(r.EXPIRY).trim() : '',
+        batch_no: extractedBatch,
+        exp_date: extractedExp,
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
-        supplier: r.SUPPLIER || ''
+        supplier: r.SUPPLIER || r.DIST || ''
       }];
     } else if (stock > 0) {
       batches = (master?.batches && master.batches.length > 0) ? master.batches : [{

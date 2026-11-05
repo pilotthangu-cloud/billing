@@ -195,10 +195,6 @@ export default function FastBillingTerminal({
         e.preventDefault();
         if (onOpenCustomerHistory) onOpenCustomerHistory();
       }
-      if (e.key === 'F7') {
-        e.preventDefault();
-        if (onReprintLastBill) onReprintLastBill();
-      }
       if (e.key === 'F8') {
         e.preventDefault();
         if (onOpenSalesReturn) onOpenSalesReturn();

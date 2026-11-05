@@ -1,0 +1,16 @@
+{
+  "appId": "com.betapharma.pos",
+  "productName": "Beta Pharmacy POS",
+  "electronVersion": "22.3.27",
+  "directories": {
+    "output": "release-win7"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": ["portable"],
+    "artifactName": "Beta.Pharmacy.POS.Win7.32bit.exe"
+  }
+}

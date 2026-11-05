@@ -3,6 +3,13 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
+// Optimize for legacy Windows 7 & low-spec counter PCs:
+// Disables GPU emulation loops that peg old CPUs at 100%
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 let mainWindow = null;
 
 function createWindow() {
@@ -82,7 +89,11 @@ $PrinterName = "${(printerName || 'TVS').replace(/"/g, '')}"
 $FilePath = "${tempPrnPath.replace(/\\/g, '\\\\')}"
 
 try {
-    $allPrinters = Get-CimInstance Win32_Printer
+    $allPrinters = if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
+        @(Get-CimInstance Win32_Printer)
+    } else {
+        @(Get-WmiObject Win32_Printer)
+    }
     $target = $null
 
     if ($PrinterName) {

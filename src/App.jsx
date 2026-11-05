@@ -814,6 +814,7 @@ export default function App() {
   };
 
   const isCompletingBillRef = useRef(false);
+  const isReprintingRef = useRef(false);
 
   // Direct TVS MSP 250 Native Spooler Print Engine (Zero Form-Feed, Exact 33 Lines, Condensed ESC/P)
   const executeTvsPrint = async (billData, isReprint = false) => {
@@ -951,37 +952,46 @@ export default function App() {
 
   // F7 Recall & Reprint Most Recent Completed Bill (e.g. paper tear / jam reprint)
   const handleReprintLastBill = async () => {
-    let candidateBill = null;
-    if (recentBills && recentBills.length > 0) {
-      candidateBill = recentBills[0];
-    } else {
-      try {
-        const stored = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
-        if (stored && stored.length > 0) {
-          candidateBill = stored[0];
-          setRecentBills(stored);
-        }
-      } catch (_) {}
+    if (isReprintingRef.current) return;
+    isReprintingRef.current = true;
+
+    try {
+      let candidateBill = null;
+      if (recentBills && recentBills.length > 0) {
+        candidateBill = recentBills[0];
+      } else {
+        try {
+          const stored = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
+          if (stored && stored.length > 0) {
+            candidateBill = stored[0];
+            setRecentBills(stored);
+          }
+        } catch (_) {}
+      }
+
+      if (!candidateBill) {
+        alert('No recently completed bills available in recall memory to reprint.\nPlease complete a bill first.');
+        return;
+      }
+
+      const reprintPayload = {
+        ...candidateBill,
+        isReprint: true,
+        reprintTimestamp: Date.now()
+      };
+
+      // 1. Show the bill modal on screen so user SEES the previous bill!
+      setCompletedBillData(reprintPayload);
+      setIsReprintMode(true);
+      setIsReceiptOpen(true);
+
+      // 2. Automatically print it to TVS MSP 250 printer!
+      await executeTvsPrint(reprintPayload, true);
+    } finally {
+      setTimeout(() => {
+        isReprintingRef.current = false;
+      }, 1500);
     }
-
-    if (!candidateBill) {
-      alert('No recently completed bills available in recall memory to reprint.\nPlease complete a bill first.');
-      return;
-    }
-
-    const reprintPayload = {
-      ...candidateBill,
-      isReprint: true,
-      reprintTimestamp: Date.now()
-    };
-
-    // 1. Show the bill modal on screen so user SEES the previous bill!
-    setCompletedBillData(reprintPayload);
-    setIsReprintMode(true);
-    setIsReceiptOpen(true);
-
-    // 2. Automatically print it to TVS MSP 250 printer!
-    await executeTvsPrint(reprintPayload, true);
   };
 
   // Step 5: Robust Startup Hydration from local IndexedDB (Durable Inventory Restoration)
