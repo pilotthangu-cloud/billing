@@ -196,31 +196,18 @@ export function normalizeExpiry(val) {
 }
 
 /**
- * Rolls forward legacy master catalog batches (e.g. 2021-2022 dataset) to current/future shelf life.
- * If already valid in the future, returns verbatim. If blank, assigns a safe default.
- * 
+ * Backwards-compatible expiry normalizer.
+ *
+ * IMPORTANT: an expiry date is regulated inventory data.  It must never be
+ * invented or moved into the future merely to make a batch saleable.  Older
+ * callers still use this function name, so retain the export while making its
+ * behaviour lossless and safe.
+ *
  * @param {string} expStr Expiry string
- * @returns {string} Guaranteed unexpired MM/YY
+ * @returns {string} Normalized expiry, or an empty string when none was supplied
  */
 export function rollExpiryForwardIfPast(expStr) {
-  const norm = normalizeExpiry(expStr);
-  const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-  const targetYearStr = String(curYear + 2).slice(-2);
-
-  if (!norm) return `12/${targetYearStr}`;
-
-  const parts = norm.split('/');
-  if (parts.length === 2) {
-    const m = parseInt(parts[0], 10) || 12;
-    let y = parseInt(parts[1], 10) || (curYear + 2);
-    if (y < 100) y += 2000;
-    if (y < curYear || (y === curYear && m < curMonth)) {
-      return `${String(m).padStart(2, '0')}/${targetYearStr}`;
-    }
-  }
-  return norm;
+  return normalizeExpiry(expStr);
 }
 
 /**

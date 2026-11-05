@@ -34,14 +34,14 @@ import {
   Bookmark
 } from 'lucide-react';
 import supplierList from '../data/suppliers.json';
+import { normalizeExpiry } from '../utils/billUtils';
 // Daily OCR Token Quota Limit: 245,000 Tokens/Day Hardcap (Strictly gpt-4o-mini)
 export const DAILY_TOKEN_CAP = 245000;
 export const HARDCAPPED_MODEL = 'gpt-4o-mini';
 
 export const OPENAI_API_KEY = 
   (typeof window !== 'undefined' ? (localStorage.getItem('beta_pharma_openai_key') || '') : '') || 
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY ? import.meta.env.VITE_OPENAI_API_KEY : '') ||
-  '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';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY ? import.meta.env.VITE_OPENAI_API_KEY : '');
 
 export function getDailyTokenUsage() {
   try {
@@ -187,7 +187,7 @@ export default function PurchaseEntryPage({
   const [replQty, setReplQty] = useState(0); // REPL_QTY
   const [mrp, setMrp] = useState(100.00);
   const [purchaseRate, setPurchaseRate] = useState(70.00); // Net distributor purchase rate (PTR)
-  const [taxPercent, setTaxPercent] = useState(12);
+  const [taxPercent, setTaxPercent] = useState('');
 
   // OCR Document Inward Parser & Manual Review State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -198,8 +198,9 @@ export default function PurchaseEntryPage({
   const fileInputRef = useRef(null);
   const [ocrError, setOcrError] = useState('');
 
-  // Admin Password Security Gate (stored in env, default 1536)
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '1536';
+  // Manager authorization must be configured per installation. There is no
+  // universal fallback PIN in the source code.
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '';
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
@@ -501,30 +502,18 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
         // 6. Clean and format line items with strict pharma sanity invariants
         const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
         const cleanedItems = rawItems.map(it => {
-          let wQty = parseInt(it.wQty) || 1;
-          const freeQty = parseInt(it.freeQty) || 0;
-          const packSize = parseInt(it.packSize) || 10;
-          let ptr = parseFloat(it.ptr) || 0;
-          let mrp = parseFloat(it.mrp) || 0;
-          const taxPercent = parseInt(it.taxPercent) || 12;
-
-          // Sanity check 1: In Indian pharma retail, MRP MUST be strictly greater than PTR.
-          // If OCR swapped MRP and Rate due to column order, swap them back!
-          if (ptr > mrp && mrp > 0) {
-            const temp = ptr;
-            ptr = mrp;
-            mrp = temp;
-          }
-
-          // If MRP is missing or 0 but PTR exists, calculate typical retail MRP (+25%)
-          if ((!mrp || mrp === 0) && ptr > 0) {
-            mrp = +(ptr * 1.25).toFixed(2);
-          }
+          const wQty = Number.parseInt(it.wQty, 10) || 0;
+          const freeQty = Number.parseInt(it.freeQty, 10) || 0;
+          const packSize = Number.parseInt(it.packSize, 10) || 0;
+          const ptr = Number.parseFloat(it.ptr) || 0;
+          const mrp = Number.parseFloat(it.mrp) || 0;
+          const parsedTax = Number(it.taxPercent);
+          const taxPercent = Number.isFinite(parsedTax) ? parsedTax : null;
 
           return {
-            name: (it.name || 'INWARD ITEM').toUpperCase(),
+            name: String(it.name || '').trim().toUpperCase(),
             generic: it.generic || '',
-            batch: (it.batch || 'BT' + Math.floor(1000 + Math.random() * 9000)).toUpperCase(),
+            batch: String(it.batch || '').trim().toUpperCase(),
             exp: it.exp || '',
             wQty,
             freeQty,
@@ -540,8 +529,8 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
         setExtractedReviewData({
           supplierCode: detectedSupplier.code,
           supplierName: detectedSupplier.name,
-          invoiceNo: parsed.invoiceNo || 'INV-' + Math.floor(10000 + Math.random() * 90000),
-          invoiceDate: parsed.invoiceDate || new Date().toLocaleDateString('en-GB'),
+          invoiceNo: String(parsed.invoiceNo || '').trim(),
+          invoiceDate: String(parsed.invoiceDate || '').trim(),
           isCash: typeof parsed.isCash === 'boolean' ? parsed.isCash : false,
           items: cleanedItems
         });
@@ -583,16 +572,16 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       items: [
         ...prev.items,
         {
-          name: 'NEW MEDICINE TAB',
-          generic: 'Active Salt',
-          batch: 'BT' + Math.floor(1000 + Math.random() * 9000),
+          name: '',
+          generic: '',
+          batch: '',
           exp: '',
-          wQty: 10,
+          wQty: 0,
           freeQty: 0,
-          packSize: 10,
-          ptr: 70.00,
-          mrp: 100.00,
-          taxPercent: 12,
+          packSize: 0,
+          ptr: 0,
+          mrp: 0,
+          taxPercent: null,
           confidence: 100
         }
       ]
@@ -606,6 +595,26 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       return;
     }
 
+    const reviewErrors = [];
+    if (!String(extractedReviewData.invoiceNo || '').trim()) reviewErrors.push('invoice number is missing');
+    if (!String(extractedReviewData.invoiceDate || '').trim()) reviewErrors.push('invoice date is missing');
+    extractedReviewData.items.forEach((it, index) => {
+      const label = `Item ${index + 1}`;
+      const matched = medicines.find(m => m.name.toLowerCase() === String(it.name || '').toLowerCase());
+      if (!matched) reviewErrors.push(`${label}: medicine must be matched/created in the catalog`);
+      if (!String(it.batch || '').trim()) reviewErrors.push(`${label}: batch is missing`);
+      if (!String(it.exp || '').trim()) reviewErrors.push(`${label}: expiry is missing`);
+      if (!(Number(it.wQty) > 0)) reviewErrors.push(`${label}: billed quantity is missing`);
+      if (!(Number(it.packSize) > 0)) reviewErrors.push(`${label}: pack size is missing`);
+      if (!(Number(it.ptr) > 0)) reviewErrors.push(`${label}: PTR/rate is missing`);
+      if (!(Number(it.mrp) > 0)) reviewErrors.push(`${label}: MRP is missing`);
+      if (it.taxPercent === null || it.taxPercent === undefined || !Number.isFinite(Number(it.taxPercent))) reviewErrors.push(`${label}: tax rate is missing`);
+    });
+    if (reviewErrors.length > 0) {
+      alert(`Invoice review is incomplete:\n\n- ${reviewErrors.join('\n- ')}\n\nNo values were generated or posted.`);
+      return;
+    }
+
     setSupplierCode(extractedReviewData.supplierCode);
     setInvoiceNo(extractedReviewData.invoiceNo);
     setBillDate(extractedReviewData.invoiceDate);
@@ -613,13 +622,13 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
 
     const newItems = extractedReviewData.items.map(it => {
       const matchedCatalog = medicines.find(m => m.name.toLowerCase() === it.name.toLowerCase());
-      const medCode = matchedCatalog ? matchedCatalog.code : 'M' + Math.floor(100000 + Math.random() * 900000);
+      const medCode = matchedCatalog.code;
       const wQtyInt = parseInt(it.wQty) || 0;
       const freeQtyInt = parseInt(it.freeQty) || 0;
-      const packSizeInt = parseInt(it.packSize) || 10;
+      const packSizeInt = parseInt(it.packSize) || 0;
       const ptrFloat = parseFloat(it.ptr) || 0;
       const mrpFloat = parseFloat(it.mrp) || 0;
-      const taxInt = parseInt(it.taxPercent) || 12;
+      const taxInt = Number(it.taxPercent);
       const lineTotal = +(wQtyInt * ptrFloat).toFixed(2);
       const totalUnits = (wQtyInt + freeQtyInt) * packSizeInt;
 
@@ -661,9 +670,9 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
     setExpDate('');
     setWQty(10);
     setFreeQty(0);
-    setPackSize(med.per || 10);
-    setMrp(med.mrp || 100);
-    setPurchaseRate(med.ptr || +(med.mrp * 0.78).toFixed(2));
+    setPackSize(med.per || '');
+    setMrp(med.mrp || '');
+    setPurchaseRate(med.ptr || '');
 
     // Jump cursor straight to Batch No input field!
     setTimeout(() => {
@@ -673,8 +682,8 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
 
   // Add line item to table
   const handleAddLineItem = () => {
-    if (!selectedMed && !searchMedQuery.trim()) {
-      alert('Select a medicine first');
+    if (!selectedMed) {
+      alert('Select an existing catalog medicine first. Create a new product in Product Catalog before receiving its stock.');
       medSearchInputRef.current?.focus();
       return;
     }
@@ -683,7 +692,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       batchInputRef.current?.focus();
       return;
     }
-    if (!expDate.trim()) {
+    if (!normalizeExpiry(expDate)) {
       alert('Enter Expiry Date (MM/YY)');
       expInputRef.current?.focus();
       return;
@@ -693,9 +702,17 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       qtyInputRef.current?.focus();
       return;
     }
+    if (!(Number(packSize) > 0) || !(Number(mrp) > 0) || !(Number(purchaseRate) > 0)) {
+      alert('Pack size, MRP and purchase rate must come from the invoice and must be greater than zero.');
+      return;
+    }
+    if (taxPercent === '' || !Number.isFinite(Number(taxPercent)) || Number(taxPercent) < 0) {
+      alert('Enter the invoice GST rate. The POS will not assume 12%.');
+      return;
+    }
 
     const medName = selectedMed ? selectedMed.name : searchMedQuery.toUpperCase();
-    const medCode = selectedMed ? selectedMed.code : 'M' + Math.floor(100000 + Math.random() * 900000);
+    const medCode = selectedMed.code;
     const lineTotal = +(wQty * purchaseRate).toFixed(2);
     const totalUnits = (wQty + freeQty + replQty) * packSize;
 
@@ -703,7 +720,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       medCode,
       name: medName,
       batch: batchNo.trim().toUpperCase(),
-      exp: expDate.trim(),
+      exp: normalizeExpiry(expDate),
       wQty: parseInt(wQty),
       packSize: parseInt(packSize),
       totalUnits,
@@ -712,7 +729,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       mrp: parseFloat(mrp) || 0,
       rate: parseFloat(purchaseRate) || 0,
       ptr: parseFloat(purchaseRate) || 0,
-      taxPercent: parseInt(taxPercent) || 12,
+      taxPercent: Number(taxPercent),
       total: lineTotal
     };
 
@@ -735,7 +752,7 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
 
   // Financial totals
   const grossTotal = purchaseItems.reduce((acc, it) => acc + it.total, 0);
-  const gstAmount = +(grossTotal * 0.12).toFixed(2);
+  const gstAmount = +purchaseItems.reduce((sum, it) => sum + ((Number(it.total) || 0) * (Number(it.taxPercent) || 0) / 100), 0).toFixed(2);
   const netPayable = Math.round(grossTotal + gstAmount - cashDiscount);
   const totalBilledPacks = purchaseItems.reduce((acc, it) => acc + it.wQty, 0);
   const totalFreePacks = purchaseItems.reduce((acc, it) => acc + it.freeQty, 0);
@@ -2444,7 +2461,9 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              if (adminPasswordInput.trim() === ADMIN_PASSWORD) {
+              if (!ADMIN_PASSWORD) {
+                setAdminAuthError('Manager access is not configured for this installation.');
+              } else if (adminPasswordInput.trim() === ADMIN_PASSWORD) {
                 setIsAdminAuthenticated(true);
                 setIsAdminAuthModalOpen(false);
                 setAdminPasswordInput('');

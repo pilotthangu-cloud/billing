@@ -10,7 +10,7 @@
  */
 
 import masterCatalogData from '../data/medicines.json' with { type: 'json' };
-import { normalizeExpiry, rollExpiryForwardIfPast } from './billUtils.js';
+import { isBatchExpired, normalizeExpiry } from './billUtils.js';
 
 // Build instantaneous O(1) indexed lookup maps
 const masterByCode = new Map();
@@ -193,7 +193,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     ? new Map(customMaster.map(m => [cleanMedicineName(m.name), m]))
     : masterByName;
 
-  const normalizedList = records.map((rawRec, idx) => {
+  const normalizedList = records.map((rawRec) => {
     // 1. Normalize all field keys to uppercase trimmed strings
     const r = {};
     for (const [k, v] of Object.entries(rawRec)) {
@@ -202,7 +202,8 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
 
     // 2. Extract Item Code
     const rawCode = r.IT_CODE || r.ITEMCODE || r.ITEM_CODE || r.CODE || r.ID || r.PRODUCT_CODE || r.PROD_CODE || '';
-    const code = String(rawCode).trim().toUpperCase() || `IMP-${(idx + 1).toString().padStart(5, '0')}`;
+    const code = String(rawCode).trim().toUpperCase();
+    if (!code) return null;
 
     // 3. Find matching master record (by code or name)
     const master = activeMasterByCode.get(code) || activeMasterByName.get(cleanMedicineName(r.IT_NAME || r.NAME || ''));
@@ -211,12 +212,13 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     const rawName = r.IT_NAME || r.ITEMNAME || r.ITEM_NAME || r.NAME || r.DESCRIPTION || r.DESCRIPT || r.DESCR || r.PRODUCT || r.PRODUCT_NAME || r.PARTICULAR || r.PARTICULARS || r.MEDICINE || r.MED_NAME || r.TITLE || r.DRUG_NAME || '';
     let cleanedName = cleanMedicineName(rawName);
 
-    // If name is blank or "UNKNOWN MEDICINE", look it up from the 24,665 master catalog!
+    // A code match may safely restore descriptive catalog fields. It must never
+    // be used to manufacture transactional fields such as stock, batch or expiry.
     if (!cleanedName || cleanedName === 'UNKNOWN MEDICINE' || cleanedName === 'UNKNOWN') {
       if (master && master.name) {
         cleanedName = cleanMedicineName(master.name);
       } else {
-        cleanedName = code ? `MEDICINE ${code}` : `ITEM ${(idx + 1).toString().padStart(5, '0')}`;
+        cleanedName = '';
       }
     }
 
@@ -224,19 +226,18 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     const rawRack = r.RACK || r.RACKNO || r.RACK_NO || r.LOCATION || r.SHELF || r.BIN || '';
     let rack = String(rawRack).trim().toUpperCase();
     if (!rack) {
-      rack = master?.rack || 'GN';
+      rack = master?.rack || '';
     }
 
     // 6. Extract MRP & PTR
-    let mrp = parseFloat(r.MRP || r.PRICE || r.RATE || r.MRATE || r.S_RATE || r.SRATE || 0);
-    if (!mrp || mrp <= 0 || (mrp === 10.0 && master?.mrp && master.mrp !== 10.0)) {
-      mrp = master?.mrp || 10.0;
-    }
+    const firstPresent = (...values) => values.find(v => v !== undefined && v !== null && String(v).trim() !== '');
+    const mrpSource = firstPresent(r.MRP, r.PRICE, r.RATE, r.MRATE, r.S_RATE, r.SRATE, master?.mrp, 0);
+    let mrp = Number(mrpSource);
+    if (!Number.isFinite(mrp)) mrp = 0;
 
-    let ptr = parseFloat(r.PTR || r.PUR_RATE || r.PURRATE || r.PRATE || r.COST || 0);
-    if (!ptr || ptr <= 0 || (ptr === 7.5 && master?.ptr && master.ptr !== 7.5)) {
-      ptr = master?.ptr || Number((mrp * 0.78).toFixed(2));
-    }
+    const ptrSource = firstPresent(r.PTR, r.PUR_RATE, r.PURRATE, r.PRATE, r.COST, master?.ptr, 0);
+    let ptr = Number(ptrSource);
+    if (!Number.isFinite(ptr)) ptr = 0;
 
     // 7. Extract Stock (Exhaustive aliases for Clipper/FoxPro/Marg/DOS stock files)
     let stock = 0;
@@ -244,14 +245,16 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       r.OP_STOCK ?? r.IT_QTY ?? r.BAL_QTY ?? r.BAL ?? r.CLOSING ?? r.CLOSE_STK ?? r.CURR_STK ?? 
       r.PHYSICAL ?? r.STK_QTY ?? r.S_QTY ?? r.QUANTITY ?? r.UNITS ?? r.TOTAL_QTY;
     if (rawStock !== undefined) {
-      stock = Math.max(0, parseInt(rawStock, 10) || 0);
+      stock = Number(rawStock);
+      if (!Number.isFinite(stock)) stock = 0;
     } else {
       stock = 0; // Strictly 0 if not in imported stock file - NEVER resurrect master.stock_shop1!
     }
 
     // 8. Extract Packing & Units
-    const packing = String(r.PACK || r.PACKING || r.UNIT || r.PER || master?.per || '10 TAB').trim();
-    const per = parseInt(r.PER || master?.per || 10, 10) || 10;
+    const packing = String(firstPresent(r.PACK, r.PACKING, r.UNIT, r.PER, master?.packing, '')).trim();
+    const perValue = Number(firstPresent(r.PER, master?.per, 1));
+    const per = Number.isFinite(perValue) && perValue > 0 ? perValue : 1;
 
     // 9. Extract Company & Generic (Recover manufacturer from master if raw is missing or numeric code)
     const rawCoCode = String(r.CO_CODE || r.COMPANY_CODE || r.MFG_CODE || '').trim().toUpperCase();
@@ -269,10 +272,12 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     }
 
     // 10. GST Tax & HSN
-    const gstPercent = parseFloat(r.GST || r.TAX || r.VAT || r.PUR_TAX || r.SAL_TPS || master?.tax_percent || 12) || 12;
-    const hsn = String(r.HSN || r.HSNCODE || r.HSN_CODE || master?.hsn || '3004').trim();
+    const gstSource = firstPresent(r.GST, r.TAX, r.VAT, r.PUR_TAX, r.SAL_TPS, master?.tax_percent);
+    const gstParsed = gstSource === undefined ? null : Number(gstSource);
+    const gstPercent = Number.isFinite(gstParsed) ? gstParsed : null;
+    const hsn = String(firstPresent(r.HSN, r.HSNCODE, r.HSN_CODE, master?.hsn, '')).trim();
 
-    // 11. Batches & Expiry (Zero-Dummy BN001 & Non-Blank Expiry Protocol)
+    // 11. Batches & expiry. Preserve only source evidence; never generate either.
     const rawBatchStr = String(
       r.BATCH || r.BATCH_NO || r.BATCHNO || r.BAT_NO || r.BATNO || r.BAT || r.B_NO || 
       r.BNO || r.BN || r.LOT || r.LOTNO || r.LOT_NO || r.BT_NO || r.B_NUM || r.BATCH_ID || 
@@ -287,62 +292,33 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
 
     let batches = [];
     if (Array.isArray(r.BATCHES) && r.BATCHES.length > 0) {
-      batches = r.BATCHES.map(b => {
-        let bNo = String(b.batch_no || b.batch || '').trim();
-        let bExp = normalizeExpiry(b.exp_date || b.exp || '');
-        if (!bNo || bNo === 'BN001') {
-          const masterB = master?.batches?.[0];
-          bNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
-        }
-        if (!bExp) {
-          bExp = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
-        }
-        return {
-          batch_no: bNo,
-          exp_date: bExp,
-          mrp: parseFloat(b.mrp) || Number(mrp.toFixed(2)),
+      batches = r.BATCHES.map(b => ({
+          batch_no: String(b.batch_no || b.batch || '').trim(),
+          exp_date: normalizeExpiry(b.exp_date || b.exp || ''),
+          mrp: Number(firstPresent(b.mrp, mrp, 0)) || 0,
           per: per,
-          qty: parseInt(b.qty || b.stock || 0, 10) || 0,
-          supplier: b.supplier || (master?.batches?.[0]?.supplier || '')
-        };
-      });
+          qty: Number(firstPresent(b.qty, b.stock, 0)) || 0,
+          supplier: String(b.supplier || '').trim()
+        }));
     } else if (rawBatchStr || rawExpStr) {
-      let bNo = rawBatchStr;
-      let bExp = normalizeExpiry(rawExpStr);
-      if (!bNo || bNo === 'BN001') {
-        const masterB = master?.batches?.[0];
-        bNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
-      }
-      if (!bExp) {
-        bExp = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
-      }
       batches = [{
-        batch_no: bNo,
-        exp_date: bExp,
+        batch_no: rawBatchStr,
+        exp_date: normalizeExpiry(rawExpStr),
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
-        supplier: r.SUPPLIER || r.DIST || (master?.batches?.[0]?.supplier || '')
-      }];
-    } else if (master?.batches && master.batches.length > 0) {
-      batches = master.batches.map(mb => ({
-        batch_no: (mb.batch_no && mb.batch_no !== 'BN001') ? mb.batch_no : `B${code.slice(-4)}`,
-        exp_date: rollExpiryForwardIfPast(mb.exp_date),
-        mrp: parseFloat(mb.mrp) || Number(mrp.toFixed(2)),
-        per: per,
-        qty: stock,
-        supplier: mb.supplier || ''
-      }));
-    } else {
-      batches = [{
-        batch_no: `B${code.slice(-4)}`,
-        exp_date: '12/27',
-        mrp: Number(mrp.toFixed(2)),
-        per: per,
-        qty: stock,
-        supplier: ''
+        supplier: String(r.SUPPLIER || r.DIST || '').trim()
       }];
     }
+
+    const importIssues = [];
+    if (!cleanedName) importIssues.push('MISSING_NAME');
+    if (stock < 0) importIssues.push('NEGATIVE_STOCK');
+    if (stock > 0 && batches.length === 0) importIssues.push('UNALLOCATED_STOCK_NO_BATCH');
+    if (batches.some(b => !b.batch_no || !b.exp_date)) importIssues.push('INCOMPLETE_BATCH');
+    if (batches.some(b => b.exp_date && isBatchExpired(b.exp_date))) importIssues.push('EXPIRED_BATCH');
+    if (stock > 0 && batches.some(b => b.exp_date && isBatchExpired(b.exp_date))) importIssues.push('ACTIVE_STOCK_EXPIRED_BATCH');
+    if (gstPercent === null) importIssues.push('MISSING_GST');
 
     return {
       code,
@@ -356,15 +332,16 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       ptr: Number(ptr.toFixed(2)),
       stock,
       stock_shop1: stock,
-      stock_shop2: master?.stock_shop2 || 0,
-      stock_shop3: master?.stock_shop3 || 0,
+      stock_shop2: 0,
+      stock_shop3: 0,
       gstPercent,
       hsn,
-      schedule: master?.schedule || (cleanedName.includes('CLONA') || cleanedName.includes('ALPRA') ? 'H1' : ''),
+      schedule: master?.schedule || '',
       batches,
+      importIssues,
       isImported: true
     };
-  });
+  }).filter(Boolean);
 
   // Group duplicate medicine codes: sum live stock and merge batches
   const groupedMap = new Map();
@@ -373,6 +350,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       groupedMap.set(item.code, item);
     } else {
       const existing = groupedMap.get(item.code);
+      if (!existing.importIssues.includes('DUPLICATE_CODE')) existing.importIssues.push('DUPLICATE_CODE');
       existing.stock = (existing.stock || 0) + (item.stock || 0);
       existing.stock_shop1 = existing.stock;
       const existingBatchNos = new Set((existing.batches || []).map(b => b.batch_no));
@@ -412,40 +390,11 @@ export function autoRepairCorruptedMedicines(medicinesList) {
       }
     }
 
-    // Heal dummy BN001 and blank expiry batches
-    let updatedBatches = (med.batches && Array.isArray(med.batches)) ? [...med.batches] : [];
-    const isCorruptedBatches = updatedBatches.length === 0 || 
-      updatedBatches.every(b => !b.batch_no || b.batch_no === 'BN001' || !b.exp_date);
-
-    if (isCorruptedBatches) {
-      if (master?.batches && master.batches.length > 0) {
-        updatedBatches = master.batches.map(mb => ({
-          batch_no: (mb.batch_no && mb.batch_no !== 'BN001') ? mb.batch_no : `B${codeUpper.slice(-4)}`,
-          exp_date: rollExpiryForwardIfPast(mb.exp_date),
-          mrp: mb.mrp || med.mrp,
-          per: mb.per || med.per || 10,
-          qty: med.stock || 0,
-          stock: med.stock || 0,
-          supplier: mb.supplier || ''
-        }));
-      } else {
-        updatedBatches = [{
-          batch_no: `B${codeUpper.slice(-4)}`,
-          exp_date: '12/27',
-          mrp: med.mrp,
-          per: med.per || 10,
-          qty: med.stock || 0,
-          stock: med.stock || 0,
-          supplier: ''
-        }];
-      }
-    } else {
-      // Ensure exp_date is formatted and rolled forward if past
-      updatedBatches = updatedBatches.map(b => ({
-        ...b,
-        exp_date: rollExpiryForwardIfPast(b.exp_date)
-      }));
-    }
+    // Only normalize recorded values. Catalog guesses are not evidence of the
+    // physical batch held at a branch and must never be written into inventory.
+    const updatedBatches = Array.isArray(med.batches)
+      ? med.batches.map(b => ({ ...b, exp_date: normalizeExpiry(b.exp_date) }))
+      : [];
 
     return {
       ...med,
@@ -467,14 +416,32 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     throw new Error('No files found in folder.');
   }
 
-  // 1. Locate Master Item File
-  const itemFile = files.find(f => {
+  const relativePath = (file) => String(file.webkitRelativePath || file.relativePath || file.name).replace(/\\/g, '/');
+  const parentPath = (file) => {
+    const path = relativePath(file);
+    const slash = path.lastIndexOf('/');
+    return slash >= 0 ? path.slice(0, slash) : '';
+  };
+
+  // 1. Locate one unambiguous master dataset. A whole-drive upload commonly
+  // contains RETAILG, RETAILG1...RETAILG4 and choosing the first ITEMFILE was
+  // the primary cause of importing stale stock.
+  const itemCandidates = files.filter(f => {
     const n = f.name.toUpperCase();
     return (n.startsWith('ITEM') || n.startsWith('MEDICINE') || n.startsWith('PRODUCT')) && n.endsWith('.DBF');
   });
+  if (itemCandidates.length > 1) {
+    const paths = itemCandidates.map(relativePath).sort().join('\n - ');
+    throw new Error(
+      `Multiple legacy datasets were found. The import was stopped to prevent mixing snapshots.\n\n - ${paths}\n\nSelect only the exact DATA folder you want to import.`
+    );
+  }
+  const itemFile = itemCandidates[0] || null;
+  const datasetPath = itemFile ? parentPath(itemFile) : null;
+  const datasetFiles = datasetPath === null ? files : files.filter(f => parentPath(f) === datasetPath);
 
   // 2. Locate Company Master File (COMPMAST.DBF / COMPANY.DBF / COMAST.DBF / etc.)
-  const companyFile = files.find(f => {
+  const companyFile = datasetFiles.find(f => {
     const n = f.name.toUpperCase();
     return (n.startsWith('COMP') || n.startsWith('COMAST') || n.startsWith('COMPANY')) && n.endsWith('.DBF');
   });
@@ -495,7 +462,7 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
   }
 
   // 3. Locate Stock File (Chronological STK<DD><MM>.DBF, STKFILE.DBF, STOCK*.DBF, BATCH*.DBF)
-  const stockFiles = files.filter(f => {
+  const stockFiles = datasetFiles.filter(f => {
     const n = f.name.toUpperCase();
     return (n.startsWith('STK') || n.startsWith('STOCK') || n.startsWith('BATCH')) && n.endsWith('.DBF');
   });
@@ -517,7 +484,15 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
   }
 
   let stockFile = null;
-  if (stockFiles.length > 0) {
+  const canonicalStock = stockFiles.filter(f => f.name.toUpperCase() === 'STKFILE.DBF');
+  if (canonicalStock.length === 1) {
+    stockFile = canonicalStock[0];
+  } else if (stockFiles.length > 1) {
+    const paths = stockFiles.map(relativePath).sort().join('\n - ');
+    throw new Error(
+      `Multiple stock snapshots were found in ${datasetPath || 'the selected folder'}. The import was stopped because a filename without a year cannot prove which snapshot is current.\n\n - ${paths}\n\nSelect ITEMFILE.DBF together with only the intended stock file, or import ITEMFILE.DBF alone to use its OP_STOCK values.`
+    );
+  } else if (stockFiles.length === 1) {
     stockFiles.sort((a, b) => {
       const scoreA = getStkFilePriorityScore(a);
       const scoreB = getStkFilePriorityScore(b);
@@ -557,7 +532,7 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
       const rawQty = sr.STOCK ?? sr.QTY ?? sr.BALANCE ?? sr.CLOSING_ST ?? sr.CL_STOCK ?? sr.CL_STK ?? 
         sr.OP_STOCK ?? sr.IT_QTY ?? sr.BAL_QTY ?? sr.BAL ?? sr.CLOSING ?? sr.CLOSE_STK ?? sr.CURR_STK ?? 
         sr.PHYSICAL ?? sr.STK_QTY ?? sr.S_QTY ?? sr.QUANTITY ?? sr.UNITS ?? sr.TOTAL_QTY;
-      const batchQty = rawQty !== undefined ? Math.max(0, parseInt(rawQty, 10) || 0) : 0;
+      const batchQty = rawQty !== undefined ? Number(rawQty) : 0;
 
       stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
 
@@ -573,33 +548,26 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
         sr.EXPIRYDATE || sr.EX_P || sr.S_EXP || sr.STK_EXP || sr.ST_EXP || ''
       ).trim();
 
-      const master = masterByCode.get(code);
-      let batchNo = rawBatch;
-      if (!batchNo || batchNo === 'BN001') {
-        const masterB = master?.batches?.[0];
-        batchNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
+      const batchNo = rawBatch;
+      const expDate = normalizeExpiry(rawExp);
+
+      const mrp = Number(sr.MRP ?? sr.PRICE ?? sr.RATE ?? sr.MRATE ?? sr.S_RATE ?? 0) || 0;
+      const ptr = Number(sr.PTR ?? sr.PUR_RATE ?? sr.PURRATE ?? sr.PRATE ?? 0) || 0;
+      const supplier = String(sr.SUPPLIER || sr.DIST || '').trim();
+
+      if (batchNo || expDate) {
+        const list = batchesMap.get(code) || [];
+        list.push({
+          batch_no: batchNo,
+          exp_date: expDate,
+          mrp: mrp > 0 ? mrp : undefined,
+          ptr: ptr > 0 ? ptr : undefined,
+          qty: batchQty,
+          stock: batchQty,
+          supplier
+        });
+        batchesMap.set(code, list);
       }
-
-      let expDate = normalizeExpiry(rawExp);
-      if (!expDate) {
-        expDate = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
-      }
-
-      const mrp = parseFloat(sr.MRP || sr.PRICE || sr.RATE || sr.MRATE || sr.S_RATE || 0) || (master?.mrp || 0);
-      const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PURRATE || sr.PRATE || 0) || (master?.ptr || 0);
-      const supplier = String(sr.SUPPLIER || sr.DIST || master?.batches?.[0]?.supplier || 'Direct Inward').trim();
-
-      const list = batchesMap.get(code) || [];
-      list.push({
-        batch_no: batchNo,
-        exp_date: expDate,
-        mrp: mrp > 0 ? mrp : undefined,
-        ptr: ptr > 0 ? ptr : undefined,
-        qty: batchQty,
-        stock: batchQty,
-        supplier: supplier
-      });
-      batchesMap.set(code, list);
     });
 
     if (records.length > 0) {
@@ -609,7 +577,7 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
           return {
             ...r,
             STOCK: stockMap.get(code),
-            BATCHES: batchesMap.get(code)
+            BATCHES: batchesMap.get(code) || []
           };
         }
         return {
@@ -620,13 +588,12 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
       });
     } else {
       const grouped = [];
-      batchesMap.forEach((batchList, code) => {
-        const total = stockMap.get(code) || 0;
+      stockMap.forEach((total, code) => {
         grouped.push({
           IT_CODE: code,
           IT_NAME: '',
           STOCK: total,
-          BATCHES: batchList
+          BATCHES: batchesMap.get(code) || []
         });
       });
       records = grouped;
@@ -637,16 +604,23 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     throw new Error('No valid medicine records found in the selected files.');
   }
 
-  statusCallback(`Normalizing ${records.length.toLocaleString()} records...`);
+  statusCallback(`Normalizing ${records.length.toLocaleString()} records without inventing missing stock data...`);
   const normalized = normalizeLegacyMedicineRecords(records, null, companyMap);
+  const totalStock = normalized.reduce((sum, med) => sum + (Number(med.stock) || 0), 0);
+  const issueCount = normalized.reduce((sum, med) => sum + (med.importIssues?.length || 0), 0);
+  const stockSource = stockFile ? relativePath(stockFile) : (itemFile ? `${relativePath(itemFile)}:OP_STOCK` : null);
 
   return {
     medicines: normalized,
-    itemFile: itemFile?.name || null,
-    stockFile: stockFile?.name || null,
-    companyFile: companyFile?.name || null,
+    itemFile: itemFile ? relativePath(itemFile) : null,
+    stockFile: stockFile ? relativePath(stockFile) : null,
+    companyFile: companyFile ? relativePath(companyFile) : null,
+    datasetPath,
+    stockSource,
+    totalStock,
+    issueCount,
     totalCount: normalized.length,
-    activeStockCount: stockMap.size,
+    activeStockCount: normalized.filter(m => Number(m.stock) !== 0).length,
     companyCount: companyMap.size
   };
 }

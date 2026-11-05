@@ -43,7 +43,7 @@ export default function DatabaseImportModal({
     try {
       const res = await processDbfFolderFiles(files, setStatusMessage);
       setParsedRecords(res.medicines);
-      setStatusMessage(`✓ Loaded ${res.totalCount.toLocaleString()} medicines (${res.itemFile || 'ITEMFILE'}). Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
+      setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Import error:', err);
       setStatusMessage(`Error parsing DBF folder: ${err.message || 'Invalid format'}`);
@@ -67,7 +67,7 @@ export default function DatabaseImportModal({
       setStatusMessage(`Found ${files.length} files in dropped folder...`);
       const res = await processDbfFolderFiles(files, setStatusMessage);
       setParsedRecords(res.medicines);
-      setStatusMessage(`✓ Loaded ${res.totalCount.toLocaleString()} medicines (${res.itemFile || 'ITEMFILE'}). Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
+      setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Drop error:', err);
       setStatusMessage(`Error reading dropped folder: ${err.message || 'Invalid format'}`);
@@ -109,10 +109,20 @@ export default function DatabaseImportModal({
     }
   };
 
-  const handleApplyImport = () => {
+  const handleApplyImport = async () => {
     if (parsedRecords.length === 0) return;
-    onImportMedicines(parsedRecords, mergeMode);
-    onClose();
+    setIsParsing(true);
+    setStatusMessage('Writing the verified import to the local database...');
+    try {
+      const result = await onImportMedicines(parsedRecords, mergeMode);
+      if (!result?.success) throw new Error(result?.error || 'The local database write failed.');
+      setStatusMessage(`✓ Import committed: ${result.count.toLocaleString()} medicines saved for ${result.stockKey}.`);
+      onClose();
+    } catch (err) {
+      setStatusMessage(`Import not committed: ${err.message}`);
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   return (
@@ -307,10 +317,10 @@ export default function DatabaseImportModal({
                     ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60' 
                     : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 }`}
-                title="Heals dummy BN001 batches, restores master expiries, and preserves all your live shop stock"
+                title="Restores descriptive catalog names only; batch numbers and expiries are never invented"
               >
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Fix Batches & Expiries</span>
+                <span>Repair Names Only</span>
               </button>
             )}
 

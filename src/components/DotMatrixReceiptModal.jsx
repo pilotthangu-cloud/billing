@@ -62,30 +62,33 @@ export default function DotMatrixReceiptModal({
 
   // Unified Print Action — close modal first so overlay is gone, print, THEN clear bill
   const handlePrint = async () => {
-    // 1. Close the modal overlay so it's removed from DOM before print fires
-    onClose();
-
-    // 2. Wait for React to remove the modal from DOM (one paint cycle)
-    await new Promise(resolve => setTimeout(resolve, 80));
-
-    // 3. PRINT NOW via RAW winspool.drv ESC/P stream (100% identical to legacy Clipper/DOS RETAIL.exe)
+    // Print first and only advance/close after the Windows spooler confirms it.
     if (window.electronAPI?.isElectron) {
       try {
         const escpBytes = Array.from(generateTvsEscPosStream(billData));
         const rawText = formatTvsBillLines(billData).join('\r\n') + '\r\n';
-        await window.electronAPI.printRawTvs({
+        const result = await window.electronAPI.printRawTvs({
           printerName: 'TVS MSP 250 Star',
           rawBytes: escpBytes,
           rawText: rawText
         });
+        if (!result?.success) {
+          throw new Error(result?.error || 'Windows spooler did not confirm the print job.');
+        }
       } catch (e) {
         console.error('Raw TVS print error:', e);
+        alert(`Printing failed: ${e.message || 'Printer error'}\n\nThe bill remains available for reprint.`);
+        return;
       }
     } else {
+      onClose();
+      await new Promise(resolve => setTimeout(resolve, 80));
       window.print();
     }
 
-    // 4. ONLY AFTER print completes — advance bill counter (clears bill state)
+    if (window.electronAPI?.isElectron) onClose();
+
+    // ONLY AFTER print completes — advance bill counter (clears bill state)
     if (!isReprint && onNewBill) {
       onNewBill();
     }

@@ -165,9 +165,11 @@ const appJsx = fs.readFileSync('src/App.jsx', 'utf8');
 const indexCss = fs.readFileSync('src/index.css', 'utf8');
 const terminalLock = fs.readFileSync('src/components/TerminalLockScreen.jsx', 'utf8');
 const topNav = fs.readFileSync('src/components/TopNavigationMenu.jsx', 'utf8');
+const purchaseEntry = fs.readFileSync('src/components/PurchaseEntryPage.jsx', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
-assert(terminalLock.includes('1536'), 'Manager Override PIN 1536 configured in terminal lock screen');
+assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
+assert(!purchaseEntry.includes('sk-proj-'), 'No OpenAI API credential is embedded in purchase-entry source');
 assert(!topNav.includes('Doctor & Hospital Master'), 'Doctor Master permanently removed from top navigation');
 assert(indexCss.includes('210mm 140mm'), 'Continuous tractor stationery (210mm x 140mm) enforced in @media print');
 assert(!appJsx.includes('Rahul C') && !topNav.includes('Rahul C'), 'Zero dummy staff ("Rahul C") in source files');
@@ -199,15 +201,15 @@ const sampleBill = {
 };
 
 const lines = formatTvsBillLines(sampleBill);
-assert(lines.length === 33, 'Bill formatted to EXACTLY 33 lines (matches 5.5" half-sheet tractor paper)');
-assert(lines.every(l => l.length === 80), 'All 33 lines are strictly 80 characters wide');
+assert(lines.length === 32, 'Bill formatted to EXACTLY 32 lines (matches the legacy RETAILG form)');
+assert(lines.every(l => l.length === 79), 'All 32 lines are strictly 79 characters wide');
 assert(lines[0].startsWith('BETA PHARMACY (Cash Bill)'), 'Header Line 1 contains Store Name and Cash Bill mode');
 assert(lines[6].startsWith('Sr Product'), 'Header Line 7 contains exact column titles');
 assert(lines[8].includes('RANTAC 150MG TAB'), 'Line 9 contains first item matching Clipper layout');
-assert(lines[9].startsWith('--------------------------------------------------------------------------------'), 'Line 10 is the compact footer separator directly under items');
-assert(lines[10].includes('27.90'), 'Line 11 anchors the Net Payable under Value column');
-assert(lines[12].includes('Signature - Pharmacist'), 'Line 13 contains Pharmacist Signature block');
-assert(lines[14].includes('** GET WELL SOON **'), 'Line 15 contains GET WELL SOON memo');
+assert(lines[15].startsWith('-------------------------------------------------------------------------------'), 'Footer separator is anchored at the legacy form position');
+assert(lines[16].includes('27.90'), 'Legacy terms line contains the Net Payable under Value column');
+assert(lines[17].includes('Signature - Pharmacist'), 'Legacy footer contains Pharmacist Signature block');
+assert(lines[19].includes('** GET WELL SOON **'), 'Legacy footer contains GET WELL SOON memo');
 
 const stream = generateTvsEscPosStream(sampleBill);
 assert(stream instanceof Uint8Array, 'Print stream generated as binary Uint8Array');
@@ -220,10 +222,10 @@ let streamCrlfCount = 0;
 for (let i = 0; i < stream.length - 1; i++) {
   if (stream[i] === 0x0D && stream[i+1] === 0x0A) streamCrlfCount++;
 }
-assert(streamCrlfCount === 33, 'Print stream contains exactly 33 CRLF advances (33 * 1/6" = exactly 5.5" perforation stop)');
+assert(streamCrlfCount === 32, 'Print stream contains exactly 32 CRLF advances, matching the legacy form');
 
 // -------------------------------------------------------------
-// TEST SUITE 8: Expiry Normalizer, Zero-BN001 Healing & Paper-Saver Mode
+// TEST SUITE 8: Expiry Integrity, Zero-Fabrication & Paper-Saver Mode
 // -------------------------------------------------------------
 console.log('\n🛡️ Test Suite 8: Expiry Normalizer, Zero-BN001 Healing & Paper-Saver Feed');
 const { normalizeExpiry, rollExpiryForwardIfPast } = await import('./src/utils/billUtils.js');
@@ -235,17 +237,17 @@ assert(normalizeExpiry('1227') === '12/27', '4-digit MMYY 1227 normalizes to 12/
 assert(normalizeExpiry('12/27') === '12/27', 'Standard MM/YY 12/27 preserved verbatim');
 
 const rolledPast = rollExpiryForwardIfPast('07/22');
-assert(rolledPast.startsWith('07/') && parseInt(rolledPast.slice(-2), 10) >= 27, 'Past catalog expiry 07/22 rolled forward to valid shelf life (>= 27)');
+assert(rolledPast === '07/22', 'Past catalog expiry is preserved and never rewritten into the future');
 assert(rollExpiryForwardIfPast('11/28') === '11/28', 'Future expiry 11/28 preserved verbatim');
-assert(Boolean(rollExpiryForwardIfPast('')), 'Blank expiry assigned non-blank current shelf life');
+assert(rollExpiryForwardIfPast('') === '', 'Blank expiry remains blank instead of being fabricated');
 
 // Paper-Saver Mode: Stops 3 lines after GET WELL SOON
 const paperSaverBill = { ...sampleBill, paperSaver: true };
 const paperSaverLines = formatTvsBillLines(paperSaverBill);
-assert(paperSaverLines.length === 18, `Paper-Saver mode outputs exactly 18 compact lines without 15 trailing blank lines (Found: ${paperSaverLines.length})`);
-assert(paperSaverLines[14].includes('** GET WELL SOON **'), 'Paper-Saver mode retains ** GET WELL SOON ** footer');
+assert(paperSaverLines.length === 23, `Paper-Saver mode keeps the legacy footer anchor plus three trailing lines (Found: ${paperSaverLines.length})`);
+assert(paperSaverLines[19].includes('** GET WELL SOON **'), 'Paper-Saver mode retains ** GET WELL SOON ** footer');
 
-// Test that TVS engine heals BN001 dummy batch if item has medicine code
+// Test that the TVS engine never invents transactional batch/expiry data
 const dummyBatchBill = {
   ...sampleBill,
   items: [
@@ -253,8 +255,27 @@ const dummyBatchBill = {
   ]
 };
 const dummyLines = formatTvsBillLines(dummyBatchBill);
-assert(!dummyLines[8].includes('BN001'), `TVS line item heals dummy BN001 and replaces with item batch (Found line: "${dummyLines[8]}")`);
-assert(dummyLines[8].includes('12/28'), 'TVS line item guarantees non-blank expiry column (12/28 found in line)');
+assert(dummyLines[8].includes('BN001'), 'TVS line item prints the recorded batch verbatim instead of substituting another batch');
+assert(!dummyLines[8].includes('12/28'), 'TVS line item leaves a missing expiry blank instead of fabricating a date');
+
+// -------------------------------------------------------------
+// TEST SUITE 9: Legacy Import Preservation & Reconciliation Flags
+// -------------------------------------------------------------
+console.log('\n📥 Test Suite 9: Legacy Import Preservation & Reconciliation Flags');
+const { normalizeLegacyMedicineRecords } = await import('./src/utils/dbfReader.js');
+const imported = normalizeLegacyMedicineRecords([
+  { IT_CODE: 'SAFE001', IT_NAME: 'SOURCE MED', OP_STOCK: 12, MRP: 0, PTR: 0, PUR_TAX: 0, BATCH: '', EXPIRY: '' },
+  { IT_CODE: 'OLD001', IT_NAME: 'OLD BATCH MED', OP_STOCK: 5, MRP: 25, PUR_TAX: 5, BATCH: 'REAL42', EXPIRY: '07/22' }
+], []);
+const safeImport = imported.find(m => m.code === 'SAFE001');
+const oldImport = imported.find(m => m.code === 'OLD001');
+assert(safeImport.stock === 12, 'ITEMFILE OP_STOCK is preserved exactly');
+assert(safeImport.mrp === 0 && safeImport.ptr === 0, 'Zero MRP/PTR values are preserved instead of replaced with guesses');
+assert(safeImport.gstPercent === 0, 'Zero tax is preserved instead of being changed to 12%');
+assert(safeImport.batches.length === 0, 'Missing source batch data remains unallocated instead of generating a batch');
+assert(safeImport.importIssues.includes('UNALLOCATED_STOCK_NO_BATCH'), 'Positive stock without batch evidence is flagged for reconciliation');
+assert(oldImport.batches[0].batch_no === 'REAL42' && oldImport.batches[0].exp_date === '07/22', 'Recorded legacy batch and expiry are preserved verbatim');
+assert(oldImport.importIssues.includes('ACTIVE_STOCK_EXPIRED_BATCH'), 'Positive stock tied to an expired batch is explicitly flagged');
 
 console.log('\n================================================================');
 console.log(`TEST RUN COMPLETE: ${passedTests} / ${totalTests} PASSED (${failedTests} FAILED)`);

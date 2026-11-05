@@ -57,7 +57,7 @@ import {
   fetchLiveMedicineDeltas
 } from './utils/supabaseClient';
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
-import { isBatchExpired } from './utils/billUtils';
+import { isBatchExpired, normalizeExpiry } from './utils/billUtils';
 
 import initialMedicines from './data/medicines.json';
 
@@ -422,11 +422,7 @@ export default function App() {
     }
   };
 
-  const handleCompleteSetup = ({ branch, counter, cashier, catalogType, importedMeds, restoredMeds, restoredBills }) => {
-    try {
-      localStorage.setItem('beta_pharma_setup_completed', 'true');
-    } catch (e) {}
-
+  const handleCompleteSetup = async ({ branch, counter, cashier, catalogType, importedMeds, restoredMeds, restoredBills }) => {
     if (branch) {
       handleSelectBranch(branch.id);
     }
@@ -453,138 +449,89 @@ export default function App() {
         setRecentBills(restoredBills);
       }
     } else if (importedMeds && importedMeds.length > 0) {
-      handleImportMedicines(importedMeds, 'replace');
+      const importResult = await handleImportMedicines(importedMeds, 'replace', branch?.stockKey || 'stock_shop1');
+      if (!importResult?.success) return importResult;
     }
+    try {
+      localStorage.setItem('beta_pharma_setup_completed', 'true');
+    } catch (e) {}
+    return { success: true };
   };
 
-  const handleImportMedicines = (newRecords, mode = 'merge') => {
-    if (!newRecords || newRecords.length === 0) return;
+  const handleImportMedicines = async (newRecords, mode = 'merge', requestedStockKey = null) => {
+    if (!Array.isArray(newRecords) || newRecords.length === 0) {
+      return { success: false, error: 'No medicine records were supplied.' };
+    }
 
-    setMedicines(prev => {
-      const masterMap = new Map(initialMedicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
-      const prevMap = new Map(prev.map(m => [String(m.code || '').trim().toUpperCase(), m]));
+    const targetStockKey = requestedStockKey || activeBranch?.stockKey || 'stock_shop1';
+    const masterMap = new Map(initialMedicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
+    const currentMap = new Map(medicines.map(m => [String(m.code || '').trim().toUpperCase(), m]));
 
-      let updated;
-      if (mode === 'replace') {
-        // Replace catalog but protect against missing names by looking up master catalog
-        updated = newRecords.map(rec => {
-          const codeUpper = String(rec.code || '').trim().toUpperCase();
-          const master = masterMap.get(codeUpper);
-          const prevItem = prevMap.get(codeUpper);
-          
-          let safeName = rec.name;
-          if (!safeName || safeName.includes('UNKNOWN')) {
-            safeName = prevItem?.name || master?.name || (rec.code ? `MEDICINE ${rec.code}` : 'MEDICINE');
-          }
-          let safeRack = rec.rack;
-          if (!safeRack) {
-            safeRack = prevItem?.rack || master?.rack || 'GN';
-          }
-          let safeMrp = rec.mrp;
-          if (!safeMrp || safeMrp <= 0 || (safeMrp === 10 && master?.mrp && master.mrp !== 10)) {
-            safeMrp = prevItem?.mrp || master?.mrp || 10;
-          }
+    const prepareRecord = (rec) => {
+      const code = String(rec.code || '').trim().toUpperCase();
+      if (!code) return null;
+      const existing = currentMap.get(code);
+      const master = masterMap.get(code);
+      const importedStock = Number(rec.stock ?? rec[targetStockKey] ?? 0);
+      const safeStock = Number.isFinite(importedStock) ? importedStock : 0;
+      const descriptiveBase = existing || master || {};
 
-          return {
-            ...(master || {}),
-            ...(prevItem || {}),
-            ...rec,
-            name: safeName,
-            // Option B: Literal preservation verbatim (strings preserved, null/undefined/non-strings mapped to "")
-            company: typeof rec.company === 'string' ? rec.company : '',
-            rack: safeRack,
-            mrp: safeMrp,
-            stock: rec.stock !== undefined ? rec.stock : 0,
-            stock_shop1: rec.stock !== undefined ? rec.stock : 0,
-            stock_shop2: rec.stock_shop2 !== undefined ? rec.stock_shop2 : (prevItem?.stock_shop2 || master?.stock_shop2 || 0),
-            batches: (() => {
-              const incoming = Array.isArray(rec.batches) ? rec.batches : [];
-              const validIncoming = incoming.filter(b => b.batch_no && b.batch_no !== 'BN001');
-              if (validIncoming.length > 0) return validIncoming;
-              const prevBatches = (prevItem?.batches || []).filter(b => b.batch_no && b.batch_no !== 'BN001');
-              if (prevBatches.length > 0) return prevBatches;
-              return (master?.batches && master.batches.length > 0) ? master.batches : incoming;
-            })()
-          };
-        });
-      } else {
-        // Merge mode: update matching items with live stock, add genuinely new items
-        const toAdd = [];
-        const overrides = {};
+      return {
+        ...descriptiveBase,
+        ...rec,
+        code,
+        name: rec.name || descriptiveBase.name || '',
+        company: typeof rec.company === 'string' ? rec.company : (descriptiveBase.company || ''),
+        rack: rec.rack || descriptiveBase.rack || '',
+        mrp: Number.isFinite(Number(rec.mrp)) ? Number(rec.mrp) : Number(descriptiveBase.mrp || 0),
+        // Imported stock belongs only to the branch selected for this machine.
+        stock: safeStock,
+        [targetStockKey]: safeStock,
+        stock_shop1: targetStockKey === 'stock_shop1' ? safeStock : Number(existing?.stock_shop1 || 0),
+        stock_shop2: targetStockKey === 'stock_shop2' ? safeStock : Number(existing?.stock_shop2 || 0),
+        // Never keep an old/master batch when the imported snapshot supplied no
+        // batch evidence. That was producing new stock under stale batches.
+        batches: Array.isArray(rec.batches) ? rec.batches : [],
+        isImported: true
+      };
+    };
 
-        newRecords.forEach(rec => {
-          const codeUpper = String(rec.code || '').trim().toUpperCase();
-          if (prevMap.has(codeUpper)) {
-            const existing = prevMap.get(codeUpper);
-            const master = masterMap.get(codeUpper);
+    const prepared = newRecords.map(prepareRecord).filter(Boolean);
+    const preparedMap = new Map(prepared.map(m => [m.code, m]));
+    const updated = mode === 'replace'
+      ? prepared
+      : [
+          ...prepared.filter(m => !currentMap.has(m.code)),
+          ...medicines.map(m => preparedMap.get(String(m.code || '').trim().toUpperCase()) || m)
+        ];
 
-            const safeName = (rec.name && !rec.name.includes('UNKNOWN')) ? rec.name : (existing.name || master?.name);
-            const safeRack = rec.rack ? String(rec.rack).trim() : (existing.rack || master?.rack || 'GN');
-            const safeMrp = (rec.mrp !== undefined && rec.mrp > 0) ? rec.mrp : (existing.mrp || master?.mrp || 10);
-            const safeStock = rec.stock !== undefined ? rec.stock : 0;
+    if (updated.length === 0) return { success: false, error: 'No valid coded medicines were found.' };
 
-            const safeBatches = (() => {
-              const incoming = Array.isArray(rec.batches) ? rec.batches : [];
-              const validIncoming = incoming.filter(b => b.batch_no && b.batch_no !== 'BN001');
-              if (validIncoming.length > 0) return validIncoming;
-              const existingBatches = (existing.batches || []).filter(b => b.batch_no && b.batch_no !== 'BN001');
-              if (existingBatches.length > 0) return existingBatches;
-              return (master?.batches && master.batches.length > 0) ? master.batches : incoming;
-            })();
+    // Commit to durable local storage first. The UI and cloud are updated only
+    // after this succeeds, preventing a false success message and partial import.
+    let idbResult;
+    try {
+      idbResult = await idbCacheMedicines(updated);
+    } catch (err) {
+      return { success: false, error: err.message || 'IndexedDB write failed.' };
+    }
+    if (!idbResult?.success) {
+      return { success: false, error: idbResult?.error || 'IndexedDB write failed.' };
+    }
 
-            overrides[existing.code] = {
-              ...existing,
-              ...rec,
-              name: safeName,
-              // Option B: Literal preservation verbatim (strings preserved, null/undefined/non-strings mapped to "")
-              company: typeof rec.company === 'string' ? rec.company : '',
-              rack: safeRack,
-              mrp: safeMrp,
-              stock: safeStock,
-              stock_shop1: safeStock,
-              batches: safeBatches
-            };
-          } else {
-            // New item not in current catalog
-            if (rec.name && !rec.name.includes('UNKNOWN')) {
-              toAdd.push({
-                ...rec,
-                company: typeof rec.company === 'string' ? rec.company : ''
-              });
-            }
-          }
-        });
+    const trulyAdded = updated.filter(m => m.isImported && !masterMap.has(m.code));
+    try {
+      localStorage.setItem('beta_pharma_added_meds', JSON.stringify(trulyAdded));
+    } catch (err) {
+      console.warn('[STORAGE_WARNING] Could not cache added medicine index:', err);
+    }
+    setMedicines(updated);
 
-        const baseUpdated = prev.map(m => overrides[m.code] ? overrides[m.code] : m);
-        updated = [...toAdd, ...baseUpdated];
-      }
-
-      // Filter out any UNKNOWN MEDICINE items before persisting
-      const safeForStorage = updated.filter(m => m.name && !m.name.includes('UNKNOWN'));
-      const trulyAdded = safeForStorage.filter(m => m.isImported && !masterMap.has(String(m.code || '').trim().toUpperCase()));
-
-      try {
-        localStorage.setItem('beta_pharma_added_meds', JSON.stringify(trulyAdded));
-      } catch (e) {}
-
-      // Cache to IndexedDB for offline resilience with explicit error logging
-      idbCacheMedicines(updated).then(res => {
-        if (!res || !res.success) {
-          console.error('[STORAGE_ERROR] Failed to persist imported catalog to IndexedDB:', res?.error);
-        }
-      }).catch(err => {
-        console.error('[STORAGE_ERROR] IndexedDB write exception during import:', err);
-      });
-
-      // Step 5: Background Cloud Catalog Sync to Supabase
-      setTimeout(() => {
-        uploadMedicinesCatalogToSupabase(updated).catch(err => {
-          console.warn('Background Supabase catalog upload note:', err);
-        });
-      }, 1000);
-
-      return updated;
+    uploadMedicinesCatalogToSupabase(updated).catch(err => {
+      console.warn('Cloud catalog sync failed after the verified local import:', err);
     });
+
+    return { success: true, count: updated.length, stockKey: targetStockKey };
   };
 
   // Instant 1-Click Master Catalog Restoration (Reverts to full 24,665 real items)
@@ -617,7 +564,7 @@ export default function App() {
       console.error('[STORAGE_ERROR] Failed to persist repaired catalog to IndexedDB:', idbResult?.error);
       alert(`Auto-repair applied to memory, but local database persistence failed: ${idbResult?.error || 'Write error'}.`);
     } else {
-      alert('✓ Auto-Repair Complete: Medicine names repaired while preserving all your live shop stock!');
+      alert('✓ Catalog names repaired. Stock, batch numbers, and expiry dates were preserved exactly; unresolved inventory still requires review.');
     }
   };
 
@@ -744,7 +691,7 @@ export default function App() {
   const [isUnverifiedReturnsOpen, setIsUnverifiedReturnsOpen] = useState(false);
   const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
 
-  // Security & Password Authorization Subsystem (Admin PIN: 1536)
+  // Security & Password Authorization Subsystem
   const [authenticatedRole, setAuthenticatedRole] = useState(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(() => {
     return !!PROTECTED_PAGES[initialRoute];
@@ -824,7 +771,7 @@ export default function App() {
   const isCompletingBillRef = useRef(false);
   const isReprintingRef = useRef(false);
 
-  // Direct TVS MSP 250 Native Spooler Print Engine (Zero Form-Feed, Exact 33 Lines, Condensed ESC/P)
+  // Direct TVS MSP 250 Native Spooler Print Engine (legacy 32-line ESC/P form)
   const executeTvsPrint = async (billData, isReprint = false) => {
     const currentBill = { ...billData, storeInfo: storeConfig };
     if (window.electronAPI?.isElectron) {
@@ -832,17 +779,23 @@ export default function App() {
         const { generateTvsEscPosStream, formatTvsBillLines } = await import('./utils/tvsPrinterEngine');
         const escpBytes = Array.from(generateTvsEscPosStream(currentBill));
         const rawText = formatTvsBillLines(currentBill).join('\r\n') + '\r\n';
-        await window.electronAPI.printRawTvs({
+        const result = await window.electronAPI.printRawTvs({
           printerName: 'TVS MSP 250 Star',
           rawBytes: escpBytes,
           rawText: rawText
         });
-        console.log(`[PRINT] Sent ${isReprint ? 'reprint' : 'bill'} #${currentBill.billNo} to TVS MSP 250`);
+        if (!result?.success) {
+          throw new Error(result?.error || 'Windows spooler did not confirm the print job.');
+        }
+        console.log(`[PRINT] Confirmed ${isReprint ? 'reprint' : 'bill'} #${currentBill.billNo} sent to TVS MSP 250`);
+        return { success: true };
       } catch (e) {
         console.error('[PRINT] Instant raw TVS print failed:', e);
+        return { success: false, error: e.message || 'Printer error' };
       }
     } else {
       window.print();
+      return { success: true, browserDialog: true };
     }
   };
 
@@ -1019,36 +972,15 @@ export default function App() {
 
         const isInit = await idbIsInitialized();
 
-        if (localStorage.getItem('beta_pharma_prod_clean_zero_v5') !== 'true') {
-          console.log('[STORAGE] Resetting cached dummy 1,851 stock. Initializing clean 0-stock catalog.');
-          await idbClearMedicines();
-          await idbCacheMedicines(initialMedicines);
-          localStorage.setItem('beta_pharma_prod_clean_zero_v5', 'true');
-          try {
-            localStorage.removeItem('beta_pharma_med_overrides');
-            localStorage.removeItem('beta_pharma_added_meds');
-          } catch (_) {}
-          if (isMounted) {
-            setMedicines(initialMedicines);
-          }
-          hydrationSuccess = true;
-        } else if (isInit) {
+        if (isInit) {
           // EXISTING INSTALLATION: Authoritative inventory must be loaded from IndexedDB
           const count = await idbGetMedicinesCount();
           if (count > 0) {
             const saved = await idbGetCachedMedicines();
             if (saved && saved.length > 0 && isMounted) {
-              const needsHealing = saved.some(m => 
-                !m.batches || m.batches.length === 0 || 
-                m.batches.every(b => !b.batch_no || b.batch_no === 'BN001' || !b.exp_date)
-              );
-              let activeList = saved;
-              if (needsHealing) {
-                console.log('[AUTO_REPAIR] Detected dummy BN001 or missing expiries in IndexedDB. Healing catalog...');
-                activeList = autoRepairCorruptedMedicines(saved);
-                idbCacheMedicines(activeList).catch(e => console.warn('Auto-repair idb cache note:', e));
-              }
-              setMedicines(activeList);
+              // Never mutate transactional batch/expiry data during startup.
+              // Missing values remain visible for explicit reconciliation.
+              setMedicines(saved);
               // Re-sync localStorage cache with authoritative IndexedDB state
               try {
                 const overrides = {};
@@ -1073,9 +1005,6 @@ export default function App() {
           console.log(`[STORAGE] Fresh installation detected. Initializing IndexedDB with ${initialMedicines.length} bundled catalogue items.`);
           await idbCacheMedicines(initialMedicines);
           await idbSetInitialized({ seededItems: initialMedicines.length });
-          try {
-            localStorage.setItem('beta_pharma_setup_completed', 'true');
-          } catch (_) {}
           if (isMounted) {
             setMedicines(initialMedicines);
           }
@@ -1344,6 +1273,24 @@ export default function App() {
     const targetBranchId = activeBranch?.id || 'MAIN';
     const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
 
+    const validationErrors = [];
+    if (!String(purchaseVoucher?.invoiceNo || '').trim()) validationErrors.push('supplier invoice number');
+    if (!String(purchaseVoucher?.supplierName || '').trim()) validationErrors.push('supplier name');
+    purchaseItems.forEach((item, index) => {
+      const label = `Item ${index + 1} (${item.name || item.medCode || 'unnamed'})`;
+      const existing = medicines.find(m => m.code === item.medCode || (item.name && m.name.toLowerCase() === item.name.toLowerCase()));
+      if (!existing && !String(item.medCode || '').trim()) validationErrors.push(`${label}: product code`);
+      if (!String(item.name || existing?.name || '').trim()) validationErrors.push(`${label}: medicine name`);
+      if (!String(item.batch || '').trim()) validationErrors.push(`${label}: batch number`);
+      if (!normalizeExpiry(item.exp)) validationErrors.push(`${label}: expiry`);
+      if (!(Number(item.mrp) > 0)) validationErrors.push(`${label}: MRP`);
+      if (!(Number(item.totalUnits || item.billedPacks || item.qty) > 0)) validationErrors.push(`${label}: quantity`);
+    });
+    if (validationErrors.length > 0) {
+      alert(`Purchase was not saved. Required source data is missing:\n\n- ${validationErrors.join('\n- ')}\n\nCorrect the invoice fields; the POS will not invent regulated stock data.`);
+      return { success: false, errors: validationErrors };
+    }
+
     setMedicines(prev => {
       const updated = [...prev];
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
@@ -1372,8 +1319,8 @@ export default function App() {
             const newQty = oldQty + unitsToAdd;
             existingBatches[bIdx] = {
               ...b,
-              exp_date: item.exp || b.exp_date,
-              mrp: item.mrp || b.mrp,
+              exp_date: normalizeExpiry(item.exp),
+              mrp: Number(item.mrp),
               purchase_price: item.ptr || item.rate || b.purchase_price || 0,
               qty: newQty,
               stock: newQty
@@ -1383,15 +1330,15 @@ export default function App() {
             existingBatches.unshift({
               batch_no: String(item.batch).trim(),
               batch: String(item.batch).trim(),
-              exp_date: item.exp || '12/28',
-              mrp: item.mrp || med.mrp || 10,
+              exp_date: normalizeExpiry(item.exp),
+              mrp: Number(item.mrp),
               purchase_price: Number(item.ptr || item.rate || 0),
-              supplier_name: String(purchaseVoucher?.supplierName || item.supplier_name || 'Standard Distributor').trim(),
-              supplier_id: String(purchaseVoucher?.supplierId || item.supplier_id || 'DIST-GENERIC').trim(),
+              supplier_name: String(purchaseVoucher.supplierName).trim(),
+              supplier_id: String(purchaseVoucher?.supplierId || item.supplier_id || '').trim(),
               invoice_no: String(purchaseVoucher?.invoiceNo || item.invoice_no || '').trim(),
               invoice_date: String(purchaseVoucher?.invoiceDate || item.invoice_date || new Date().toISOString().slice(0, 10)),
               branch_id: targetBranchId,
-              per: item.packSize || 10,
+              per: Number(item.packSize || med.per || 1),
               qty: unitsToAdd,
               initial_qty: unitsToAdd,
               stock: unitsToAdd
@@ -1416,23 +1363,23 @@ export default function App() {
         } else {
           // New medicine received for this branch
           const newMed = {
-            code: item.medCode || `M${Math.floor(10000 + Math.random() * 90000)}`,
+            code: String(item.medCode).trim(),
             name: item.name,
             company: typeof item.company === 'string' ? item.company : '', // Option B rule preserved!
-            mrp: Number(item.mrp || 10),
-            rack: item.rack || 'MAIN-SHELF',
-            schedule: item.schedule || 'Normal',
+            mrp: Number(item.mrp),
+            rack: item.rack || '',
+            schedule: item.schedule || '',
             branchId: targetBranchId,
             stock: unitsToAdd,
             [targetStockKey]: unitsToAdd,
             batches: [{
               batch_no: String(item.batch).trim(),
               batch: String(item.batch).trim(),
-              exp_date: item.exp || '12/28',
-              mrp: Number(item.mrp || 10),
+              exp_date: normalizeExpiry(item.exp),
+              mrp: Number(item.mrp),
               purchase_price: Number(item.ptr || item.rate || 0),
-              supplier_name: String(purchaseVoucher?.supplierName || item.supplier_name || 'Standard Distributor').trim(),
-              supplier_id: String(purchaseVoucher?.supplierId || item.supplier_id || 'DIST-GENERIC').trim(),
+              supplier_name: String(purchaseVoucher.supplierName).trim(),
+              supplier_id: String(purchaseVoucher?.supplierId || item.supplier_id || '').trim(),
               invoice_no: String(purchaseVoucher?.invoiceNo || item.invoice_no || '').trim(),
               invoice_date: String(purchaseVoucher?.invoiceDate || item.invoice_date || new Date().toISOString().slice(0, 10)),
               branch_id: targetBranchId,
@@ -1820,6 +1767,25 @@ export default function App() {
     const targetBranchId = activeBranch?.id || 'MAIN';
     const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
 
+    const validationErrors = [];
+    if (!String(importedData.invoiceNo || '').trim()) validationErrors.push('invoice number');
+    if (!String(importedData.distributor || '').trim()) validationErrors.push('distributor name');
+    importedData.items.forEach((item, index) => {
+      const label = `Item ${index + 1} (${item.name || item.code || 'unnamed'})`;
+      const existing = medicines.find(m => m.code === item.code || (item.name && m.name.toLowerCase() === item.name.toLowerCase()));
+      if (!existing && !String(item.code || '').trim()) validationErrors.push(`${label}: product code`);
+      if (!String(item.name || existing?.name || '').trim()) validationErrors.push(`${label}: medicine name`);
+      if (!String(item.batch || '').trim()) validationErrors.push(`${label}: batch number`);
+      if (!normalizeExpiry(item.exp || item.exp_date)) validationErrors.push(`${label}: expiry`);
+      if (!(Number(item.mrp) > 0)) validationErrors.push(`${label}: MRP`);
+      if (!(Number(item.ptr) > 0)) validationErrors.push(`${label}: PTR/purchase rate`);
+      if (!(Number(item.qty) > 0)) validationErrors.push(`${label}: quantity`);
+    });
+    if (validationErrors.length > 0) {
+      alert(`Invoice was not inwarded. Required source data is missing:\n\n- ${validationErrors.join('\n- ')}\n\nCorrect the OCR/import review instead of accepting generated values.`);
+      return { success: false, errors: validationErrors };
+    }
+
     // 1. Inward items into catalog
     setMedicines(prev => {
       const updated = [...prev];
@@ -1835,16 +1801,16 @@ export default function App() {
           if (bIdx !== -1) {
             batches[bIdx] = {
               ...batches[bIdx],
-              exp_date: item.exp || batches[bIdx].exp_date,
-              mrp: item.mrp || batches[bIdx].mrp,
+              exp_date: normalizeExpiry(item.exp || item.exp_date),
+              mrp: Number(item.mrp),
               stock: (batches[bIdx].stock || 0) + item.qty
             };
           } else {
             batches.unshift({
-              batch_no: item.batch || 'BN-' + Date.now().toString().slice(-4),
-              exp_date: item.exp || item.exp_date || '',
-              mrp: item.mrp || med.mrp,
-              per: item.per || med.per || 10,
+              batch_no: String(item.batch).trim(),
+              exp_date: normalizeExpiry(item.exp || item.exp_date),
+              mrp: Number(item.mrp),
+              per: Number(item.per || med.per || 1),
               stock: item.qty
             });
           }
@@ -1857,21 +1823,22 @@ export default function App() {
         } else {
           // New Medicine
           const newMedObj = {
-            code: item.code || 'M' + Math.floor(10000 + Math.random() * 90000),
+            code: String(item.code).trim(),
             name: item.name,
             generic: item.generic || '',
-            mrp: item.mrp || 100,
-            ptr: item.ptr || 78,
-            per: item.per || 10,
-            rack: item.rack || 'GN',
-            tax_percent: item.gstPercent || 12,
+            mrp: Number(item.mrp),
+            ptr: Number(item.ptr),
+            per: Number(item.per || 1),
+            rack: item.rack || '',
+            tax_percent: item.gstPercent ?? null,
+            stock: Number(item.qty),
             stock_shop1: targetStockKey === 'stock_shop1' ? item.qty : 0,
             stock_shop2: targetStockKey === 'stock_shop2' ? item.qty : 0,
             batches: [{
-              batch_no: item.batch || 'BN001',
-              exp_date: item.exp || item.exp_date || '',
-              mrp: item.mrp || 100,
-              per: item.per || 10,
+              batch_no: String(item.batch).trim(),
+              exp_date: normalizeExpiry(item.exp || item.exp_date),
+              mrp: Number(item.mrp),
+              per: Number(item.per || 1),
               stock: item.qty
             }]
           };
@@ -1895,10 +1862,10 @@ export default function App() {
     try {
       const payables = JSON.parse(localStorage.getItem('beta_pharma_purchase_bills') || '[]');
       const newPayable = {
-        billNo: importedData.invoiceNo || `INV-${Date.now().toString().slice(-5)}`,
-        name: importedData.distributor || 'General Pharma Distributor',
+        billNo: importedData.invoiceNo,
+        name: importedData.distributor,
         date: importedData.invoiceDate || billDate,
-        amount: importedData.items.reduce((acc, it) => acc + ((it.ptr || it.mrp * 0.78) * it.qty), 0),
+        amount: importedData.items.reduce((acc, it) => acc + (Number(it.ptr) * Number(it.qty)), 0),
         itemsCount: importedData.items.length,
         status: 'UNPAID',
         source: 'INVOICE_IMPORT'
@@ -1907,9 +1874,9 @@ export default function App() {
       localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify(payables));
 
     // Offline-first delta sync push for purchase inward
-    const invoiceTotal = importedData.items.reduce((acc, it) => acc + ((it.ptr || it.mrp * 0.78) * it.qty), 0);
+    const invoiceTotal = importedData.items.reduce((acc, it) => acc + (Number(it.ptr) * Number(it.qty)), 0);
     syncEngine.recordPurchaseInward({
-      supplierName: importedData.distributor || 'General Pharma Distributor',
+      supplierName: importedData.distributor,
       invoiceDate: importedData.invoiceDate || billDate,
       totalAmount: invoiceTotal,
       items: importedData.items,
@@ -1918,6 +1885,7 @@ export default function App() {
     } catch (e) {}
 
     alert(`🎉 Purchase Invoice Inwarded! ${importedData.items.length} items successfully updated into live inventory.`);
+    return { success: true };
   };
 
   // Multi-Store Inter-Branch Stock Transfer Handler
@@ -2350,7 +2318,10 @@ export default function App() {
     }
 
     if (isInstantPrint) {
-      await executeTvsPrint(billPayload, false);
+      const printResult = await executeTvsPrint(billPayload, false);
+      if (!printResult?.success) {
+        alert(`Bill ${billPayload.billNo} was saved, but printing failed.\n\n${printResult?.error || 'Printer error'}\n\nUse Recall/Reprint after checking the TVS printer.`);
+      }
       handleNewBill();
     } else {
       // 4. Open clean Dot-Matrix Receipt Modal: Cashier can preview voucher, press Enter to print, send WhatsApp, or press Esc
@@ -2384,23 +2355,44 @@ export default function App() {
   const handleRepeatBill = (repeatItems, docName, patName) => {
     if (!repeatItems || repeatItems.length === 0) return;
 
-    const formatted = repeatItems.map(it => {
+    const formatted = [];
+    const repeatErrors = [];
+    repeatItems.forEach(it => {
       const itName = it.name || it.medicine?.name || '';
       const itCode = it.code || it.medicine?.code || '';
       const found = medicines.find(m => (itCode && m.code === itCode) || (itName && (m.name || '').toLowerCase() === itName.toLowerCase()));
-      const batchObj = found?.batches?.[0] || {
-        batch_no: it.batch?.batch_no || it.batch || 'BN001',
-        exp_date: it.exp || it.exp_date || it.batch?.exp_date || '',
-        mrp: it.mrp || it.batch?.mrp || 30,
-        per: it.per || it.batch?.per || 10
-      };
-      return {
-        medicine: found || { name: itName || 'Medicine', code: itCode || 'M9999', company: 'GEN', rack: 1 },
+      if (!found) {
+        repeatErrors.push(`${itName || itCode || 'Unknown item'} is no longer in the catalog`);
+        return;
+      }
+      const requestedBatch = String(it.batch?.batch_no || it.batch || '').trim().toUpperCase();
+      const saleableBatches = (found.batches || []).filter(b => {
+        const qty = Number(b.qty ?? b.stock ?? 0);
+        const expiry = normalizeExpiry(b.exp_date);
+        return qty > 0 && b.batch_no && b.batch_no !== 'BN001' && expiry && !isBatchExpired(expiry);
+      });
+      const batchObj = saleableBatches.find(b => String(b.batch_no).trim().toUpperCase() === requestedBatch) || saleableBatches[0];
+      const qty = Number.parseInt(it.qty, 10);
+      if (!batchObj) {
+        repeatErrors.push(`${found.name} has no saleable in-stock batch`);
+        return;
+      }
+      if (!(qty > 0) || qty > Number(batchObj.qty ?? batchObj.stock ?? 0)) {
+        repeatErrors.push(`${found.name} requested ${it.qty || 0}, available ${Number(batchObj.qty ?? batchObj.stock ?? 0)} in batch ${batchObj.batch_no}`);
+        return;
+      }
+      formatted.push({
+        medicine: found,
         batch: batchObj,
-        qty: parseInt(it.qty, 10) || 10,
-        totalValue: it.totalValue || ((batchObj.mrp / (batchObj.per || 10)) * (parseInt(it.qty, 10) || 10))
-      };
+        qty,
+        totalValue: (Number(batchObj.mrp) / (Number(batchObj.per) || 1)) * qty
+      });
     });
+
+    if (repeatErrors.length > 0) {
+      alert(`The prescription was not loaded because current inventory does not match the old bill:\n\n- ${repeatErrors.join('\n- ')}\n\nReview and add current batches manually.`);
+      return;
+    }
 
     setItems(formatted);
     if (docName) setDoctorName(docName);

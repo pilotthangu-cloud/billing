@@ -23,7 +23,7 @@ import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
 import SubstituteRadarModal from './SubstituteRadarModal';
 import { fuzzySearchMedicines } from '../utils/fuzzySearch';
-import { triggerWhatsAppBillShare, isBatchExpired, normalizeExpiry, rollExpiryForwardIfPast } from '../utils/billUtils';
+import { triggerWhatsAppBillShare, isBatchExpired, normalizeExpiry } from '../utils/billUtils';
 import { syncEngine } from '../utils/syncEngine';
 
 export default function FastBillingTerminal({
@@ -279,34 +279,28 @@ export default function FastBillingTerminal({
     // FEFO: Prioritize eligible in-stock, unexpired batches first so fresh saleable stock is dispensed
     const eligibleBatches = (med.batches || []).filter(b => {
       const bQty = b.qty !== undefined ? b.qty : (b.stock !== undefined ? b.stock : 0);
-      return bQty > 0 && !isBatchExpired(b.exp_date);
+      const batchNo = String(b.batch_no || '').trim();
+      const expiry = normalizeExpiry(b.exp_date);
+      return bQty > 0 && batchNo && batchNo !== 'BN001' && expiry && !isBatchExpired(expiry);
     }).sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
 
-    // Fall back to all batches sorted by earliest expiry only if no eligible in-stock unexpired batch exists
-    const sortedBatches = (med.batches || []).slice().sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
-
-    let chosenCandidate = eligibleBatches.length > 0 ? eligibleBatches[0] : (sortedBatches.length > 0 ? sortedBatches[0] : null);
-
-    // If candidate has dummy BN001 or missing expiry, look for non-dummy batch in med.batches
-    if (!chosenCandidate || chosenCandidate.batch_no === 'BN001' || !chosenCandidate.exp_date) {
-      const nonDummyBatch = (med.batches || []).find(b => b.batch_no && b.batch_no !== 'BN001');
-      if (nonDummyBatch) {
-        chosenCandidate = { ...nonDummyBatch };
-      }
+    if (eligibleBatches.length === 0) {
+      alert(
+        `Cannot add ${med.name || med.code}.\n\n` +
+        'There is no in-stock batch with a recorded batch number and an unexpired expiry date. ' +
+        'Correct the inventory record or receive the stock through Purchase before billing.'
+      );
+      return;
     }
 
-    const itemCode = String(med.code || '0000').trim();
-    const finalBatchNo = (chosenCandidate?.batch_no && chosenCandidate.batch_no !== 'BN001')
-      ? chosenCandidate.batch_no
-      : ('B' + itemCode.slice(-4));
-
-    const finalExpDate = rollExpiryForwardIfPast(chosenCandidate?.exp_date);
+    const chosenCandidate = eligibleBatches[0];
 
     const chosenBatch = {
-      batch_no: finalBatchNo,
-      exp_date: finalExpDate,
-      mrp: chosenCandidate?.mrp || med.mrp,
-      per: chosenCandidate?.per || med.per || 10
+      ...chosenCandidate,
+      batch_no: String(chosenCandidate.batch_no).trim(),
+      exp_date: normalizeExpiry(chosenCandidate.exp_date),
+      mrp: Number(chosenCandidate.mrp ?? med.mrp ?? 0),
+      per: Number(chosenCandidate.per ?? med.per ?? 1) || 1
     };
 
     // Check if near expiry (< 60 days)
@@ -324,7 +318,8 @@ export default function FastBillingTerminal({
       return false;
     })();
 
-    const qty = med.per || 10;
+    const availableQty = Number(chosenCandidate.qty ?? chosenCandidate.stock ?? 0);
+    const qty = Math.min(Number(med.per || chosenBatch.per || 1), availableQty);
     const lineVal = (chosenBatch.mrp / (chosenBatch.per || 10)) * qty;
     const newLine = {
       medicine: med,
@@ -352,6 +347,18 @@ export default function FastBillingTerminal({
   const handleAddLineItem = (e) => {
     if (e) e.preventDefault();
     if (!activeMedicine || !activeBatch || entryQty <= 0) return;
+
+    const recordedExpiry = normalizeExpiry(activeBatch.exp_date);
+    const recordedBatchNo = String(activeBatch.batch_no || '').trim();
+    const availableQty = Number(activeBatch.qty ?? activeBatch.stock ?? 0);
+    if (!recordedBatchNo || recordedBatchNo === 'BN001' || !recordedExpiry || isBatchExpired(recordedExpiry)) {
+      alert('This batch cannot be billed because its batch number or unexpired expiry date is missing/invalid. Correct the inventory record first.');
+      return;
+    }
+    if (Number(entryQty) > availableQty) {
+      alert(`Only ${availableQty} unit(s) are available in batch ${recordedBatchNo}.`);
+      return;
+    }
 
     if (syncEngine.isMedicineBlocked(activeMedicine.code, activeBranch?.id)) {
       const conflict = syncEngine.getMedicineConflict(activeMedicine.code, activeBranch?.id);
@@ -416,8 +423,13 @@ export default function FastBillingTerminal({
   // Financial calculations
   const totalQty = items.reduce((acc, it) => acc + (it.qty || 0), 0);
   const grossTotal = items.reduce((acc, it) => acc + it.totalValue, 0);
-  const gstRate = 0.12;
-  const taxableAmount = grossTotal / (1 + gstRate);
+  // Pharmacy MRPs are tax-inclusive. Calculate tax per item because medicines
+  // can legitimately carry different GST rates; a blanket 12% corrupts totals.
+  const taxableAmount = items.reduce((acc, it) => {
+    const rawRate = it.medicine?.gstPercent ?? it.medicine?.tax_percent ?? it.medicine?.taxPercent ?? 0;
+    const rate = Math.max(0, Number(rawRate) || 0) / 100;
+    return acc + (Number(it.totalValue) || 0) / (1 + rate);
+  }, 0);
   const cgst = (grossTotal - taxableAmount) / 2;
   const sgst = cgst;
   const netPayable = Math.round(grossTotal);
@@ -1027,7 +1039,7 @@ export default function FastBillingTerminal({
                   }`}>
                     {item ? (
                       <div>
-                        <span>{rollExpiryForwardIfPast(item.batch?.exp_date)}</span>
+                        <span>{normalizeExpiry(item.batch?.exp_date)}</span>
                         {item.isShortExpiry && (
                           <span className="block text-[8px] font-mono font-black text-amber-600 dark:text-amber-400 uppercase tracking-tighter">
                             EXP &lt;60d

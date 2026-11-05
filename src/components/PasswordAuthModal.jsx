@@ -13,7 +13,7 @@ export default function PasswordAuthModal({
   const [error, setError] = useState('');
   const inputRef = useRef(null);
 
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '1536';
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '';
 
   useEffect(() => {
     if (isOpen) {
@@ -31,7 +31,9 @@ export default function PasswordAuthModal({
     if (e) e.preventDefault();
     const cleanPin = pin.trim();
 
-    if (cleanPin === ADMIN_PASSWORD || cleanPin === '1536') {
+    if (!ADMIN_PASSWORD) {
+      setError('Manager access is not configured. Set VITE_ADMIN_PASSWORD for this installation.');
+    } else if (cleanPin === ADMIN_PASSWORD) {
       setError('');
       onSuccess('MANAGER');
       onClose();

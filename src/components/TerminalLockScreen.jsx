@@ -26,6 +26,7 @@ export default function TerminalLockScreen({
   onOpenSetupWizard
 }) {
   const isDark = theme === 'dark';
+  const managerPassword = import.meta.env.VITE_ADMIN_PASSWORD || '';
   
   // Login States
   const [selectedStaff, setSelectedStaff] = useState(() => staffList[0] || '');
@@ -88,7 +89,11 @@ export default function TerminalLockScreen({
     e.preventDefault();
     setErrorMsg('');
 
-    if (managerPin !== '1536') {
+    if (!managerPassword) {
+      setErrorMsg('Manager access is not configured for this installation.');
+      return;
+    }
+    if (managerPin !== managerPassword) {
       setErrorMsg('Incorrect Manager Security PIN.');
       return;
     }

@@ -113,7 +113,7 @@ export default function FirstTimeSetupWizardModal({
       const res = await processDbfFolderFiles(files, setImportStatus);
       setImportedMeds(res.medicines);
       setImportSummary(res);
-      setImportStatus(`✓ Extracted ${res.totalCount.toLocaleString()} medicines! Stock from ${res.stockFile || 'STKFILE'}. Companies from ${res.companyFile || 'COMPMAST'}.`);
+      setImportStatus(`✓ Previewed ${res.totalCount.toLocaleString()} medicines. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Wizard import error:', err);
       setImportStatus(`Error: ${err.message || 'Invalid files'}`);
@@ -234,7 +234,7 @@ export default function FirstTimeSetupWizardModal({
   };
 
   // Finalize Setup
-  const handleFinish = () => {
+  const handleFinish = async () => {
     let finalBranch = availableBranches.find(b => b.id === selectedBranchId);
     if (selectedBranchId === 'CUSTOM' && customBranchName.trim()) {
       finalBranch = {
@@ -247,7 +247,7 @@ export default function FirstTimeSetupWizardModal({
       };
     }
 
-    onCompleteSetup({
+    const result = await onCompleteSetup({
       branch: finalBranch || availableBranches[0],
       counter: counterName.trim() || 'Counter 01',
       cashier: cashierName.trim() || 'Counter Staff',
@@ -257,6 +257,10 @@ export default function FirstTimeSetupWizardModal({
       restoredBills: (catalogChoice === 'cloud' || catalogChoice === 'local_json') ? restoredBills : null
     });
 
+    if (result?.success === false) {
+      setImportStatus(`Setup was not completed: ${result.error || 'The local database write failed.'}`);
+      return;
+    }
     onClose();
   };
 

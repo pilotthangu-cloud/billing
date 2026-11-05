@@ -26,7 +26,7 @@ export default function DistributorInvoiceImportModal({
   const isDark = theme === 'dark';
   const medCatalog = (catalogMedicines && catalogMedicines.length > 0) ? catalogMedicines : allMedicines;
   const [distributorName, setDistributorName] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('INV-' + Math.floor(10000 + Math.random() * 90000));
+  const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toLocaleDateString('en-GB'));
   const [rawText, setRawText] = useState('');
   const [parsedItems, setParsedItems] = useState([]);
@@ -89,12 +89,12 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
       if (parts.length < 2) continue;
 
       const rawName = nameIdx !== -1 ? parts[nameIdx] : parts[0];
-      const rawBatch = batchIdx !== -1 ? parts[batchIdx] : (parts[1] || 'BN' + Math.floor(1000 + Math.random() * 9000));
+      const rawBatch = batchIdx !== -1 ? parts[batchIdx] : (parts[1] || '');
       const rawExp = expIdx !== -1 ? parts[expIdx] : (parts[2] || '');
-      const rawQty = qtyIdx !== -1 ? parseInt(parts[qtyIdx], 10) || 10 : 10;
-      const rawPtr = ptrIdx !== -1 ? parseFloat(parts[ptrIdx]) || 50.0 : 50.0;
-      const rawMrp = mrpIdx !== -1 ? parseFloat(parts[mrpIdx]) || (rawPtr * 1.3) : (rawPtr * 1.3);
-      const rawPer = perIdx !== -1 ? parseInt(parts[perIdx], 10) || 10 : 10;
+      const rawQty = qtyIdx !== -1 ? parseInt(parts[qtyIdx], 10) || 0 : 0;
+      const rawPtr = ptrIdx !== -1 ? parseFloat(parts[ptrIdx]) || 0 : 0;
+      const rawMrp = mrpIdx !== -1 ? parseFloat(parts[mrpIdx]) || 0 : 0;
+      const rawPer = perIdx !== -1 ? parseInt(parts[perIdx], 10) || 0 : 0;
 
       // Match against master medicines catalog
       const cleanName = rawName.toUpperCase();
@@ -103,7 +103,7 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
         m.name.toUpperCase().startsWith(cleanName.slice(0, 10))
       );
 
-      const resolvedCode = existing ? existing.code : ('M' + Math.floor(10000 + Math.random() * 90000));
+      const resolvedCode = existing ? existing.code : '';
 
       items.push({
         id: i,
@@ -113,7 +113,7 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
         generic: existing ? existing.generic : '',
         isExisting: !!existing,
         existingStock: existing ? (existing.stock_shop1 || 0) : 0,
-        rack: existing ? existing.rack : 'GN',
+        rack: existing ? existing.rack : '',
         batch: rawBatch.toUpperCase(),
         exp: rawExp,
         qty: rawQty,
@@ -135,13 +135,34 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
     setStep(2);
   };
 
-  const handleConfirmInward = () => {
+  const handleConfirmInward = async () => {
+    const errors = [];
+    if (!distributorName.trim()) errors.push('distributor name');
+    if (!invoiceNumber.trim()) errors.push('invoice number');
+    if (!invoiceDate.trim()) errors.push('invoice date');
+    parsedItems.forEach((it, index) => {
+      const label = `Item ${index + 1} (${it.name || 'unnamed'})`;
+      if (!it.matchedCode) errors.push(`${label}: unmatched catalog product`);
+      if (!String(it.batch || '').trim()) errors.push(`${label}: batch number`);
+      if (!String(it.exp || '').trim()) errors.push(`${label}: expiry`);
+      if (!(Number(it.qty) > 0)) errors.push(`${label}: quantity`);
+      if (!(Number(it.ptr) > 0)) errors.push(`${label}: PTR`);
+      if (!(Number(it.mrp) > 0)) errors.push(`${label}: MRP`);
+      if (!(Number(it.per) > 0)) errors.push(`${label}: pack size`);
+    });
+    if (errors.length > 0) {
+      alert(`Invoice cannot be inwarded:\n\n- ${errors.join('\n- ')}\n\nCorrect the preview; no values will be generated.`);
+      return;
+    }
+
     const totalPacks = parsedItems.reduce((acc, it) => acc + it.qtyPacks, 0);
     const totalInvoiceCost = parsedItems.reduce((acc, it) => acc + it.totalCost, 0);
 
     const invoicePayload = {
       distributorName,
       invoiceNumber,
+      distributor: distributorName,
+      invoiceNo: invoiceNumber,
       invoiceDate,
       inwardDate: new Date().toLocaleDateString('en-GB'),
       items: parsedItems,
@@ -154,45 +175,8 @@ AZITHRAL 500MG TAB,AZI1190,04/27,15,95.00,135.00,5`;
 
     const inwardFn = onImportSuccess || onInwardInvoice;
     if (inwardFn) {
-      inwardFn(invoicePayload);
-    }
-
-    // Persist into beta_pharma_purchase_bills so it appears in Payables and Batch Enquiry
-    try {
-      const existingBills = JSON.parse(localStorage.getItem('beta_pharma_purchase_bills') || '[]');
-      const newVoucher = {
-        purNo: '0' + (6927 + existingBills.length + 1),
-        billNo: invoiceNumber,
-        supplier: distributorName,
-        supplierName: distributorName,
-        date: invoiceDate,
-        billDate: invoiceDate,
-        amount: totalInvoiceCost,
-        totalAmount: totalInvoiceCost,
-        balanceDue: totalInvoiceCost,
-        paidAmount: 0,
-        creditDays: 30,
-        itemsCount: parsedItems.length,
-        items: parsedItems.map(it => ({
-          code: it.code,
-          name: it.name,
-          batch: it.batch,
-          exp: it.exp,
-          wQty: it.qty,
-          freeQty: 0,
-          packSize: it.per || 10,
-          ptr: it.ptr,
-          rate: it.ptr,
-          mrp: it.mrp,
-          totalUnits: it.qty * (it.per || 10),
-          taxPercent: 12,
-          total: it.totalCost
-        })),
-        status: 'DUE'
-      };
-      localStorage.setItem('beta_pharma_purchase_bills', JSON.stringify([newVoucher, ...existingBills]));
-    } catch (e) {
-      console.error('Failed to store purchase voucher', e);
+      const result = await inwardFn(invoicePayload);
+      if (result?.success === false) return;
     }
 
     setInwardSuccessSummary(invoicePayload);
