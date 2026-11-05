@@ -23,7 +23,7 @@ import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
 import SubstituteRadarModal from './SubstituteRadarModal';
 import { fuzzySearchMedicines } from '../utils/fuzzySearch';
-import { triggerWhatsAppBillShare, isBatchExpired } from '../utils/billUtils';
+import { triggerWhatsAppBillShare, isBatchExpired, normalizeExpiry, rollExpiryForwardIfPast } from '../utils/billUtils';
 import { syncEngine } from '../utils/syncEngine';
 
 export default function FastBillingTerminal({
@@ -81,6 +81,19 @@ export default function FastBillingTerminal({
 
   // Active Shop Branch Stock Key (Configured per physical machine)
   const stockKey = activeBranch?.stockKey || 'stock_shop1';
+
+  // Continuous Paper Feed Mode: 33-line Half-Sheet vs Compact Paper-Saver Feed
+  const [isPaperSaver, setIsPaperSaver] = useState(() => {
+    return typeof localStorage !== 'undefined' && localStorage.getItem('beta_pharma_paper_saver') === 'true';
+  });
+
+  const togglePaperSaver = () => {
+    const nextVal = !isPaperSaver;
+    setIsPaperSaver(nextVal);
+    try {
+      localStorage.setItem('beta_pharma_paper_saver', String(nextVal));
+    } catch (_) {}
+  };
 
   // Selected Medicine for current entry
   const [activeMedicine, setActiveMedicine] = useState(null);
@@ -272,12 +285,29 @@ export default function FastBillingTerminal({
     // Fall back to all batches sorted by earliest expiry only if no eligible in-stock unexpired batch exists
     const sortedBatches = (med.batches || []).slice().sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
 
-    const chosenBatch = eligibleBatches.length > 0 ? eligibleBatches[0] : (sortedBatches.length > 0 ? sortedBatches[0] : {
-      batch_no: 'B' + med.code.slice(-4),
-      exp_date: '',
-      mrp: med.mrp,
-      per: med.per || 10
-    });
+    let chosenCandidate = eligibleBatches.length > 0 ? eligibleBatches[0] : (sortedBatches.length > 0 ? sortedBatches[0] : null);
+
+    // If candidate has dummy BN001 or missing expiry, look for non-dummy batch in med.batches
+    if (!chosenCandidate || chosenCandidate.batch_no === 'BN001' || !chosenCandidate.exp_date) {
+      const nonDummyBatch = (med.batches || []).find(b => b.batch_no && b.batch_no !== 'BN001');
+      if (nonDummyBatch) {
+        chosenCandidate = { ...nonDummyBatch };
+      }
+    }
+
+    const itemCode = String(med.code || '0000').trim();
+    const finalBatchNo = (chosenCandidate?.batch_no && chosenCandidate.batch_no !== 'BN001')
+      ? chosenCandidate.batch_no
+      : ('B' + itemCode.slice(-4));
+
+    const finalExpDate = rollExpiryForwardIfPast(chosenCandidate?.exp_date);
+
+    const chosenBatch = {
+      batch_no: finalBatchNo,
+      exp_date: finalExpDate,
+      mrp: chosenCandidate?.mrp || med.mrp,
+      per: chosenCandidate?.per || med.per || 10
+    };
 
     // Check if near expiry (< 60 days)
     const isShortExpiry = (() => {
@@ -870,6 +900,20 @@ export default function FastBillingTerminal({
               <span>📁 Upload DBF</span>
             </button>
           )}
+
+          {/* Continuous Paper Feed Mode: 33-Line Perforation vs Compact Paper-Saver */}
+          <button
+            type="button"
+            onClick={togglePaperSaver}
+            className={`py-2 px-3 rounded-lg border text-xs font-bold font-mono flex items-center space-x-1 transition cursor-pointer ${
+              isPaperSaver
+                ? 'border-emerald-600 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : (theme === 'dark' ? 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-200' : 'border-slate-300 bg-white text-slate-600 hover:text-slate-900')
+            }`}
+            title={isPaperSaver ? "Paper-Saver Mode ACTIVE: Printer stops right after bill footer (saves continuous paper)" : "Perforation Mode ACTIVE: Printer feeds to 5.5 inch horizontal perforation tear bar"}
+          >
+            <span>{isPaperSaver ? '🌿 Paper-Saver Feed' : '📄 5.5" Perforation'}</span>
+          </button>
         </div>
       </div>
 
@@ -983,7 +1027,7 @@ export default function FastBillingTerminal({
                   }`}>
                     {item ? (
                       <div>
-                        <span>{item.batch.exp_date}</span>
+                        <span>{rollExpiryForwardIfPast(item.batch?.exp_date)}</span>
                         {item.isShortExpiry && (
                           <span className="block text-[8px] font-mono font-black text-amber-600 dark:text-amber-400 uppercase tracking-tighter">
                             EXP &lt;60d

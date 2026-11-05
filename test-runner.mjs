@@ -222,6 +222,40 @@ for (let i = 0; i < stream.length - 1; i++) {
 }
 assert(streamCrlfCount === 33, 'Print stream contains exactly 33 CRLF advances (33 * 1/6" = exactly 5.5" perforation stop)');
 
+// -------------------------------------------------------------
+// TEST SUITE 8: Expiry Normalizer, Zero-BN001 Healing & Paper-Saver Mode
+// -------------------------------------------------------------
+console.log('\n🛡️ Test Suite 8: Expiry Normalizer, Zero-BN001 Healing & Paper-Saver Feed');
+const { normalizeExpiry, rollExpiryForwardIfPast } = await import('./src/utils/billUtils.js');
+
+assert(normalizeExpiry('20271231') === '12/27', 'dBase III Date field 20271231 normalizes to 12/27');
+assert(normalizeExpiry('2027-12-31') === '12/27', 'ISO date 2027-12-31 normalizes to 12/27');
+assert(normalizeExpiry('31/12/2027') === '12/27', 'Indian DD/MM/YYYY date 31/12/2027 normalizes to 12/27');
+assert(normalizeExpiry('1227') === '12/27', '4-digit MMYY 1227 normalizes to 12/27');
+assert(normalizeExpiry('12/27') === '12/27', 'Standard MM/YY 12/27 preserved verbatim');
+
+const rolledPast = rollExpiryForwardIfPast('07/22');
+assert(rolledPast.startsWith('07/') && parseInt(rolledPast.slice(-2), 10) >= 27, 'Past catalog expiry 07/22 rolled forward to valid shelf life (>= 27)');
+assert(rollExpiryForwardIfPast('11/28') === '11/28', 'Future expiry 11/28 preserved verbatim');
+assert(Boolean(rollExpiryForwardIfPast('')), 'Blank expiry assigned non-blank current shelf life');
+
+// Paper-Saver Mode: Stops 3 lines after GET WELL SOON
+const paperSaverBill = { ...sampleBill, paperSaver: true };
+const paperSaverLines = formatTvsBillLines(paperSaverBill);
+assert(paperSaverLines.length === 18, `Paper-Saver mode outputs exactly 18 compact lines without 15 trailing blank lines (Found: ${paperSaverLines.length})`);
+assert(paperSaverLines[14].includes('** GET WELL SOON **'), 'Paper-Saver mode retains ** GET WELL SOON ** footer');
+
+// Test that TVS engine heals BN001 dummy batch if item has medicine code
+const dummyBatchBill = {
+  ...sampleBill,
+  items: [
+    { medicine: { code: 'A921A007', name: 'GABAMA FORTE', company: 'PHARMA LABS' }, batch: { batch_no: 'BN001', exp_date: '' }, rate: 107.0, packSize: 10, quantity: 3, amount: 32.10 }
+  ]
+};
+const dummyLines = formatTvsBillLines(dummyBatchBill);
+assert(!dummyLines[8].includes('BN001'), `TVS line item heals dummy BN001 and replaces with item batch (Found line: "${dummyLines[8]}")`);
+assert(dummyLines[8].includes('12/28'), 'TVS line item guarantees non-blank expiry column (12/28 found in line)');
+
 console.log('\n================================================================');
 console.log(`TEST RUN COMPLETE: ${passedTests} / ${totalTests} PASSED (${failedTests} FAILED)`);
 console.log('================================================================');

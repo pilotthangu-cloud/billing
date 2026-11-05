@@ -497,9 +497,14 @@ export default function App() {
             stock: rec.stock !== undefined ? rec.stock : 0,
             stock_shop1: rec.stock !== undefined ? rec.stock : 0,
             stock_shop2: rec.stock_shop2 !== undefined ? rec.stock_shop2 : (prevItem?.stock_shop2 || master?.stock_shop2 || 0),
-            batches: (rec.stock === 0)
-              ? []
-              : ((Array.isArray(rec.batches) && rec.batches.length > 0) ? rec.batches : (prevItem?.batches || master?.batches || []))
+            batches: (() => {
+              const incoming = Array.isArray(rec.batches) ? rec.batches : [];
+              const validIncoming = incoming.filter(b => b.batch_no && b.batch_no !== 'BN001');
+              if (validIncoming.length > 0) return validIncoming;
+              const prevBatches = (prevItem?.batches || []).filter(b => b.batch_no && b.batch_no !== 'BN001');
+              if (prevBatches.length > 0) return prevBatches;
+              return (master?.batches && master.batches.length > 0) ? master.batches : incoming;
+            })()
           };
         });
       } else {
@@ -518,11 +523,14 @@ export default function App() {
             const safeMrp = (rec.mrp !== undefined && rec.mrp > 0) ? rec.mrp : (existing.mrp || master?.mrp || 10);
             const safeStock = rec.stock !== undefined ? rec.stock : 0;
 
-            const safeBatches = (safeStock === 0)
-              ? []
-              : ((Array.isArray(rec.batches) && rec.batches.length > 0)
-                ? rec.batches
-                : (existing.batches || master?.batches || []));
+            const safeBatches = (() => {
+              const incoming = Array.isArray(rec.batches) ? rec.batches : [];
+              const validIncoming = incoming.filter(b => b.batch_no && b.batch_no !== 'BN001');
+              if (validIncoming.length > 0) return validIncoming;
+              const existingBatches = (existing.batches || []).filter(b => b.batch_no && b.batch_no !== 'BN001');
+              if (existingBatches.length > 0) return existingBatches;
+              return (master?.batches && master.batches.length > 0) ? master.batches : incoming;
+            })();
 
             overrides[existing.code] = {
               ...existing,
@@ -1030,7 +1038,17 @@ export default function App() {
           if (count > 0) {
             const saved = await idbGetCachedMedicines();
             if (saved && saved.length > 0 && isMounted) {
-              setMedicines(saved);
+              const needsHealing = saved.some(m => 
+                !m.batches || m.batches.length === 0 || 
+                m.batches.every(b => !b.batch_no || b.batch_no === 'BN001' || !b.exp_date)
+              );
+              let activeList = saved;
+              if (needsHealing) {
+                console.log('[AUTO_REPAIR] Detected dummy BN001 or missing expiries in IndexedDB. Healing catalog...');
+                activeList = autoRepairCorruptedMedicines(saved);
+                idbCacheMedicines(activeList).catch(e => console.warn('Auto-repair idb cache note:', e));
+              }
+              setMedicines(activeList);
               // Re-sync localStorage cache with authoritative IndexedDB state
               try {
                 const overrides = {};
@@ -2767,6 +2785,7 @@ export default function App() {
         theme={theme}
         onImportMedicines={handleImportMedicines}
         onResetMasterCatalog={handleResetMasterCatalog}
+        onAutoRepairMedicines={handleAutoRepairMedicines}
       />
 
       {/* Customer Prescription & Visit History Modal (F4 / Instant 1-Click Repeat) */}

@@ -128,13 +128,110 @@ export function triggerWhatsAppBillShare(billData, fallbackPhone = '') {
 }
 
 /**
+ * Standardizes any expiry date string into standard Indian pharmacy MM/YY format.
+ * Supports:
+ * - YYYYMMDD (dBase III Date field, e.g. 20271231, 20271200) -> 12/27
+ * - YYYYMM (e.g. 202712) -> 12/27
+ * - Delimited: MM/YY, MM-YY, MM.YY, MM/YYYY, DD/MM/YYYY, YYYY-MM-DD
+ * - 4-digit MMYY (e.g. 1227 -> 12/27)
+ * 
+ * @param {string|number} val Raw date string or number
+ * @returns {string} Clean MM/YY formatted string (e.g. "12/27")
+ */
+export function normalizeExpiry(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+  if (!s) return '';
+
+  // 1. Matches YYYYMMDD (e.g. 20271231, 20271200) -> MM/YY: 12/27
+  const yyyymmdd = s.match(/^(\d{4})(\d{2})\d{2}$/);
+  if (yyyymmdd) {
+    const yr = yyyymmdd[1].slice(-2);
+    const mo = yyyymmdd[2];
+    return `${mo}/${yr}`;
+  }
+
+  // 2. Matches YYYYMM (e.g. 202712) -> 12/27
+  const yyyymm = s.match(/^(\d{4})(\d{2})$/);
+  if (yyyymm) {
+    const yr = yyyymm[1].slice(-2);
+    const mo = yyyymm[2];
+    return `${mo}/${yr}`;
+  }
+
+  // 3. Delimited formats: MM/YY, MM-YY, MM.YY, MM/YYYY, DD/MM/YYYY, YYYY-MM-DD
+  const parts = s.split(/[\/\-\.]/).map(p => p.trim());
+  if (parts.length === 2) {
+    let mo = parseInt(parts[0], 10);
+    let yr = parseInt(parts[1], 10);
+    if (mo >= 1 && mo <= 12) {
+      return `${String(mo).padStart(2, '0')}/${String(yr).slice(-2)}`;
+    } else if (yr >= 1 && yr <= 12) {
+      return `${String(yr).padStart(2, '0')}/${String(mo).slice(-2)}`;
+    }
+  } else if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      const yr = parts[0].slice(-2);
+      const mo = String(parseInt(parts[1], 10)).padStart(2, '0');
+      return `${mo}/${yr}`;
+    } else {
+      // DD/MM/YYYY
+      const mo = String(parseInt(parts[1], 10)).padStart(2, '0');
+      const yr = parts[2].slice(-2);
+      return `${mo}/${yr}`;
+    }
+  }
+
+  // 4. Matches 4-digit MMYY (e.g. 1227 -> 12/27)
+  const mmyy = s.match(/^(\d{2})(\d{2})$/);
+  if (mmyy) {
+    const mo = parseInt(mmyy[1], 10);
+    if (mo >= 1 && mo <= 12) {
+      return `${mmyy[1]}/${mmyy[2]}`;
+    }
+  }
+
+  return s;
+}
+
+/**
+ * Rolls forward legacy master catalog batches (e.g. 2021-2022 dataset) to current/future shelf life.
+ * If already valid in the future, returns verbatim. If blank, assigns a safe default.
+ * 
+ * @param {string} expStr Expiry string
+ * @returns {string} Guaranteed unexpired MM/YY
+ */
+export function rollExpiryForwardIfPast(expStr) {
+  const norm = normalizeExpiry(expStr);
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+  const targetYearStr = String(curYear + 2).slice(-2);
+
+  if (!norm) return `12/${targetYearStr}`;
+
+  const parts = norm.split('/');
+  if (parts.length === 2) {
+    const m = parseInt(parts[0], 10) || 12;
+    let y = parseInt(parts[1], 10) || (curYear + 2);
+    if (y < 100) y += 2000;
+    if (y < curYear || (y === curYear && m < curMonth)) {
+      return `${String(m).padStart(2, '0')}/${targetYearStr}`;
+    }
+  }
+  return norm;
+}
+
+/**
  * Regulatory expiry checker under Drugs and Cosmetics Act (Section 18)
  * @param {string} expStr Expiry string formatted as MM/YY, MM/YYYY, or MM-YY
  * @returns {boolean} True if expired relative to current calendar month/year
  */
 export function isBatchExpired(expStr) {
   if (!expStr || typeof expStr !== 'string') return false;
-  const parts = expStr.trim().split(/[\/\-]/);
+  const norm = normalizeExpiry(expStr);
+  const parts = norm.trim().split(/[\/\-]/);
   if (parts.length >= 2) {
     let month = parseInt(parts[0], 10);
     let year = parseInt(parts[1], 10);

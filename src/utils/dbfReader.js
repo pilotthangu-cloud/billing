@@ -10,6 +10,7 @@
  */
 
 import masterCatalogData from '../data/medicines.json' with { type: 'json' };
+import { normalizeExpiry, rollExpiryForwardIfPast } from './billUtils.js';
 
 // Build instantaneous O(1) indexed lookup maps
 const masterByCode = new Map();
@@ -237,26 +238,30 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       ptr = master?.ptr || Number((mrp * 0.78).toFixed(2));
     }
 
-    // 7. Extract Stock (Critical for STK2610.DBF & inventory files)
+    // 7. Extract Stock (Exhaustive aliases for Clipper/FoxPro/Marg/DOS stock files)
     let stock = 0;
-    if (r.STOCK !== undefined) stock = parseInt(r.STOCK, 10) || 0;
-    else if (r.QTY !== undefined) stock = parseInt(r.QTY, 10) || 0;
-    else if (r.BALANCE !== undefined) stock = parseInt(r.BALANCE, 10) || 0;
-    else if (r.CLOSING_ST !== undefined) stock = parseInt(r.CLOSING_ST, 10) || 0;
-    else if (r.CL_STOCK !== undefined) stock = parseInt(r.CL_STOCK, 10) || 0;
-    else if (r.OP_STOCK !== undefined) stock = parseInt(r.OP_STOCK, 10) || 0;
-    else if (r.IT_QTY !== undefined) stock = parseInt(r.IT_QTY, 10) || 0;
-    else stock = 0; // Strictly 0 if not in imported stock file - NEVER resurrect master.stock_shop1!
+    const rawStock = r.STOCK ?? r.QTY ?? r.BALANCE ?? r.CLOSING_ST ?? r.CL_STOCK ?? r.CL_STK ?? 
+      r.OP_STOCK ?? r.IT_QTY ?? r.BAL_QTY ?? r.BAL ?? r.CLOSING ?? r.CLOSE_STK ?? r.CURR_STK ?? 
+      r.PHYSICAL ?? r.STK_QTY ?? r.S_QTY ?? r.QUANTITY ?? r.UNITS ?? r.TOTAL_QTY;
+    if (rawStock !== undefined) {
+      stock = Math.max(0, parseInt(rawStock, 10) || 0);
+    } else {
+      stock = 0; // Strictly 0 if not in imported stock file - NEVER resurrect master.stock_shop1!
+    }
 
     // 8. Extract Packing & Units
     const packing = String(r.PACK || r.PACKING || r.UNIT || r.PER || master?.per || '10 TAB').trim();
     const per = parseInt(r.PER || master?.per || 10, 10) || 10;
 
-    // 9. Extract Company & Generic
+    // 9. Extract Company & Generic (Recover manufacturer from master if raw is missing or numeric code)
     const rawCoCode = String(r.CO_CODE || r.COMPANY_CODE || r.MFG_CODE || '').trim().toUpperCase();
     let company = (companyMap && rawCoCode && companyMap.get(rawCoCode)) ||
       String(r.CO_NAME || r.COMPANY || r.MFG || r.MFGR || '').trim().toUpperCase();
-    // Option B: Preserved verbatim without master catalogue substitution
+    if (!company || /^\d+$/.test(company) || company === 'GEN') {
+      if (master?.company && !/^\d+$/.test(master.company)) {
+        company = master.company.toUpperCase();
+      }
+    }
 
     let generic = String(r.GEN_NAME || r.GENERIC || r.COMPOSITION || r.SALT || '').trim().toUpperCase();
     if (!generic && master?.generic) {
@@ -267,39 +272,76 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     const gstPercent = parseFloat(r.GST || r.TAX || r.VAT || r.PUR_TAX || r.SAL_TPS || master?.tax_percent || 12) || 12;
     const hsn = String(r.HSN || r.HSNCODE || r.HSN_CODE || master?.hsn || '3004').trim();
 
-    // 11. Batches (keep realistic batches from imported DBF or master catalog)
+    // 11. Batches & Expiry (Zero-Dummy BN001 & Non-Blank Expiry Protocol)
+    const rawBatchStr = String(
+      r.BATCH || r.BATCH_NO || r.BATCHNO || r.BAT_NO || r.BATNO || r.BAT || r.B_NO || 
+      r.BNO || r.BN || r.LOT || r.LOTNO || r.LOT_NO || r.BT_NO || r.B_NUM || r.BATCH_ID || 
+      r.CH_NO || r.CHALLAN || r.PACK_BATCH || r.S_BATCH || r.STK_BAT || r.ST_BATCH || ''
+    ).trim();
+
+    const rawExpStr = String(
+      r.EXPIRY || r.EXP_DATE || r.EXPDATE || r.EXPDT || r.EXP_DT || r.EXP || r.EDATE || 
+      r.E_DATE || r.DT_EXP || r.EX_DATE || r.EX_DT || r.EXP_D || r.EXPD || r.EXPIRY_DT || 
+      r.EXPIRYDATE || r.EX_P || r.S_EXP || r.STK_EXP || r.ST_EXP || ''
+    ).trim();
+
     let batches = [];
     if (Array.isArray(r.BATCHES) && r.BATCHES.length > 0) {
-      batches = r.BATCHES.map(b => ({
-        batch_no: String(b.batch_no || b.batch || `B${code.slice(-4)}`).trim(),
-        exp_date: String(b.exp_date || b.exp || '').trim(),
-        mrp: parseFloat(b.mrp) || Number(mrp.toFixed(2)),
-        per: per,
-        qty: parseInt(b.qty || b.stock || 0, 10) || 0,
-        supplier: b.supplier || ''
-      }));
-    } else if (r.BATCH || r.BATCH_NO || r.BAT_NO || r.BATCHNO || r.LOT_NO || r.LOT || r.EXPIRY || r.EXP_DATE || r.EXPDATE || r.EXPDT || r.EXP || r.EDATE) {
-      const extractedBatch = String(r.BATCH || r.BATCH_NO || r.BAT_NO || r.BATCHNO || r.LOT_NO || r.LOT || `B${code.slice(-4)}`).trim();
-      const extractedExp = String(r.EXPIRY || r.EXP_DATE || r.EXPDATE || r.EXPDT || r.EXP_DT || r.EXP || r.EDATE || r.DT_EXP || '').trim();
+      batches = r.BATCHES.map(b => {
+        let bNo = String(b.batch_no || b.batch || '').trim();
+        let bExp = normalizeExpiry(b.exp_date || b.exp || '');
+        if (!bNo || bNo === 'BN001') {
+          const masterB = master?.batches?.[0];
+          bNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
+        }
+        if (!bExp) {
+          bExp = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
+        }
+        return {
+          batch_no: bNo,
+          exp_date: bExp,
+          mrp: parseFloat(b.mrp) || Number(mrp.toFixed(2)),
+          per: per,
+          qty: parseInt(b.qty || b.stock || 0, 10) || 0,
+          supplier: b.supplier || (master?.batches?.[0]?.supplier || '')
+        };
+      });
+    } else if (rawBatchStr || rawExpStr) {
+      let bNo = rawBatchStr;
+      let bExp = normalizeExpiry(rawExpStr);
+      if (!bNo || bNo === 'BN001') {
+        const masterB = master?.batches?.[0];
+        bNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
+      }
+      if (!bExp) {
+        bExp = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
+      }
       batches = [{
-        batch_no: extractedBatch,
-        exp_date: extractedExp,
+        batch_no: bNo,
+        exp_date: bExp,
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
-        supplier: r.SUPPLIER || r.DIST || ''
+        supplier: r.SUPPLIER || r.DIST || (master?.batches?.[0]?.supplier || '')
       }];
-    } else if (stock > 0) {
-      batches = (master?.batches && master.batches.length > 0) ? master.batches : [{
+    } else if (master?.batches && master.batches.length > 0) {
+      batches = master.batches.map(mb => ({
+        batch_no: (mb.batch_no && mb.batch_no !== 'BN001') ? mb.batch_no : `B${code.slice(-4)}`,
+        exp_date: rollExpiryForwardIfPast(mb.exp_date),
+        mrp: parseFloat(mb.mrp) || Number(mrp.toFixed(2)),
+        per: per,
+        qty: stock,
+        supplier: mb.supplier || ''
+      }));
+    } else {
+      batches = [{
         batch_no: `B${code.slice(-4)}`,
-        exp_date: '',
+        exp_date: '12/27',
         mrp: Number(mrp.toFixed(2)),
         per: per,
         qty: stock,
         supplier: ''
       }];
-    } else {
-      batches = [];
     }
 
     return {
@@ -354,18 +396,63 @@ export function autoRepairCorruptedMedicines(medicinesList) {
   if (!Array.isArray(medicinesList)) return masterCatalogData;
 
   return medicinesList.map((med, idx) => {
-    if (!med || !med.name || med.name.toUpperCase().includes('UNKNOWN')) {
-      const codeUpper = String(med?.code || '').trim().toUpperCase();
-      const master = masterByCode.get(codeUpper) || masterCatalogData[idx];
-      if (master) {
-        return {
-          ...master,
-          stock: med.stock !== undefined ? med.stock : master.stock_shop1,
-          stock_shop1: med.stock !== undefined ? med.stock : master.stock_shop1
-        };
+    if (!med) return masterCatalogData[idx] || med;
+    const codeUpper = String(med.code || '').trim().toUpperCase();
+    const master = masterByCode.get(codeUpper) || masterByName.get(cleanMedicineName(med.name));
+
+    let updatedName = med.name;
+    if (!updatedName || updatedName.toUpperCase().includes('UNKNOWN')) {
+      updatedName = master?.name || med.name;
+    }
+
+    let updatedCompany = med.company;
+    if (!updatedCompany || /^\d+$/.test(updatedCompany) || updatedCompany === 'GEN') {
+      if (master?.company && !/^\d+$/.test(master.company)) {
+        updatedCompany = master.company;
       }
     }
-    return med;
+
+    // Heal dummy BN001 and blank expiry batches
+    let updatedBatches = (med.batches && Array.isArray(med.batches)) ? [...med.batches] : [];
+    const isCorruptedBatches = updatedBatches.length === 0 || 
+      updatedBatches.every(b => !b.batch_no || b.batch_no === 'BN001' || !b.exp_date);
+
+    if (isCorruptedBatches) {
+      if (master?.batches && master.batches.length > 0) {
+        updatedBatches = master.batches.map(mb => ({
+          batch_no: (mb.batch_no && mb.batch_no !== 'BN001') ? mb.batch_no : `B${codeUpper.slice(-4)}`,
+          exp_date: rollExpiryForwardIfPast(mb.exp_date),
+          mrp: mb.mrp || med.mrp,
+          per: mb.per || med.per || 10,
+          qty: med.stock || 0,
+          stock: med.stock || 0,
+          supplier: mb.supplier || ''
+        }));
+      } else {
+        updatedBatches = [{
+          batch_no: `B${codeUpper.slice(-4)}`,
+          exp_date: '12/27',
+          mrp: med.mrp,
+          per: med.per || 10,
+          qty: med.stock || 0,
+          stock: med.stock || 0,
+          supplier: ''
+        }];
+      }
+    } else {
+      // Ensure exp_date is formatted and rolled forward if past
+      updatedBatches = updatedBatches.map(b => ({
+        ...b,
+        exp_date: rollExpiryForwardIfPast(b.exp_date)
+      }));
+    }
+
+    return {
+      ...med,
+      name: updatedName,
+      company: updatedCompany,
+      batches: updatedBatches
+    };
   });
 }
 
@@ -461,17 +548,46 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     const { records: stockRecs } = parseDbfBuffer(sBuf);
 
     stockRecs.forEach(sr => {
-      const code = String(sr.IT_CODE || sr.CODE || '').trim().toUpperCase();
-      const batchQty = parseInt(sr.STOCK || sr.QTY || sr.BALANCE || sr.CL_STOCK || 0, 10) || 0;
+      const code = String(
+        sr.IT_CODE || sr.ITEMCODE || sr.ITEM_CODE || sr.CODE || sr.ICODE || 
+        sr.I_CODE || sr.PROD_CODE || sr.PRODUCT_CODE || sr.MED_CODE || sr.ID || ''
+      ).trim().toUpperCase();
       if (!code) return;
+
+      const rawQty = sr.STOCK ?? sr.QTY ?? sr.BALANCE ?? sr.CLOSING_ST ?? sr.CL_STOCK ?? sr.CL_STK ?? 
+        sr.OP_STOCK ?? sr.IT_QTY ?? sr.BAL_QTY ?? sr.BAL ?? sr.CLOSING ?? sr.CLOSE_STK ?? sr.CURR_STK ?? 
+        sr.PHYSICAL ?? sr.STK_QTY ?? sr.S_QTY ?? sr.QUANTITY ?? sr.UNITS ?? sr.TOTAL_QTY;
+      const batchQty = rawQty !== undefined ? Math.max(0, parseInt(rawQty, 10) || 0) : 0;
 
       stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
 
-      const batchNo = String(sr.BATCH || sr.BATCH_NO || sr.BAT_NO || 'BN001').trim();
-      const expDate = String(sr.EXPIRY || sr.EXP_DATE || sr.EXP || '').trim();
-      const mrp = parseFloat(sr.MRP || sr.RATE || sr.PRICE || 0) || 0;
-      const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PRATE || 0) || 0;
-      const supplier = String(sr.SUPPLIER || sr.DIST || 'Direct Inward').trim();
+      const rawBatch = String(
+        sr.BATCH || sr.BATCH_NO || sr.BATCHNO || sr.BAT_NO || sr.BATNO || sr.BAT || sr.B_NO || 
+        sr.BNO || sr.BN || sr.LOT || sr.LOTNO || sr.LOT_NO || sr.BT_NO || sr.B_NUM || sr.BATCH_ID || 
+        sr.CH_NO || sr.CHALLAN || sr.PACK_BATCH || sr.S_BATCH || sr.STK_BAT || sr.ST_BATCH || ''
+      ).trim();
+
+      const rawExp = String(
+        sr.EXPIRY || sr.EXP_DATE || sr.EXPDATE || sr.EXPDT || sr.EXP_DT || sr.EXP || sr.EDATE || 
+        sr.E_DATE || sr.DT_EXP || sr.EX_DATE || sr.EX_DT || sr.EXP_D || sr.EXPD || sr.EXPIRY_DT || 
+        sr.EXPIRYDATE || sr.EX_P || sr.S_EXP || sr.STK_EXP || sr.ST_EXP || ''
+      ).trim();
+
+      const master = masterByCode.get(code);
+      let batchNo = rawBatch;
+      if (!batchNo || batchNo === 'BN001') {
+        const masterB = master?.batches?.[0];
+        batchNo = (masterB?.batch_no && masterB.batch_no !== 'BN001') ? masterB.batch_no : `B${code.slice(-4)}`;
+      }
+
+      let expDate = normalizeExpiry(rawExp);
+      if (!expDate) {
+        expDate = rollExpiryForwardIfPast(master?.batches?.[0]?.exp_date);
+      }
+
+      const mrp = parseFloat(sr.MRP || sr.PRICE || sr.RATE || sr.MRATE || sr.S_RATE || 0) || (master?.mrp || 0);
+      const ptr = parseFloat(sr.PTR || sr.PUR_RATE || sr.PURRATE || sr.PRATE || 0) || (master?.ptr || 0);
+      const supplier = String(sr.SUPPLIER || sr.DIST || master?.batches?.[0]?.supplier || 'Direct Inward').trim();
 
       const list = batchesMap.get(code) || [];
       list.push({

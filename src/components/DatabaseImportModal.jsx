@@ -18,7 +18,8 @@ export default function DatabaseImportModal({
   onClose,
   theme,
   onImportMedicines,
-  onResetMasterCatalog
+  onResetMasterCatalog,
+  onAutoRepairMedicines
 }) {
   const isDark = theme === 'dark';
 
@@ -294,6 +295,24 @@ export default function DatabaseImportModal({
             >
               Cancel
             </button>
+
+            {onAutoRepairMedicines && (
+              <button
+                onClick={() => {
+                  onAutoRepairMedicines();
+                  onClose();
+                }}
+                className={`px-3 py-2 rounded-lg border text-xs font-bold flex items-center space-x-1 ${
+                  isDark 
+                    ? 'border-emerald-800 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60' 
+                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                }`}
+                title="Heals dummy BN001 batches, restores master expiries, and preserves all your live shop stock"
+              >
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Fix Batches & Expiries</span>
+              </button>
+            )}
 
             {onResetMasterCatalog && (
               <button

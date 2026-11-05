@@ -34,7 +34,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Beta Pharmacy POS"
-    }
+    },
+    "compression": "normal"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

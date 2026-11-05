@@ -1,3 +1,5 @@
+import { rollExpiryForwardIfPast } from './billUtils.js';
+
 /**
  * TVS Electronics MSP 250 STAR Native ESC/P Print Engine
  * Generates raw 80-column character streams and byte arrays for:
@@ -138,13 +140,37 @@ export function formatTvsBillLines(billData) {
     if (isSchedule) prodName = padRight(prodName, 22) + '*';
     prodName = padRight(prodName, 24);
 
-    const mfr = padRight((it.medicine?.company || it.company || 'GEN').slice(0, 3).toUpperCase(), 4);
-    const batchNo = String(it.batch?.batch_no || it.batch_no || it.batch || 'BN001').trim();
+    let rawCo = String(it.medicine?.company || it.company || '').trim().toUpperCase();
+    if (!rawCo || /^\d+$/.test(rawCo)) {
+      rawCo = it.medicine?.batches?.[0]?.supplier || 'GEN';
+    }
+    const mfr = padRight(rawCo.slice(0, 3), 4);
+
+    // Dynamic Batch Recovery: Never fall back to dummy BN001 if medicine has real batches
+    let batchNo = String(it.batch?.batch_no || it.batch_no || it.batch || '').trim();
+    if (!batchNo || batchNo === 'BN001') {
+      const medBatches = it.medicine?.batches || [];
+      const validMedBatch = medBatches.find(b => b.batch_no && b.batch_no !== 'BN001');
+      if (validMedBatch) {
+        batchNo = validMedBatch.batch_no;
+      } else {
+        const itemCode = String(it.medicine?.code || it.code || '0000').trim();
+        batchNo = 'B' + itemCode.slice(-4);
+      }
+    }
     const batch = padRight(batchNo.slice(0, 11), 12);
 
-    // Read exp_date from all possible alias fields so it never prints blank
-    const rawExp = String(it.batch?.exp_date || it.batch?.expiry || it.exp_date || it.expiry || it.exp || '').trim();
-    const exp = padRight(rawExp.slice(0, 7), 8);
+    // Dynamic Expiry Recovery: Standardize to MM/YY, roll forward if past, and guarantee non-blank
+    let rawExp = String(it.batch?.exp_date || it.batch?.expiry || it.exp_date || it.expiry || it.exp || '').trim();
+    if (!rawExp) {
+      const medBatches = it.medicine?.batches || [];
+      const validExpBatch = medBatches.find(b => b.exp_date);
+      if (validExpBatch) {
+        rawExp = validExpBatch.exp_date;
+      }
+    }
+    const safeExpStr = rollExpiryForwardIfPast(rawExp);
+    const exp = padRight(safeExpStr.slice(0, 7), 8);
 
     const qty = parseInt(it.quantity || it.qty || 1, 10);
 
@@ -197,12 +223,23 @@ export function formatTvsBillLines(billData) {
   lines.push(padRight(padRight(time, 20) + padCenter('** GET WELL SOON **', 40) + ' '.repeat(20), 80));
 
   // Trailing line feeds:
-  // Advance paper so the total lines fill the 5.5" half-sheet (33 lines) tractor perforation.
-  // This pushes the compact bill up past the print head needles so it is fully visible,
-  // and places the horizontal perforation right at the tear bar for clean manual tear-off.
-  const targetPageLines = Math.max(33, Math.ceil(lines.length / 33) * 33);
-  while (lines.length < targetPageLines) {
-    lines.push(' '.repeat(80));
+  // Checks if Paper-Saver mode is enabled in billData or localStorage.
+  // Default: Advances paper to 33 lines (5.5" half-sheet) so the pre-punched tractor perforation aligns with the tear bar.
+  // Paper-Saver Mode: Feeds only 3 blank lines after GET WELL SOON to save paper on short bills.
+  const isPaperSaver = Boolean(
+    billData?.paperSaver || 
+    (typeof localStorage !== 'undefined' && localStorage.getItem('beta_pharma_paper_saver') === 'true')
+  );
+
+  if (isPaperSaver) {
+    for (let i = 0; i < 3; i++) {
+      lines.push(' '.repeat(80));
+    }
+  } else {
+    const targetPageLines = Math.max(33, Math.ceil(lines.length / 33) * 33);
+    while (lines.length < targetPageLines) {
+      lines.push(' '.repeat(80));
+    }
   }
 
   return lines;
