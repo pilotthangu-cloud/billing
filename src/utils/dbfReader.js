@@ -463,7 +463,18 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
   // master; prefer that exact name instead of misclassifying every ITEM*.DBF
   // as another legacy dataset.
   const exactItemFiles = files.filter(f => f.name.toUpperCase() === 'ITEMFILE.DBF');
-  const itemCandidates = exactItemFiles.length > 0 ? exactItemFiles : broadItemCandidates;
+  let itemCandidates = exactItemFiles.length > 0 ? exactItemFiles : broadItemCandidates;
+  if (itemCandidates.length > 1) {
+    // A live RETAILG installation commonly keeps DATA-OLD beside DATA. When
+    // the user selects the RETAILG parent, prefer the one exact current DATA
+    // directory and ignore archival siblings such as DATA-OLD.
+    const currentDataCandidates = itemCandidates.filter(file => {
+      const parent = parentPath(file);
+      const folderName = parent.split('/').filter(Boolean).pop() || '';
+      return folderName.toUpperCase() === 'DATA';
+    });
+    if (currentDataCandidates.length === 1) itemCandidates = currentDataCandidates;
+  }
   if (itemCandidates.length > 1) {
     const paths = itemCandidates.map(relativePath).sort().join('\n - ');
     throw new Error(

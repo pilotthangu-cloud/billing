@@ -46,6 +46,7 @@ export default function DatabaseImportModal({
       setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Import error:', err);
+      setParsedRecords([]);
       setStatusMessage(`Error parsing DBF folder: ${err.message || 'Invalid format'}`);
     } finally {
       setIsParsing(false);
@@ -70,6 +71,7 @@ export default function DatabaseImportModal({
       setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Drop error:', err);
+      setParsedRecords([]);
       setStatusMessage(`Error reading dropped folder: ${err.message || 'Invalid format'}`);
     } finally {
       setIsParsing(false);
@@ -77,14 +79,22 @@ export default function DatabaseImportModal({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const file = files[0];
 
-    setSelectedFile(file);
+    setSelectedFile(files.length === 1 ? file : { name: `${files.length} selected files` });
     setIsParsing(true);
-    setStatusMessage(`Parsing ${file.name}...`);
+    setParsedRecords([]);
+    setStatusMessage(files.length > 1 ? `Scanning ${files.length} selected DBF files...` : `Parsing ${file.name}...`);
 
     try {
+      if (files.length > 1) {
+        const res = await processDbfFolderFiles(files, setStatusMessage);
+        setParsedRecords(res.medicines);
+        setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
+        return;
+      }
       const fileName = file.name.toUpperCase();
       if (fileName.endsWith('.DBF')) {
         const buffer = await file.arrayBuffer();
@@ -103,6 +113,7 @@ export default function DatabaseImportModal({
       }
     } catch (err) {
       console.error('Import parse error:', err);
+      setParsedRecords([]);
       setStatusMessage(`Error parsing file: ${err.message || 'Invalid format'}`);
     } finally {
       setIsParsing(false);
@@ -188,14 +199,15 @@ export default function DatabaseImportModal({
             }`}>
               <Upload className="w-8 h-8 mx-auto mb-2 text-sky-500" />
               <span className="text-sm font-bold block">
-                Select Single .DBF / .CSV File
+                Select DBF / CSV Files
               </span>
               <span className="text-[11px] text-slate-500 block mt-1 leading-normal">
-                Double-click into <strong>DATA</strong>, click on <strong>ITEMFILE.DBF</strong> or <strong>STK2610.DBF</strong>, then click <strong>Open</strong>.
+                Open <strong>DATA</strong>, press <strong>Ctrl+A</strong> to select every DBF, then click <strong>Open</strong>.
               </span>
               <input
                 type="file"
                 accept=".dbf,.csv,.txt"
+                multiple
                 onChange={handleFileUpload}
                 className="hidden"
               />
