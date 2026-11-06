@@ -9,7 +9,11 @@
  */
 
 const DB_NAME = 'BetaPharmaDB';
-const DB_VERSION = 4;
+// Keep this above every previously shipped browser schema. Opening an older
+// version against a database created by a newer deployment throws VersionError
+// and was incorrectly surfaced to the operator as "IndexedDB unavailable".
+// IndexedDB upgrades in place; existing records are preserved.
+const DB_VERSION = 20;
 
 let dbInstance = null;
 
@@ -95,6 +99,11 @@ export function openPharmaDB() {
 
     request.onerror = (event) => {
       console.error('Failed to open IndexedDB:', event.target.error);
+      resolve(null);
+    };
+
+    request.onblocked = () => {
+      console.warn('IndexedDB upgrade is blocked by another open POS tab. Close other POS tabs and retry.');
       resolve(null);
     };
   });
