@@ -184,7 +184,7 @@ assert(supabaseClientSource.includes(".upsert(chunk, { onConflict: 'medicine_cod
 assert(supabaseClientSource.includes('success: failures.length === 0'), 'Partial catalog upload cannot report success');
 assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent printer fallback awaits and returns the real spooler result');
 assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
-assert(topNavigationSource.includes('Beta.Pharmacy.POS.1.0.0.repaired.exe'), 'Website exposes the repaired 64-bit desktop download');
+assert(topNavigationSource.includes('Beta.Pharmacy.POS.64bit.SELECT-ALL-FINAL.exe'), 'Website exposes the final repaired 64-bit desktop download');
 assert(topNavigationSource.includes('Beta.Pharmacy.POS.Win7.32bit.repaired.exe'), 'Website exposes a separate repaired Windows 7 32-bit download');
 assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 assert(dbfReaderSource.includes("folderName.toUpperCase() === 'DATA'"), 'RETAILG parent import prefers current DATA over DATA-OLD');

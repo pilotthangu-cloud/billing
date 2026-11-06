@@ -123,7 +123,7 @@ export default function TopNavigationMenu({
 
             {!window.electronAPI?.isElectron && (
               <a
-                href="https://github.com/pilotthangu-cloud/billing/releases/download/v1.0.0/Beta.Pharmacy.POS.1.0.0.repaired.exe"
+                href="https://github.com/pilotthangu-cloud/billing/releases/download/v1.0.0/Beta.Pharmacy.POS.64bit.SELECT-ALL-FINAL.exe"
                 target="_blank"
                 rel="noreferrer"
                 className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
