@@ -192,10 +192,12 @@ export default function BackupManagerModal({
               <ShieldCheck className="w-6 h-6 text-emerald-500 shrink-0" />
               <div>
                 <h4 className="text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                  DATA PROTECTION: ACTIVE & SAFE
+                  {backupStats.totalBackups > 0 ? 'LOCAL BACKUP: VERIFIED PRESENT' : 'LOCAL BACKUP: NOT YET CONFIRMED'}
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                  Local disk snapshots retained for <strong>730 Days</strong>. 
+                  {backupStats.totalBackups > 0
+                    ? <span><strong>{backupStats.totalBackups}</strong> committed daily snapshot(s); retention target <strong>730 days</strong>. </span>
+                    : <span>No committed local snapshot is currently visible. Start a shift or export a backup before relying on recovery. </span>}
                   {storageEstimate && (
                     <span> Cloud Storage: <strong>{storageEstimate.usedMB} MB / {storageEstimate.maxMB} MB ({storageEstimate.pctUsed}% used)</strong>.</span>
                   )}

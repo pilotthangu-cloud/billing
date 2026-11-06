@@ -277,6 +277,41 @@ assert(safeImport.importIssues.includes('UNALLOCATED_STOCK_NO_BATCH'), 'Positive
 assert(oldImport.batches[0].batch_no === 'REAL42' && oldImport.batches[0].exp_date === '07/22', 'Recorded legacy batch and expiry are preserved verbatim');
 assert(oldImport.importIssues.includes('ACTIVE_STOCK_EXPIRED_BATCH'), 'Positive stock tied to an expired batch is explicitly flagged');
 
+// -------------------------------------------------------------
+// TEST SUITE 10: Branch-Correct FEFO Batch Transfers
+// -------------------------------------------------------------
+console.log('\n🏪 Test Suite 10: Branch-Correct FEFO Batch Transfers');
+const { planBatchTransfer } = await import('./src/utils/inventoryTransfer.js');
+const transferSource = {
+  code: 'T001',
+  batches: [
+    { batch_no: 'EARLY', exp_date: '06/27', branch_id: 'MAIN', qty: 4, stock: 4, mrp: 20 },
+    { batch_no: 'LATER', exp_date: '12/28', branch_id: 'MAIN', qty: 8, stock: 8, mrp: 20 },
+    { batch_no: 'OTHER', exp_date: '01/29', branch_id: 'POLYCLINIC', qty: 3, stock: 3, mrp: 20 }
+  ]
+};
+const transferPlan = planBatchTransfer(transferSource, 'MAIN', 'POLYCLINIC', 6);
+assert(transferPlan.success, 'Transfer plan succeeds when source has enough verified batch stock');
+assert(transferPlan.allocations[0].batchNo === 'EARLY' && transferPlan.allocations[0].qty === 4, 'Transfer consumes the earliest-expiry source batch first');
+assert(transferPlan.allocations[1].batchNo === 'LATER' && transferPlan.allocations[1].qty === 2, 'Transfer continues into the next source batch for the exact remainder');
+assert(transferPlan.fromTotal === 6 && transferPlan.toTotal === 9, 'Source and destination branch totals reconcile after transfer');
+assert(transferSource.batches[0].qty === 4, 'Transfer planning does not mutate the original medicine record');
+const rejectedTransfer = planBatchTransfer(transferSource, 'MAIN', 'POLYCLINIC', 99);
+assert(!rejectedTransfer.success && rejectedTransfer.transferableQty === 12, 'Transfer rejects quantities above verified source batch stock');
+
+// -------------------------------------------------------------
+// TEST SUITE 11: Backup Checksum & Tamper Rejection
+// -------------------------------------------------------------
+console.log('\n💾 Test Suite 11: Backup Checksum & Tamper Rejection');
+const { generateBackupChecksum, validateBackupSnapshot } = await import('./src/utils/backupEngine.js');
+const backupDataA = { medicines: [{ code: 'A1', name: 'TEST', stock_shop1: 3 }], recentBills: [], branchId: 'MAIN' };
+const backupDataB = { branchId: 'MAIN', recentBills: [], medicines: [{ name: 'TEST', stock_shop1: 3, code: 'A1' }] };
+const backupChecksum = generateBackupChecksum(backupDataA);
+assert(backupChecksum === generateBackupChecksum(backupDataB), 'Backup checksum is deterministic regardless of object key order');
+assert(validateBackupSnapshot({ checksum: backupChecksum, data: backupDataA }).valid, 'Backup with matching checksum passes validation');
+const tamperedBackup = { ...backupDataA, medicines: [{ ...backupDataA.medicines[0], stock_shop1: 999 }] };
+assert(!validateBackupSnapshot({ checksum: backupChecksum, data: tamperedBackup }).valid, 'Tampered stock content is rejected by checksum validation');
+
 console.log('\n================================================================');
 console.log(`TEST RUN COMPLETE: ${passedTests} / ${totalTests} PASSED (${failedTests} FAILED)`);
 console.log('================================================================');

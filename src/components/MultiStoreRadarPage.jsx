@@ -46,16 +46,20 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
     return list;
   }, [medicines]);
 
-  const handleDispatchRebalance = (cand) => {
+  const handleDispatchRebalance = async (cand) => {
     if (!cand) return;
     if (onTransferStock) {
-      onTransferStock({
+      const result = await onTransferStock({
         medCode: cand.medCode,
         medicineName: cand.name,
         fromBranchId: cand.fromBranchId,
         toBranchId: cand.toBranchId,
         qty: cand.transferQty
       });
+      if (!result?.success) {
+        setTransferSuccess(`Transfer failed: ${result?.error || 'Inventory validation failed.'}`);
+        return;
+      }
     } else {
       handleTransfer(
         { code: cand.medCode, name: cand.name },
@@ -68,20 +72,22 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
     setTimeout(() => setTransferSuccess(null), 5000);
   };
 
-  const handleDispatchAllRebalance = () => {
+  const handleDispatchAllRebalance = async () => {
     if (rebalanceCandidates.length === 0) return;
-    rebalanceCandidates.forEach(cand => {
+    let completed = 0;
+    for (const cand of rebalanceCandidates) {
       if (onTransferStock) {
-        onTransferStock({
+        const result = await onTransferStock({
           medCode: cand.medCode,
           medicineName: cand.name,
           fromBranchId: cand.fromBranchId,
           toBranchId: cand.toBranchId,
           qty: cand.transferQty
         });
+        if (result?.success) completed += 1;
       }
-    });
-    setTransferSuccess(`🚀 Dispatched all ${rebalanceCandidates.length} inter-store stock transfers.`);
+    }
+    setTransferSuccess(`Completed ${completed} of ${rebalanceCandidates.length} validated inter-store stock transfers.`);
     setTimeout(() => setTransferSuccess(null), 5000);
   };
 
@@ -97,15 +103,19 @@ export default function MultiStoreRadarPage({ theme, medicines, onBackToBilling,
         );
       }).slice(0, 60);
 
-  const handleTransfer = (med, fromShop, toShop, qty = 5) => {
+  const handleTransfer = async (med, fromShop, toShop, qty = 5) => {
     if (onTransferStock) {
-      onTransferStock({
+      const result = await onTransferStock({
         medCode: med.code,
         medicineName: med.name,
         fromBranchId: fromShop.includes('Polyclinic') ? 'POLYCLINIC' : 'MAIN',
         toBranchId: toShop.includes('Polyclinic') ? 'POLYCLINIC' : 'MAIN',
         qty
       });
+      if (!result?.success) {
+        setTransferSuccess(`Transfer failed: ${result?.error || 'Inventory validation failed.'}`);
+        return;
+      }
     } else {
       const trNumber = `TR-${Date.now().toString().slice(-6)}`;
       const note = {

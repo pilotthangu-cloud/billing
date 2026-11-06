@@ -130,27 +130,29 @@ export async function saveDailyBackupSnapshot(medicines, recentBills, activeBran
       operator: activeShift?.staffName || 'Counter Staff',
       medicinesCount: (medicines || []).length,
       billsCount: (recentBills || []).length,
-      snapshot: snapshotData
+      snapshot: snapshotData,
+      checksum: generateBackupChecksum(snapshotData)
     };
 
-    const tx = db.transaction('backups', 'readwrite');
-    const store = tx.objectStore('backups');
-    store.put(backupPayload);
+    return await new Promise((resolve) => {
+      const tx = db.transaction('backups', 'readwrite');
+      const store = tx.objectStore('backups');
+      store.put(backupPayload);
 
-    // Prune backups older than 730 days (2+ years)
-    const cutoffTimestamp = Date.now() - (BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    const cursorReq = store.openCursor();
-    cursorReq.onsuccess = (e) => {
-      const cursor = e.target.result;
-      if (cursor) {
-        if (cursor.value.timestamp && cursor.value.timestamp < cutoffTimestamp) {
-          cursor.delete();
+      // Prune backups older than 730 days (2+ years)
+      const cutoffTimestamp = Date.now() - (BACKUP_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const cursorReq = store.openCursor();
+      cursorReq.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.value.timestamp && cursor.value.timestamp < cutoffTimestamp) cursor.delete();
+          cursor.continue();
         }
-        cursor.continue();
-      }
-    };
-
-    return backupPayload;
+      };
+      tx.oncomplete = () => resolve({ success: true, ...backupPayload });
+      tx.onerror = () => resolve({ success: false, error: tx.error?.message || 'Backup transaction failed.' });
+      tx.onabort = () => resolve({ success: false, error: tx.error?.message || 'Backup transaction aborted.' });
+    });
   } catch (err) {
     console.warn('Daily backup engine note:', err);
     return null;
@@ -292,6 +294,13 @@ export function validateBackupSnapshot(snapshot) {
     }
   }
 
+  if (snapshot.checksum) {
+    const actualChecksum = generateBackupChecksum(payload);
+    if (String(snapshot.checksum) !== actualChecksum) {
+      return { valid: false, error: `Validation Error: Backup checksum mismatch (expected ${snapshot.checksum}, calculated ${actualChecksum}).` };
+    }
+  }
+
   return { valid: true, payload };
 }
 
@@ -305,6 +314,10 @@ export async function restoreFromVerifiedCloudBackup(branchId = 'MAIN', options 
   }
 
   const backup = res.backup;
+  const actualCloudChecksum = generateBackupChecksum(backup.data);
+  if (!backup.checksum || actualCloudChecksum !== String(backup.checksum)) {
+    return { success: false, error: 'Cloud backup content failed checksum verification. Restore was blocked.' };
+  }
   const validation = validateBackupSnapshot(backup.data || {});
   if (!validation.valid) {
     return { success: false, error: validation.error };

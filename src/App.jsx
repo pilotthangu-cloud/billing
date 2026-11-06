@@ -58,6 +58,7 @@ import {
 } from './utils/supabaseClient';
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
 import { isBatchExpired, normalizeExpiry } from './utils/billUtils';
+import { planBatchTransfer } from './utils/inventoryTransfer';
 
 import initialMedicines from './data/medicines.json';
 
@@ -526,6 +527,7 @@ export default function App() {
     } catch (err) {
       console.warn('[STORAGE_WARNING] Could not cache added medicine index:', err);
     }
+    medicinesRef.current = updated;
     setMedicines(updated);
 
     uploadMedicinesCatalogToSupabase(updated).catch(err => {
@@ -688,6 +690,8 @@ export default function App() {
 
   // Medicines Catalog (Dynamic state loaded with persistent localStorage deltas)
   const [medicines, setMedicines] = useState(getInitialMedicines);
+  const medicinesRef = useRef(medicines);
+  useEffect(() => { medicinesRef.current = medicines; }, [medicines]);
   const [isCatalogHydrating, setIsCatalogHydrating] = useState(true);
   const [isUnverifiedReturnsOpen, setIsUnverifiedReturnsOpen] = useState(false);
   const [isNewMedModalOpen, setIsNewMedModalOpen] = useState(false);
@@ -1217,7 +1221,9 @@ export default function App() {
   // Automated 2+ Years Daily Backup Snapshot Engine (Local Hard Drive)
   useEffect(() => {
     if (medicines && medicines.length > 0 && activeShift) {
-      saveDailyBackupSnapshot(medicines, recentBills, activeBranch, activeShift);
+      saveDailyBackupSnapshot(medicines, recentBills, activeBranch, activeShift).then(result => {
+        if (!result?.success) console.error('[BACKUP] Daily snapshot was not committed:', result?.error || 'Unknown error');
+      });
     }
   }, [activeShift, recentBills.length]);
 
@@ -1425,6 +1431,7 @@ export default function App() {
     } catch (e) {
       console.warn('[STORAGE_WARNING] Purchase fallback cache was not updated:', e);
     }
+    medicinesRef.current = updated;
     setMedicines(updated);
 
     await Promise.all(modifiedMeds.map(m => syncEngine.recordMedicineDelta(m)));
@@ -1447,14 +1454,15 @@ export default function App() {
     const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
     const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
 
-    const updated = medicines.map(m => {
+    const updated = medicinesRef.current.map(m => {
       if (m.code === medCodeOrName || m.name.toLowerCase() === String(medCodeOrName).toLowerCase()) {
         const med = { ...m };
         const oldBatches = med.batches || [];
-        const targetBatch = oldBatches.find(b => b.batch_no === batchNo);
+        const targetBatch = oldBatches.find(b => b.batch_no === batchNo && (b.branch_id || 'MAIN') === targetBranchId);
+        if (!targetBatch) return m;
         const batchQty = targetBatch ? (targetBatch.qty !== undefined ? targetBatch.qty : (targetBatch.stock !== undefined ? targetBatch.stock : 0)) : 0;
         
-        med.batches = oldBatches.filter(b => b.batch_no !== batchNo);
+        med.batches = oldBatches.filter(b => !(b.batch_no === batchNo && (b.branch_id || 'MAIN') === targetBranchId));
         med[targetStockKey] = Math.max(0, (med[targetStockKey] || 0) - batchQty);
         med.stock = med[targetStockKey];
         med.updatedAt = new Date().toISOString();
@@ -1467,23 +1475,21 @@ export default function App() {
       return m;
     });
 
-    try {
-      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-      if (targetBranchId) {
-        localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
-        localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
-      }
-    } catch (e) {}
-
-    setMedicines(updated);
-
     if (modifiedMed) {
       const idbResult = await idbUpdateMedicines([modifiedMed]);
       if (!idbResult || !idbResult.success) {
         console.error('[STORAGE_ERROR] Failed to persist batch deletion to IndexedDB:', idbResult?.error);
-        alert(`Storage Warning: Batch "${batchNo}" deleted from active view, but local database persistence failed: ${idbResult?.error || 'Write error'}. Changes remain preserved in fallback storage.`);
+        alert(`Batch was not deleted because local database persistence failed: ${idbResult?.error || 'Write error'}.`);
+        return;
       }
-      syncEngine.recordMedicineDelta(modifiedMed);
+      medicinesRef.current = updated;
+      setMedicines(updated);
+      try {
+        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+        localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
+        localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
+      } catch (e) {}
+      await syncEngine.recordMedicineDelta(modifiedMed);
     }
   };
 
@@ -1518,9 +1524,10 @@ export default function App() {
     const modifiedMeds = [];
     const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
 
-    const updated = medicines.map(med => {
+    const updated = medicinesRef.current.map(med => {
       if (!med.batches || med.batches.length === 0) return med;
       const keptBatches = med.batches.filter(b => {
+        if ((b.branch_id || 'MAIN') !== targetBranchId) return true;
         const bStock = b.qty !== undefined ? b.qty : (b.stock !== undefined ? b.stock : 0);
         const days = parseDays(b.exp_date);
         const isDead = (bStock <= 0) || (days < -180);
@@ -1529,7 +1536,9 @@ export default function App() {
       });
 
       if (keptBatches.length !== med.batches.length) {
-        const newStock = keptBatches.reduce((acc, b) => acc + (b.qty !== undefined ? b.qty : (b.stock || 0)), 0);
+        const newStock = keptBatches
+          .filter(b => (b.branch_id || 'MAIN') === targetBranchId)
+          .reduce((acc, b) => acc + (b.qty !== undefined ? b.qty : (b.stock || 0)), 0);
         const newMed = {
           ...med,
           batches: keptBatches,
@@ -1545,27 +1554,25 @@ export default function App() {
       return med;
     });
 
-    try {
-      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-      if (targetBranchId) {
-        localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
-        localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
-      }
-    } catch (e) {}
-
-    setMedicines(updated);
-
     // Persist to IndexedDB and check the actual result
-    const idbResult = await idbCacheMedicines(updated);
+    const idbResult = modifiedMeds.length > 0 ? await idbUpdateMedicines(modifiedMeds) : { success: true };
     if (!idbResult || !idbResult.success) {
       console.error('[STORAGE_ERROR] Failed to persist purged catalog to IndexedDB:', idbResult?.error);
-      alert(`Storage Warning: Purged ${totalPurged} dead/obsolete batches from memory, but local database persistence failed: ${idbResult?.error || 'IndexedDB write error'}. Your modifications remain preserved in browser fallback storage.`);
+      alert(`Purge was not committed because local database persistence failed: ${idbResult?.error || 'IndexedDB write error'}.`);
       return;
     }
 
+    medicinesRef.current = updated;
+    setMedicines(updated);
+    try {
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
+    } catch (e) {}
+
     // Queue sync deltas for all modified medicines
     for (const m of modifiedMeds) {
-      syncEngine.recordMedicineDelta(m);
+      await syncEngine.recordMedicineDelta(m);
     }
 
     alert(`Successfully purged ${totalPurged} dead/obsolete batches from counter inventory and persisted to local database.`);
@@ -1594,33 +1601,36 @@ export default function App() {
     const modifiedMeds = [];
     const unverifiedItems = [];
 
-    // 1. Restock returned quantities to shelf inventory and verify batches
-    setMedicines(prev => {
-      const updated = prev.map(m => ({
-        ...m,
-        batches: m.batches ? m.batches.map(b => ({ ...b })) : []
-      }));
-      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+    // 1. Stage returned quantities and verify exact branch batches before any state mutation.
+    const updated = medicinesRef.current.map(m => ({
+      ...m,
+      batches: m.batches ? m.batches.map(b => ({ ...b })) : []
+    }));
+    const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
 
-      itemsToReturn.forEach(retItem => {
+    itemsToReturn.forEach(retItem => {
         const targetBatchNo = String(retItem.batch || retItem.batch_no || '').trim().toUpperCase();
         const returnQty = parseInt(retItem.returnQty, 10) || 0;
 
         const idx = updated.findIndex(m => m.code === retItem.code || m.name.toLowerCase() === (retItem.name || '').toLowerCase());
-        if (idx !== -1) {
+        if (idx !== -1 && returnQty > 0 && targetBatchNo) {
           const med = { ...updated[idx] };
           const batches = med.batches || [];
-          const bIdx = batches.findIndex(b => String(b.batch_no || '').trim().toUpperCase() === targetBatchNo);
+          const bIdx = batches.findIndex(b =>
+            String(b.batch_no || '').trim().toUpperCase() === targetBatchNo &&
+            (b.branch_id || 'MAIN') === targetBranchId
+          );
 
-          if (bIdx !== -1) {
+          if (bIdx !== -1 && normalizeExpiry(batches[bIdx].exp_date) && !isBatchExpired(batches[bIdx].exp_date)) {
             // Batch verified in existing inventory
             const curBatchQty = parseInt(batches[bIdx].qty !== undefined ? batches[bIdx].qty : (batches[bIdx].stock || 0), 10);
             batches[bIdx].qty = curBatchQty + returnQty;
             batches[bIdx].stock = batches[bIdx].qty;
-            med[targetStockKey] = (med[targetStockKey] || 0) + returnQty;
-            if (targetStockKey === 'stock_shop1') {
-              med.stock = med.stock_shop1;
-            }
+            med[targetStockKey] = batches
+              .filter(batch => (batch.branch_id || 'MAIN') === targetBranchId)
+              .reduce((sum, batch) => sum + Number(batch.qty ?? batch.stock ?? 0), 0);
+            med.stock = med[targetStockKey];
+            med.updatedAt = new Date().toISOString();
             updated[idx] = med;
             modifiedMeds.push(med);
             const key = med.code || med.name.toLowerCase();
@@ -1638,18 +1648,16 @@ export default function App() {
             retItem.unverifiedBatch = true;
             retItem.requiresDispositionReview = true;
           }
+        } else {
+          unverifiedItems.push({
+            name: retItem.name,
+            code: retItem.code,
+            batch: retItem.batch || 'UNSPECIFIED',
+            qty: returnQty
+          });
+          retItem.unverifiedBatch = true;
+          retItem.requiresDispositionReview = true;
         }
-      });
-
-      try {
-        localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-        if (targetBranchId) {
-          localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
-          localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
-        }
-      } catch (e) {}
-
-      return updated;
     });
 
     if (unverifiedItems.length > 0) {
@@ -1687,12 +1695,24 @@ export default function App() {
         const idbRes = await idbUpdateMedicines(modifiedMeds);
         if (!idbRes || !idbRes.success) {
           console.error('IndexedDB return persistence error:', idbRes?.error);
-          alert(`Warning: Local database storage error while saving returned stock: ${idbRes?.error || 'Unknown error'}`);
+          alert(`Sales Return Failed: Local database storage error while saving returned stock: ${idbRes?.error || 'Unknown error'}`);
+          return;
         }
       } catch (err) {
         console.error('IndexedDB return persistence exception:', err);
-        alert(`Warning: Local database storage error while saving returned stock: ${err.message}`);
+        alert(`Sales Return Failed: Local database storage error while saving returned stock: ${err.message}`);
+        return;
       }
+    }
+
+    medicinesRef.current = updated;
+    setMedicines(updated);
+    try {
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_med_overrides_${targetBranchId}`, JSON.stringify(overrides));
+      localStorage.setItem(`beta_pharma_last_operational_mutation_${targetBranchId}`, String(Date.now()));
+    } catch (e) {
+      console.warn('[STORAGE_WARNING] Return fallback cache failed:', e);
     }
 
     // Mark as processed in registry ONLY after successful execution
@@ -1744,9 +1764,12 @@ export default function App() {
       const cnHistory = JSON.parse(localStorage.getItem('beta_pharma_credit_notes') || '[]');
       cnHistory.unshift(returnData);
       localStorage.setItem('beta_pharma_credit_notes', JSON.stringify(cnHistory));
+    } catch (e) {
+      console.warn('[STORAGE_WARNING] Credit-note fallback history failed:', e);
+    }
 
-    // Offline-first delta sync push for sales return / credit note
-    syncEngine.recordCreditNote({
+    // Offline-first durable outbox for sales return / credit note
+    await syncEngine.recordCreditNote({
       creditNoteNo: returnData.creditNoteNo,
       customerName: returnData.customerName || returnData.originalBill?.patientName || 'CUSTOMER',
       refundAmount: returnData.refundAmount,
@@ -1755,14 +1778,12 @@ export default function App() {
       status: returnData.hasUnverifiedBatches ? 'QUARANTINED' : 'PROCESSED',
       branchId: activeBranch?.id || 'MAIN'
     });
-    if (Array.isArray(modifiedMeds)) {
-      for (const m of modifiedMeds) {
-        syncEngine.recordMedicineDelta(m);
-      }
+    for (const m of modifiedMeds) {
+      await syncEngine.recordMedicineDelta(m);
     }
-    } catch (e) {}
 
-    alert(`✅ ${returnData.creditNoteNo} issued! ${returnData.returnedItems.length} item(s) restocked to ${activeBranch?.short || 'shelf'}. Refund/Credit Amount: ₹${returnData.refundAmount.toFixed(2)}`);
+    const restockedCount = itemsToReturn.length - unverifiedItems.length;
+    alert(`${returnData.creditNoteNo} issued. ${restockedCount} item line(s) restocked; ${unverifiedItems.length} quarantined for review. Refund/Credit Amount: ₹${returnData.refundAmount.toFixed(2)}`);
   };
 
   // Distributor Purchase Invoice Inward Handler: Updates shelf stock, adds batches, and logs payables
@@ -1814,7 +1835,7 @@ export default function App() {
   };
 
   // Multi-Store Inter-Branch Stock Transfer Handler
-  const handleTransferStock = ({ medCode, medicineName, fromBranchId, toBranchId, qty }) => {
+  const handleTransferStock = async ({ medCode, medicineName, fromBranchId, toBranchId, qty }) => {
     const fromBranch = AVAILABLE_BRANCHES.find(b => b.id === fromBranchId) || { name: fromBranchId, stockKey: fromBranchId === 'POLYCLINIC' ? 'stock_shop2' : 'stock_shop1' };
     const toBranch = AVAILABLE_BRANCHES.find(b => b.id === toBranchId) || { name: toBranchId, stockKey: toBranchId === 'POLYCLINIC' ? 'stock_shop2' : 'stock_shop1' };
     const fromShopKey = fromBranch.stockKey || 'stock_shop1';
@@ -1822,51 +1843,49 @@ export default function App() {
     const fromBranchName = fromBranch.name || fromBranchId;
     const toBranchName = toBranch.name || toBranchId;
 
-    let transferredMed = null;
+    const requestedQty = Number(qty);
+    if (!fromBranchId || !toBranchId || fromBranchId === toBranchId || !(requestedQty > 0)) {
+      return { success: false, error: 'Invalid branch transfer request.' };
+    }
+    const catalog = medicinesRef.current;
+    const medIndex = catalog.findIndex(m => m.code === medCode || m.name.toLowerCase() === (medicineName || '').toLowerCase());
+    if (medIndex < 0) return { success: false, error: 'Medicine not found.' };
 
-    // 1. Update live medicines catalog state and persist in IndexedDB
-    setMedicines(prev => {
-      const updated = prev.map(m => {
-        if (m.code === medCode || m.name.toLowerCase() === (medicineName || '').toLowerCase()) {
-          const currentFrom = m[fromShopKey] || 0;
-          const currentTo = m[toShopKey] || 0;
-          const actualQty = Math.min(currentFrom, qty);
-          const newFrom = Math.max(0, currentFrom - actualQty);
-          const newTo = currentTo + actualQty;
-          const newMed = {
-            ...m,
-            [fromShopKey]: newFrom,
-            [toShopKey]: newTo,
-            stock: (activeBranch?.stockKey === fromShopKey) ? newFrom : (activeBranch?.stockKey === toShopKey ? newTo : m.stock),
-            updatedAt: new Date().toISOString()
-          };
-          transferredMed = newMed;
-          return newMed;
-        }
-        return m;
-      });
+    const source = catalog[medIndex];
+    const transferPlan = planBatchTransfer(source, fromBranchId, toBranchId, requestedQty);
+    if (!transferPlan.success) {
+      const error = `${transferPlan.error} Source: ${fromBranchName}.`;
+      alert(`Transfer not committed. ${error}`);
+      return { success: false, error };
+    }
+    const { batches, allocations, fromTotal: newFrom, toTotal: newTo } = transferPlan;
+    const transferredMed = {
+      ...source,
+      batches,
+      [fromShopKey]: newFrom,
+      [toShopKey]: newTo,
+      stock: activeBranch?.id === fromBranchId ? newFrom : (activeBranch?.id === toBranchId ? newTo : source.stock),
+      updatedAt: new Date().toISOString()
+    };
 
-      try {
-        const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
-        if (transferredMed) {
-          overrides[transferredMed.code || transferredMed.name.toLowerCase()] = transferredMed;
-          localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
-        }
-      } catch (e) {}
+    const persisted = await idbUpdateMedicines([transferredMed]);
+    if (!persisted?.success) {
+      const error = persisted?.error || 'Local database write failed.';
+      alert(`Transfer was not committed: ${error}`);
+      return { success: false, error };
+    }
 
-      // Surgically persist transferred medicine to IndexedDB and check result
-      if (transferredMed) {
-        idbUpdateMedicines([transferredMed]).then(res => {
-          if (!res || !res.success) {
-            console.error('[STORAGE_ERROR] Failed to persist stock transfer to IndexedDB:', res?.error);
-            alert(`Storage Warning: Stock transfer recorded in active view, but local database persistence failed: ${res?.error || 'Write error'}. Data remains saved in fallback storage.`);
-          }
-        }).catch(err => {
-          console.error('[STORAGE_ERROR] IndexedDB write exception during stock transfer:', err);
-        });
-      }
-      return updated;
-    });
+    const updated = [...catalog];
+    updated[medIndex] = transferredMed;
+    medicinesRef.current = updated;
+    setMedicines(updated);
+    try {
+      const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
+      overrides[transferredMed.code || transferredMed.name.toLowerCase()] = transferredMed;
+      localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(overrides));
+    } catch (e) {
+      console.warn('[STORAGE_WARNING] Transfer fallback cache failed:', e);
+    }
 
     // 2. Create transfer note in audit trail
     const trNumber = `TR-${Date.now().toString().slice(-6)}`;
@@ -1878,8 +1897,10 @@ export default function App() {
       medCode,
       from: fromBranchName,
       to: toBranchName,
-      qty,
-      status: 'DISPATCHED'
+      qty: requestedQty,
+      batchAllocations: allocations,
+      status: 'COMPLETED',
+      branchId: fromBranchId
     };
 
     try {
@@ -1888,12 +1909,10 @@ export default function App() {
     } catch (e) {}
 
     // 3. Record in Delta Sync Engine (IndexedDB + Supabase)
-    syncEngine.recordStockTransfer(transferRecord);
-    if (transferredMed) {
-      syncEngine.recordMedicineDelta(transferredMed);
-    }
+    await syncEngine.recordStockTransfer(transferRecord);
+    await syncEngine.recordMedicineDelta(transferredMed);
 
-    return transferRecord;
+    return { success: true, transfer: transferRecord };
   };
 
   // Hold Bill
@@ -2148,7 +2167,9 @@ export default function App() {
 
     // Step 4: Transaction successfully committed to IndexedDB!
     // Now and ONLY now apply the new state to in-memory React state and secondary storage
-    setMedicines(Array.from(updatedCatalogMap.values()));
+    const committedCatalog = Array.from(updatedCatalogMap.values());
+    medicinesRef.current = committedCatalog;
+    setMedicines(committedCatalog);
 
     try {
       localStorage.setItem('beta_pharma_med_overrides', JSON.stringify(stagedOverrides));

@@ -1,5 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
+function canonicalBackupJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return '[' + value.map(canonicalBackupJson).join(',') + ']';
+  return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + canonicalBackupJson(value[key])).join(',') + '}';
+}
+
+function calculateBackupChecksum(value) {
+  const str = canonicalBackupJson(value);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (((hash << 5) - hash) + str.charCodeAt(i)) | 0;
+  }
+  return `BP-CHK-${Math.abs(hash).toString(16).toUpperCase()}-${str.length}`;
+}
+
 const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 
                     (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) || 
                     'https://coqziknetbiinumbueay.supabase.co';
@@ -8,7 +23,9 @@ const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
                     (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) || 
                     'sb_publishable_WYpbTNB7TwcbIUNF_413Pg_RMBShr9h';
 
-export const STORE_KEY = 'beta_counter_2026';
+// This identifies an installation; it is not an authorization secret. Real
+// authorization must be enforced by Supabase RLS/auth claims on the server.
+export const STORE_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PHARMACY_STORE_KEY) || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
@@ -16,9 +33,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     autoRefreshToken: true
   },
   global: {
-    headers: {
-      'x-pharmacy-store-key': STORE_KEY
-    }
+    headers: STORE_KEY ? { 'x-pharmacy-store-key': STORE_KEY } : {}
   }
 });
 
@@ -32,8 +47,8 @@ async function attemptProxySync(actionType, payload) {
     const adminToken = typeof localStorage !== 'undefined' ? (localStorage.getItem('beta_pharma_admin_token') || '') : '';
     const headers = {
       'Content-Type': 'application/json',
-      'x-pharmacy-store-key': STORE_KEY,
-      'x-pharmacy-branch-id': branchId
+      'x-pharmacy-branch-id': branchId,
+      ...(STORE_KEY ? { 'x-pharmacy-store-key': STORE_KEY } : {})
     };
     if (adminToken) {
       headers['x-admin-token'] = adminToken;
@@ -479,7 +494,7 @@ export async function uploadVerifiedCloudBackup(backupPayload) {
     // Verify that the cloud record actually exists and its checksum matches exactly!
     const { data: readData, error: readError } = await supabase
       .from('pharmacy_backups')
-      .select('id, checksum, record_counts, created_at')
+      .select('id, checksum, record_counts, created_at, snapshot_data')
       .eq('branch_id', branchId)
       .eq('checksum', checksum)
       .order('created_at', { ascending: false })
@@ -494,6 +509,13 @@ export async function uploadVerifiedCloudBackup(backupPayload) {
     }
 
     const verifiedRecord = readData[0];
+    if (!verifiedRecord.snapshot_data) {
+      return { success: false, verified: false, error: 'Cloud backup metadata exists, but snapshot content could not be read back.' };
+    }
+    const readbackChecksum = calculateBackupChecksum(verifiedRecord.snapshot_data);
+    if (readbackChecksum !== checksum || verifiedRecord.checksum !== checksum) {
+      return { success: false, verified: false, error: 'Cloud backup readback checksum did not match the uploaded snapshot.' };
+    }
     return {
       success: true,
       verified: true,
