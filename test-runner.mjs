@@ -278,7 +278,14 @@ assert(!dummyLines[8].includes('12/28'), 'TVS line item leaves a missing expiry 
 // TEST SUITE 9: Legacy Import Preservation & Reconciliation Flags
 // -------------------------------------------------------------
 console.log('\n📥 Test Suite 9: Legacy Import Preservation & Reconciliation Flags');
-const { normalizeLegacyMedicineRecords } = await import('./src/utils/dbfReader.js');
+const { normalizeLegacyMedicineRecords, selectLegacyStockSnapshot } = await import('./src/utils/dbfReader.js');
+const selectedMonthlyStock = selectLegacyStockSnapshot([
+  { name: 'BATCH.DBF', lastModified: 99 },
+  { name: 'STK2509.DBF', lastModified: 300 },
+  { name: 'STK2601.DBF', lastModified: 200 },
+  { name: 'STK2611.DBF', lastModified: 100 }
+]);
+assert(selectedMonthlyStock?.name === 'STK2611.DBF', 'Folder import selects the greatest RETAILG STKYYMM monthly snapshot');
 const imported = normalizeLegacyMedicineRecords([
   { IT_CODE: 'SAFE001', IT_NAME: 'SOURCE MED', OP_STOCK: 12, MRP: 0, PTR: 0, PUR_TAX: 0, BATCH: '', EXPIRY: '' },
   { IT_CODE: 'OLD001', IT_NAME: 'OLD BATCH MED', OP_STOCK: 5, MRP: 25, PUR_TAX: 5, BATCH: 'REAL42', EXPIRY: '07/22' }

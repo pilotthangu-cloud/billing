@@ -406,6 +406,33 @@ export function autoRepairCorruptedMedicines(medicinesList) {
   });
 }
 
+/**
+ * Select the current stock snapshot from an active RETAILG DATA directory.
+ * RETAILG monthly files use STKYYMM.DBF (for example STK2611 = Nov 2026),
+ * so the greatest valid year/month is deterministic within one DATA folder.
+ */
+export function selectLegacyStockSnapshot(stockFiles = []) {
+  const files = Array.from(stockFiles || []);
+  const canonical = files.filter(file => file.name.toUpperCase() === 'STKFILE.DBF');
+  if (canonical.length === 1) return canonical[0];
+
+  const monthly = files
+    .map(file => {
+      const match = file.name.toUpperCase().match(/^STK(\d{2})(\d{2})\.DBF$/);
+      if (!match) return null;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      if (month < 1 || month > 12) return null;
+      return { file, score: (year * 100) + month };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || Number(b.file.lastModified || 0) - Number(a.file.lastModified || 0));
+
+  if (monthly.length > 0) return monthly[0].file;
+  if (files.length === 1) return files[0];
+  return null;
+}
+
 
 /**
  * Universal Multi-File DBF Folder Processor (ITEMFILE + COMPMAST + STKFILE)
@@ -474,40 +501,12 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     return (n.startsWith('STK') || n.startsWith('STOCK') || n.startsWith('BATCH')) && n.endsWith('.DBF');
   });
 
-  function getStkFilePriorityScore(file) {
-    const n = file.name.toUpperCase();
-    // Daily closing stock pattern: STK<DD><MM>.DBF (e.g. STK0411.DBF = Nov 04, STK2610.DBF = Oct 26)
-    const match = n.match(/^STK(\d{2})(\d{2})\.DBF$/i);
-    if (match) {
-      const day = parseInt(match[1], 10) || 1;
-      const month = parseInt(match[2], 10) || 1;
-      return 10000 + (month * 100 + day);
-    }
-    if (n === 'STKFILE.DBF') return 5000;
-    if (n.startsWith('STK')) return 4000;
-    if (n.startsWith('STOCK')) return 3000;
-    if (n.startsWith('BATCH')) return 2000;
-    return 1000;
-  }
-
-  let stockFile = null;
-  const canonicalStock = stockFiles.filter(f => f.name.toUpperCase() === 'STKFILE.DBF');
-  if (canonicalStock.length === 1) {
-    stockFile = canonicalStock[0];
-  } else if (stockFiles.length > 1) {
+  const stockFile = selectLegacyStockSnapshot(stockFiles);
+  if (!stockFile && stockFiles.length > 1) {
     const paths = stockFiles.map(relativePath).sort().join('\n - ');
     throw new Error(
-      `Multiple stock snapshots were found in ${datasetPath || 'the selected folder'}. The import was stopped because a filename without a year cannot prove which snapshot is current.\n\n - ${paths}\n\nSelect ITEMFILE.DBF together with only the intended stock file, or import ITEMFILE.DBF alone to use its OP_STOCK values.`
+      `Multiple stock files were found in ${datasetPath || 'the selected folder'}, but none had a deterministic STKYYMM.DBF or STKFILE.DBF name.\n\n - ${paths}\n\nSelect ITEMFILE.DBF together with the intended stock file, or import ITEMFILE.DBF alone to use its OP_STOCK values.`
     );
-  } else if (stockFiles.length === 1) {
-    stockFiles.sort((a, b) => {
-      const scoreA = getStkFilePriorityScore(a);
-      const scoreB = getStkFilePriorityScore(b);
-      if (scoreA !== scoreB) return scoreB - scoreA;
-      // Fallback to lastModified timestamp if scores are identical
-      return (b.lastModified || 0) - (a.lastModified || 0);
-    });
-    stockFile = stockFiles[0];
   }
 
   let records = [];
