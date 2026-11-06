@@ -167,6 +167,7 @@ const terminalLock = fs.readFileSync('src/components/TerminalLockScreen.jsx', 'u
 const topNav = fs.readFileSync('src/components/TopNavigationMenu.jsx', 'utf8');
 const purchaseEntry = fs.readFileSync('src/components/PurchaseEntryPage.jsx', 'utf8');
 const supabaseClientSource = fs.readFileSync('src/utils/supabaseClient.js', 'utf8');
+const electronMainSource = fs.readFileSync('electron/main.cjs', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
 assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
@@ -178,6 +179,8 @@ assert(!supabaseClientSource.includes("'Standard Distributor'") && !supabaseClie
 assert(!supabaseClientSource.includes('`TR-${Date.now()}`') && !supabaseClientSource.includes('`SHIFT-${Date.now()}`'), 'Cloud sync rejects missing transfer and shift identifiers instead of generating replacements');
 assert(supabaseClientSource.includes(".upsert(chunk, { onConflict: 'medicine_code' })"), 'Catalog retry is idempotent by medicine code');
 assert(supabaseClientSource.includes('success: failures.length === 0'), 'Partial catalog upload cannot report success');
+assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent printer fallback awaits and returns the real spooler result');
+assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
 
 // -------------------------------------------------------------
 // TEST SUITE 7: TVS MSP 250 Star ESC/P Hardware Engine Validation

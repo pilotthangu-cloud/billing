@@ -62,8 +62,8 @@ function createWindow() {
 
 // 1. Direct Raw ESC/P Text Print via Windows Native Spooler (winspool.drv)
 // Bypasses Chromium graphics rasterization, GDI, and A4 driver overrides completely.
-// Guaranteed identical to legacy Clipper / DOS printing.
-ipcMain.handle('print-raw-tvs', async (event, payload = {}) => {
+// Sends the generated ESC/P stream directly to the Windows RAW spooler.
+async function printRawTvs(payload = {}) {
   try {
     const printerName = payload.printerName || 'TVS';
     const tempPrnPath = path.join(app.getPath('temp'), `tvs_raw_${Date.now()}.prn`);
@@ -237,14 +237,16 @@ public class RawPrinterHelper {
     console.error('print-raw-tvs exception:', err);
     return { success: false, error: err.message };
   }
-});
+}
+
+ipcMain.handle('print-raw-tvs', async (_event, payload = {}) => printRawTvs(payload));
 
 // 2. Silent Print Route: Always routes dot-matrix print requests to print-raw-tvs
 ipcMain.handle('print-silent', async (event, options = {}) => {
   if (options.rawBytes || options.rawText) {
-    return ipcMain.emit('print-raw-tvs', event, options);
+    return printRawTvs(options);
   }
-  return { success: true };
+  return { success: false, error: 'Silent printing requires a raw ESC/P byte stream.' };
 });
 
 // 3. Fetch list of all installed Windows printers
