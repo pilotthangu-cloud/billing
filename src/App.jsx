@@ -530,9 +530,15 @@ export default function App() {
     medicinesRef.current = updated;
     setMedicines(updated);
 
-    uploadMedicinesCatalogToSupabase(updated).catch(err => {
-      console.warn('Cloud catalog sync failed after the verified local import:', err);
-    });
+    uploadMedicinesCatalogToSupabase(updated)
+      .then(result => {
+        if (!result?.success) {
+          console.warn('Cloud catalog sync is incomplete; the verified local import remains authoritative.', result);
+        }
+      })
+      .catch(err => {
+        console.warn('Cloud catalog sync failed after the verified local import:', err);
+      });
 
     return { success: true, count: updated.length, stockKey: targetStockKey };
   };

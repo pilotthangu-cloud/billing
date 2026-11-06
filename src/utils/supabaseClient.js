@@ -162,9 +162,11 @@ export async function pushSalesBillToSupabase(billData) {
  * Sync credit note / sales return to Supabase (quarantined or verified)
  */
 export async function pushCreditNoteToSupabase(creditNoteData) {
-  if (!creditNoteData) return { success: false, error: 'Missing credit note data' };
+  if (!creditNoteData?.creditNoteNo || !creditNoteData?.branchId) {
+    return { success: false, error: 'Credit note number and branch are required' };
+  }
 
-  const creditNoteNo = String(creditNoteData.creditNoteNo || creditNoteData.billNo || `CN-${Date.now()}`);
+  const creditNoteNo = String(creditNoteData.creditNoteNo);
   const row = {
     credit_note_no: creditNoteNo,
     patient_name: creditNoteData.customerName || creditNoteData.patientName || 'CUSTOMER',
@@ -172,7 +174,7 @@ export async function pushCreditNoteToSupabase(creditNoteData) {
     items_json: Array.isArray(creditNoteData.items || creditNoteData.returnedItems) ? (creditNoteData.items || creditNoteData.returnedItems) : [],
     unverified_items_json: Array.isArray(creditNoteData.unverifiedItems) ? creditNoteData.unverifiedItems : [],
     status: creditNoteData.status || (creditNoteData.unverifiedItems?.length > 0 ? 'QUARANTINED' : 'PROCESSED'),
-    branch_id: creditNoteData.branchId || 'MAIN',
+    branch_id: String(creditNoteData.branchId),
     created_at: new Date().toISOString()
   };
 
@@ -248,15 +250,25 @@ export async function pushMedicineDeltaToSupabase(med, branchId = 'MAIN') {
  * Sync stock transfer between branches
  */
 export async function pushStockTransferToSupabase(transferData) {
+  const transferId = String(transferData?.id || '').trim();
+  const medicineName = String(transferData?.medicine || transferData?.medicine_name || '').trim();
+  const fromStore = String(transferData?.from || transferData?.from_store || '').trim();
+  const toStore = String(transferData?.to || transferData?.to_store || '').trim();
+  const quantity = Number(transferData?.qty ?? transferData?.quantity);
+  const branchId = String(transferData?.branchId || '').trim();
+  if (!transferId || !medicineName || !fromStore || !toStore || !branchId || !Number.isFinite(quantity) || quantity <= 0) {
+    return { success: false, error: 'Transfer id, medicine, source, destination, branch and positive quantity are required' };
+  }
+
   try {
     const { data, error } = await supabase.from('stock_transfers').insert([{
-      transfer_id: String(transferData.id || `TR-${Date.now()}`),
-      medicine_name: transferData.medicine || transferData.medicine_name,
-      from_store: transferData.from || transferData.from_store,
-      to_store: transferData.to || transferData.to_store,
-      quantity: Number(transferData.qty || transferData.quantity || 0),
+      transfer_id: transferId,
+      medicine_name: medicineName,
+      from_store: fromStore,
+      to_store: toStore,
+      quantity,
       status: transferData.status || 'COMPLETED',
-      branch_id: transferData.branchId || 'MAIN',
+      branch_id: branchId,
       created_at: new Date().toISOString()
     }]);
 
@@ -278,13 +290,21 @@ export async function pushStockTransferToSupabase(transferData) {
  * Sync purchase inward invoice to Supabase
  */
 export async function pushPurchaseInwardToSupabase(purchaseData) {
+  const supplierName = String(purchaseData?.supplierName || purchaseData?.supplier || '').trim();
+  const billDate = String(purchaseData?.invoiceDate || purchaseData?.date || '').trim();
+  const branchId = String(purchaseData?.branchId || '').trim();
+  const purchaseItems = Array.isArray(purchaseData?.items) ? purchaseData.items : [];
+  if (!supplierName || !billDate || !branchId || purchaseItems.length === 0) {
+    return { success: false, error: 'Supplier, invoice date, branch and purchase items are required' };
+  }
+
   try {
     const { data, error } = await supabase.from('purchase_inwards').insert([{
-      supplier_name: purchaseData.supplierName || purchaseData.supplier || 'Standard Distributor',
-      bill_date: purchaseData.invoiceDate || purchaseData.date || new Date().toISOString().slice(0, 10),
-      total_amount: Number(purchaseData.totalAmount || purchaseData.netAmount || 0),
-      items_json: purchaseData.items || [],
-      branch_id: purchaseData.branchId || 'shop1',
+      supplier_name: supplierName,
+      bill_date: billDate,
+      total_amount: Number(purchaseData.totalAmount ?? purchaseData.netAmount ?? 0),
+      items_json: purchaseItems,
+      branch_id: branchId,
       created_at: new Date().toISOString()
     }]);
 
@@ -312,37 +332,53 @@ export async function uploadMedicinesCatalogToSupabase(medicinesList, onProgress
 
   const BATCH_SIZE = 200;
   let totalUploaded = 0;
+  const failures = [];
+  const validMedicines = medicinesList.filter(med => {
+    const valid = Boolean(String(med?.code || '').trim() && String(med?.name || '').trim());
+    if (!valid) failures.push({ code: med?.code || null, error: 'Missing medicine code or name' });
+    return valid;
+  });
 
-  for (let i = 0; i < medicinesList.length; i += BATCH_SIZE) {
-    const chunk = medicinesList.slice(i, i + BATCH_SIZE).map(med => ({
-      medicine_code: med.code || `M${i}`,
-      name: med.name,
+  for (let i = 0; i < validMedicines.length; i += BATCH_SIZE) {
+    const chunk = validMedicines.slice(i, i + BATCH_SIZE).map(med => ({
+      medicine_code: String(med.code).trim(),
+      name: String(med.name).trim(),
       company: med.company || '',
-      mrp: Number(med.mrp || 0),
+      mrp: Number(med.mrp ?? 0),
       rack: String(med.rack || ''),
       schedule: med.schedule || '',
-      stock_shop1: Number(med.stock_shop1 || med.stock || 0),
-      batches_json: med.batches || [],
+      stock_shop1: Number(med.stock_shop1 ?? med.stock ?? 0),
+      batches_json: Array.isArray(med.batches) ? med.batches : [],
       updated_at: new Date().toISOString()
     }));
 
     try {
-      const { error } = await supabase.from('medicines_catalog').insert(chunk);
+      const { error } = await supabase
+        .from('medicines_catalog')
+        .upsert(chunk, { onConflict: 'medicine_code' });
       if (error) {
         console.warn(`Supabase catalog batch ${i}-${i + BATCH_SIZE} notice:`, error.message);
+        failures.push({ range: [i, i + chunk.length - 1], error: error.message });
       } else {
         totalUploaded += chunk.length;
       }
     } catch (e) {
       console.warn('Catalog upload network exception:', e.message);
+      failures.push({ range: [i, i + chunk.length - 1], error: e.message });
     }
 
     if (onProgress) {
-      onProgress(Math.min(i + BATCH_SIZE, medicinesList.length), medicinesList.length);
+      onProgress(Math.min(i + BATCH_SIZE, validMedicines.length), validMedicines.length);
     }
   }
 
-  return { success: true, uploadedCount: totalUploaded, total: medicinesList.length };
+  return {
+    success: failures.length === 0 && totalUploaded === validMedicines.length,
+    uploadedCount: totalUploaded,
+    total: validMedicines.length,
+    rejectedCount: medicinesList.length - validMedicines.length,
+    failures
+  };
 }
 
 /**
@@ -400,15 +436,21 @@ export async function fetchMedicinesCatalogFromSupabase(onProgress) {
  * Sync shift handover record to Supabase
  */
 export async function pushShiftRecordToSupabase(shiftData) {
+  const shiftId = String(shiftData?.shiftId || '').trim();
+  const branchId = String(shiftData?.branchId || '').trim();
+  if (!shiftId || !branchId) {
+    return { success: false, error: 'Shift id and branch are required' };
+  }
+
   try {
     const notesSummary = shiftData.notes || 
       `Staff: ${shiftData.staffName || 'Counter Staff'}, Total Sales: Rs.${shiftData.totalSales || 0}, Bills: ${shiftData.startBill || '0'} - ${shiftData.endBill || '0'}`;
 
     const { data, error } = await supabase.from('shift_records').insert([{
-      shift_id: String(shiftData.shiftId || `SHIFT-${Date.now()}`),
+      shift_id: shiftId,
       closing_cash: Number(shiftData.closingCash || 0),
       notes: notesSummary,
-      branch_id: shiftData.branchId || 'shop1',
+      branch_id: branchId,
       created_at: new Date().toISOString()
     }]);
 

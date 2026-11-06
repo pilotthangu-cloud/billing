@@ -166,6 +166,7 @@ const indexCss = fs.readFileSync('src/index.css', 'utf8');
 const terminalLock = fs.readFileSync('src/components/TerminalLockScreen.jsx', 'utf8');
 const topNav = fs.readFileSync('src/components/TopNavigationMenu.jsx', 'utf8');
 const purchaseEntry = fs.readFileSync('src/components/PurchaseEntryPage.jsx', 'utf8');
+const supabaseClientSource = fs.readFileSync('src/utils/supabaseClient.js', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
 assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
@@ -173,6 +174,10 @@ assert(!purchaseEntry.includes('sk-proj-'), 'No OpenAI API credential is embedde
 assert(!topNav.includes('Doctor & Hospital Master'), 'Doctor Master permanently removed from top navigation');
 assert(indexCss.includes('210mm 140mm'), 'Continuous tractor stationery (210mm x 140mm) enforced in @media print');
 assert(!appJsx.includes('Rahul C') && !topNav.includes('Rahul C'), 'Zero dummy staff ("Rahul C") in source files');
+assert(!supabaseClientSource.includes("'Standard Distributor'") && !supabaseClientSource.includes('`M${i}`'), 'Cloud sync does not fabricate supplier names or medicine codes');
+assert(!supabaseClientSource.includes('`TR-${Date.now()}`') && !supabaseClientSource.includes('`SHIFT-${Date.now()}`'), 'Cloud sync rejects missing transfer and shift identifiers instead of generating replacements');
+assert(supabaseClientSource.includes(".upsert(chunk, { onConflict: 'medicine_code' })"), 'Catalog retry is idempotent by medicine code');
+assert(supabaseClientSource.includes('success: failures.length === 0'), 'Partial catalog upload cannot report success');
 
 // -------------------------------------------------------------
 // TEST SUITE 7: TVS MSP 250 Star ESC/P Hardware Engine Validation
