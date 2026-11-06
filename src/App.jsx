@@ -57,7 +57,7 @@ import {
   fetchLiveMedicineDeltas
 } from './utils/supabaseClient';
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
-import { isBatchExpired, normalizeExpiry } from './utils/billUtils';
+import { isBatchExpired, isExpiryValid, normalizeExpiry } from './utils/billUtils';
 import { planBatchTransfer } from './utils/inventoryTransfer';
 
 import initialMedicines from './data/medicines.json';
@@ -1295,7 +1295,7 @@ export default function App() {
       if (!existing && !String(item.medCode || '').trim()) validationErrors.push(`${label}: product code`);
       if (!String(item.name || existing?.name || '').trim()) validationErrors.push(`${label}: medicine name`);
       if (!String(item.batch || '').trim()) validationErrors.push(`${label}: batch number`);
-      if (!normalizeExpiry(item.exp)) validationErrors.push(`${label}: expiry`);
+      if (!isExpiryValid(normalizeExpiry(item.exp))) validationErrors.push(`${label}: valid expiry (MM/YY)`);
       if (!(Number(item.mrp) > 0)) validationErrors.push(`${label}: MRP`);
       if (!(Number(item.totalUnits || item.billedPacks || item.qty) > 0)) validationErrors.push(`${label}: quantity`);
     });
@@ -1627,7 +1627,7 @@ export default function App() {
             (b.branch_id || 'MAIN') === targetBranchId
           );
 
-          if (bIdx !== -1 && normalizeExpiry(batches[bIdx].exp_date) && !isBatchExpired(batches[bIdx].exp_date)) {
+          if (bIdx !== -1 && isExpiryValid(normalizeExpiry(batches[bIdx].exp_date)) && !isBatchExpired(batches[bIdx].exp_date)) {
             // Batch verified in existing inventory
             const curBatchQty = parseInt(batches[bIdx].qty !== undefined ? batches[bIdx].qty : (batches[bIdx].stock || 0), 10);
             batches[bIdx].qty = curBatchQty + returnQty;
@@ -2010,7 +2010,7 @@ export default function App() {
       }
 
       // Regulatory check: Expired batches cannot be dispensed (Section 18, Drugs and Cosmetics Act)
-      if (!normalizeExpiry(foundBatch.exp_date) || isBatchExpired(foundBatch.exp_date)) {
+      if (!isExpiryValid(normalizeExpiry(foundBatch.exp_date)) || isBatchExpired(foundBatch.exp_date)) {
         alert(`Cannot complete bill: Regulatory Restriction.\n\nMedicine: ${itemName}\nBatch "${foundBatch.batch_no}" has expired (${foundBatch.exp_date}).\n\nDispensing expired medicines is strictly prohibited by pharmacy regulations. Please discard or select a valid unexpired batch.`);
         releaseGuard();
         return;
@@ -2331,7 +2331,7 @@ export default function App() {
       const saleableBatches = (found.batches || []).filter(b => {
         const qty = Number(b.qty ?? b.stock ?? 0);
         const expiry = normalizeExpiry(b.exp_date);
-        return qty > 0 && b.batch_no && b.batch_no !== 'BN001' && expiry && !isBatchExpired(expiry);
+        return qty > 0 && b.batch_no && b.batch_no !== 'BN001' && isExpiryValid(expiry) && !isBatchExpired(expiry);
       });
       const batchObj = saleableBatches.find(b => String(b.batch_no).trim().toUpperCase() === requestedBatch) || saleableBatches[0];
       const qty = Number.parseInt(it.qty, 10);

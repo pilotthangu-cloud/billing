@@ -10,7 +10,7 @@
  */
 
 import masterCatalogData from '../data/medicines.json' with { type: 'json' };
-import { isBatchExpired, normalizeExpiry } from './billUtils.js';
+import { isBatchExpired, isExpiryValid, normalizeExpiry } from './billUtils.js';
 
 // Build instantaneous O(1) indexed lookup maps
 const masterByCode = new Map();
@@ -316,6 +316,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     if (stock < 0) importIssues.push('NEGATIVE_STOCK');
     if (stock > 0 && batches.length === 0) importIssues.push('UNALLOCATED_STOCK_NO_BATCH');
     if (batches.some(b => !b.batch_no || !b.exp_date)) importIssues.push('INCOMPLETE_BATCH');
+    if (batches.some(b => b.exp_date && !isExpiryValid(b.exp_date))) importIssues.push('INVALID_EXPIRY');
     if (batches.some(b => b.exp_date && isBatchExpired(b.exp_date))) importIssues.push('EXPIRED_BATCH');
     if (stock > 0 && batches.some(b => b.exp_date && isBatchExpired(b.exp_date))) importIssues.push('ACTIVE_STOCK_EXPIRED_BATCH');
     if (gstPercent === null) importIssues.push('MISSING_GST');

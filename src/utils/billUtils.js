@@ -211,12 +211,27 @@ export function rollExpiryForwardIfPast(expStr) {
 }
 
 /**
+ * Returns true only for a real calendar month/year in MM/YY form after
+ * normalization. Unknown text and impossible months must never make a batch
+ * saleable merely because they are non-empty.
+ */
+export function isExpiryValid(expStr) {
+  if (!expStr || typeof expStr !== 'string') return false;
+  const norm = normalizeExpiry(expStr);
+  const match = norm.match(/^(\d{2})\/(\d{2})$/);
+  if (!match) return false;
+  const month = Number(match[1]);
+  const year = Number(match[2]);
+  return Number.isInteger(month) && month >= 1 && month <= 12 && Number.isInteger(year);
+}
+
+/**
  * Regulatory expiry checker under Drugs and Cosmetics Act (Section 18)
  * @param {string} expStr Expiry string formatted as MM/YY, MM/YYYY, or MM-YY
  * @returns {boolean} True if expired relative to current calendar month/year
  */
 export function isBatchExpired(expStr) {
-  if (!expStr || typeof expStr !== 'string') return false;
+  if (!isExpiryValid(expStr)) return false;
   const norm = normalizeExpiry(expStr);
   const parts = norm.trim().split(/[\/\-]/);
   if (parts.length >= 2) {

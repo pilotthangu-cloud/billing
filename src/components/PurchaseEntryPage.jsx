@@ -34,7 +34,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import supplierList from '../data/suppliers.json';
-import { normalizeExpiry } from '../utils/billUtils';
+import { isExpiryValid, normalizeExpiry } from '../utils/billUtils';
 // Daily OCR Token Quota Limit: 245,000 Tokens/Day Hardcap (Strictly gpt-4o-mini)
 export const DAILY_TOKEN_CAP = 245000;
 export const HARDCAPPED_MODEL = 'gpt-4o-mini';
@@ -692,8 +692,8 @@ MANDATORY INDIAN PHARMA INVOICE RULES:
       batchInputRef.current?.focus();
       return;
     }
-    if (!normalizeExpiry(expDate)) {
-      alert('Enter Expiry Date (MM/YY)');
+    if (!isExpiryValid(normalizeExpiry(expDate))) {
+      alert('Enter a valid Expiry Date (MM/YY)');
       expInputRef.current?.focus();
       return;
     }

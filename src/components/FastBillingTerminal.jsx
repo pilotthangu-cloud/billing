@@ -23,7 +23,7 @@ import DoctorSelector from './DoctorSelector';
 import MedicineDetailRadar from './MedicineDetailRadar';
 import SubstituteRadarModal from './SubstituteRadarModal';
 import { fuzzySearchMedicines } from '../utils/fuzzySearch';
-import { triggerWhatsAppBillShare, isBatchExpired, normalizeExpiry } from '../utils/billUtils';
+import { triggerWhatsAppBillShare, isBatchExpired, isExpiryValid, normalizeExpiry } from '../utils/billUtils';
 import { syncEngine } from '../utils/syncEngine';
 
 export default function FastBillingTerminal({
@@ -282,7 +282,7 @@ export default function FastBillingTerminal({
       const batchNo = String(b.batch_no || '').trim();
       const expiry = normalizeExpiry(b.exp_date);
       const batchBranch = b.branch_id || 'MAIN';
-      return batchBranch === (activeBranch?.id || 'MAIN') && bQty > 0 && batchNo && batchNo !== 'BN001' && expiry && !isBatchExpired(expiry);
+      return batchBranch === (activeBranch?.id || 'MAIN') && bQty > 0 && batchNo && batchNo !== 'BN001' && isExpiryValid(expiry) && !isBatchExpired(expiry);
     }).sort((a, b) => parseBatchExpScore(a.exp_date) - parseBatchExpScore(b.exp_date));
 
     if (eligibleBatches.length === 0) {
@@ -352,7 +352,7 @@ export default function FastBillingTerminal({
     const recordedExpiry = normalizeExpiry(activeBatch.exp_date);
     const recordedBatchNo = String(activeBatch.batch_no || '').trim();
     const availableQty = Number(activeBatch.qty ?? activeBatch.stock ?? 0);
-    if (!recordedBatchNo || recordedBatchNo === 'BN001' || !recordedExpiry || isBatchExpired(recordedExpiry)) {
+    if (!recordedBatchNo || recordedBatchNo === 'BN001' || !isExpiryValid(recordedExpiry) || isBatchExpired(recordedExpiry)) {
       alert('This batch cannot be billed because its batch number or unexpired expiry date is missing/invalid. Correct the inventory record first.');
       return;
     }

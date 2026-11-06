@@ -236,13 +236,16 @@ assert(streamCrlfCount === 32, 'Print stream contains exactly 32 CRLF advances, 
 // TEST SUITE 8: Expiry Integrity, Zero-Fabrication & Paper-Saver Mode
 // -------------------------------------------------------------
 console.log('\n🛡️ Test Suite 8: Expiry Normalizer, Zero-BN001 Healing & Paper-Saver Feed');
-const { normalizeExpiry, rollExpiryForwardIfPast } = await import('./src/utils/billUtils.js');
+const { isExpiryValid, normalizeExpiry, rollExpiryForwardIfPast } = await import('./src/utils/billUtils.js');
 
 assert(normalizeExpiry('20271231') === '12/27', 'dBase III Date field 20271231 normalizes to 12/27');
 assert(normalizeExpiry('2027-12-31') === '12/27', 'ISO date 2027-12-31 normalizes to 12/27');
 assert(normalizeExpiry('31/12/2027') === '12/27', 'Indian DD/MM/YYYY date 31/12/2027 normalizes to 12/27');
 assert(normalizeExpiry('1227') === '12/27', '4-digit MMYY 1227 normalizes to 12/27');
 assert(normalizeExpiry('12/27') === '12/27', 'Standard MM/YY 12/27 preserved verbatim');
+assert(isExpiryValid('12/27'), 'A real MM/YY expiry is accepted as valid');
+assert(!isExpiryValid('13/27'), 'Impossible month 13 is rejected');
+assert(!isExpiryValid('UNKNOWN'), 'Unrecognized expiry text is rejected');
 
 const rolledPast = rollExpiryForwardIfPast('07/22');
 assert(rolledPast === '07/22', 'Past catalog expiry is preserved and never rewritten into the future');

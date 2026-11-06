@@ -1,4 +1,4 @@
-import { isBatchExpired, normalizeExpiry } from './billUtils.js';
+import { isBatchExpired, isExpiryValid, normalizeExpiry } from './billUtils.js';
 
 function expiryScore(value) {
   const [monthText, yearText] = normalizeExpiry(value).split('/');
@@ -24,7 +24,7 @@ export function planBatchTransfer(medicine, fromBranchId, toBranchId, requestedQ
     .filter(({ batch }) =>
       (batch.branch_id || 'MAIN') === fromBranchId &&
       Number(batch.qty ?? batch.stock ?? 0) > 0 &&
-      batch.batch_no && normalizeExpiry(batch.exp_date) && !isBatchExpired(batch.exp_date)
+      batch.batch_no && isExpiryValid(normalizeExpiry(batch.exp_date)) && !isBatchExpired(batch.exp_date)
     )
     .sort((a, b) => expiryScore(a.batch.exp_date) - expiryScore(b.batch.exp_date));
 
