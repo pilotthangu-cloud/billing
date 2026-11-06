@@ -169,6 +169,7 @@ const purchaseEntry = fs.readFileSync('src/components/PurchaseEntryPage.jsx', 'u
 const supabaseClientSource = fs.readFileSync('src/utils/supabaseClient.js', 'utf8');
 const electronMainSource = fs.readFileSync('electron/main.cjs', 'utf8');
 const topNavigationSource = fs.readFileSync('src/components/TopNavigationMenu.jsx', 'utf8');
+const dbfReaderSource = fs.readFileSync('src/utils/dbfReader.js', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
 assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
@@ -184,6 +185,7 @@ assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent pri
 assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
 assert(topNavigationSource.includes('Beta.Pharmacy.POS.1.0.0.repaired.exe'), 'Website exposes the repaired 64-bit desktop download');
 assert(topNavigationSource.includes('Beta.Pharmacy.POS.Win7.32bit.repaired.exe'), 'Website exposes a separate repaired Windows 7 32-bit download');
+assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 
 // -------------------------------------------------------------
 // TEST SUITE 7: TVS MSP 250 Star ESC/P Hardware Engine Validation

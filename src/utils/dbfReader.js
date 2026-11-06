@@ -427,10 +427,16 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
   // 1. Locate one unambiguous master dataset. A whole-drive upload commonly
   // contains RETAILG, RETAILG1...RETAILG4 and choosing the first ITEMFILE was
   // the primary cause of importing stale stock.
-  const itemCandidates = files.filter(f => {
+  const broadItemCandidates = files.filter(f => {
     const n = f.name.toUpperCase();
     return (n.startsWith('ITEM') || n.startsWith('MEDICINE') || n.startsWith('PRODUCT')) && n.endsWith('.DBF');
   });
+  // A real RETAILG data directory contains hundreds of DBFs, often including
+  // ITEM-ledger/history tables. ITEMFILE.DBF is the authoritative product
+  // master; prefer that exact name instead of misclassifying every ITEM*.DBF
+  // as another legacy dataset.
+  const exactItemFiles = files.filter(f => f.name.toUpperCase() === 'ITEMFILE.DBF');
+  const itemCandidates = exactItemFiles.length > 0 ? exactItemFiles : broadItemCandidates;
   if (itemCandidates.length > 1) {
     const paths = itemCandidates.map(relativePath).sort().join('\n - ');
     throw new Error(
