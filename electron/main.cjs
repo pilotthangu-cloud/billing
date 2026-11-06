@@ -18,7 +18,7 @@ function createWindow() {
     height: 768,
     minWidth: 1024,
     minHeight: 600,
-    title: 'Beta Pharmacy POS & Management Terminal',
+    title: `Beta Pharmacy POS ${app.getVersion()}`,
     backgroundColor: '#09090b',
     autoHideMenuBar: true,
     webPreferences: {

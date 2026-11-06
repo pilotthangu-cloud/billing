@@ -1,14 +1,14 @@
 {
   "name": "pharma-pos",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1-rc.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --port 3000 --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node test-runner.mjs",
+    "test": "node test-runner.mjs && node --test tests/*.mjs",
     "electron:start": "electron electron/main.cjs",
     "electron:build": "vite build && electron-builder --win",
     "electron:build:win7-32": "vite build && electron-builder --config electron-builder-win7-ia32.json --win --ia32"
@@ -55,6 +55,7 @@
     "autoprefixer": "^10.4.20",
     "electron": "^45.2.2",
     "electron-builder": "^26.18.0",
+    "fake-indexeddb": "^6.2.7",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "vite": "^6.0.3"

@@ -9,13 +9,21 @@
  */
 
 const DB_NAME = 'BetaPharmaDB';
-// Keep this above every previously shipped browser schema. Opening an older
-// version against a database created by a newer deployment throws VersionError
-// and was incorrectly surfaced to the operator as "IndexedDB unavailable".
-// IndexedDB upgrades in place; existing records are preserved.
+// Version 20 has shipped. Retain it to avoid downgrading existing databases.
 const DB_VERSION = 20;
 
 let dbInstance = null;
+let openingPromise = null;
+let storageStatus = { available: false, code: 'NOT_OPENED', error: 'Local database has not opened yet.' };
+const REQUIRED_STORES = ['bills', 'medicines', 'due_bills', 'stock_transfers', 'sync_queue', 'backups', 'unverified_returns', 'app_meta'];
+
+export function getPharmaStorageStatus() {
+  return { ...storageStatus };
+}
+
+function storageFailure() {
+  return { success: false, error: storageStatus.error, code: storageStatus.code };
+}
 
 /**
  * Open and initialize IndexedDB stores
@@ -23,14 +31,26 @@ let dbInstance = null;
  */
 export function openPharmaDB() {
   if (dbInstance) return Promise.resolve(dbInstance);
+  if (openingPromise) return openingPromise;
 
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.indexedDB) {
-      console.warn('IndexedDB not supported in this environment');
-      return resolve(null);
-    }
+  const attempt = new Promise((resolve) => {
+    let finished = false;
+    const finish = (db, code, message) => {
+      if (finished) { if (db) db.close(); return; }
+      finished = true;
+      clearTimeout(timer);
+      storageStatus = { available: Boolean(db), code, error: message || '' };
+      resolve(db);
+    };
+    const timer = setTimeout(() => finish(null, 'OPEN_TIMEOUT', 'Local database did not open within 10 seconds. Close other POS windows, restart the app and retry. Existing data has not been deleted.'), 10000);
+    let factory;
+    try { factory = globalThis.indexedDB || globalThis.window?.indexedDB; }
+    catch (error) { finish(null, error.name, `Local database access was denied: ${error.message}`); return; }
+    if (!factory) { finish(null, 'UNSUPPORTED', 'This app session cannot access IndexedDB. Open the desktop app or a regular browser profile with local storage enabled.'); return; }
 
-    const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+    let request;
+    try { request = factory.open(DB_NAME, DB_VERSION); }
+    catch (error) { finish(null, error.name, `Local database could not open: ${error.message}`); return; }
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
@@ -89,24 +109,44 @@ export function openPharmaDB() {
     };
 
     request.onsuccess = (event) => {
-      dbInstance = event.target.result;
+      const opened = event.target.result;
+      if (finished) { opened.close(); return; }
+      const missing = REQUIRED_STORES.filter(name => !opened.objectStoreNames.contains(name));
+      if (missing.length) {
+        opened.close();
+        finish(null, 'INCOMPATIBLE_SCHEMA', `Local database is missing stores: ${missing.join(', ')}. Existing data was preserved; database repair is required.`);
+        return;
+      }
+      dbInstance = opened;
       dbInstance.onversionchange = () => {
-        dbInstance.close();
-        dbInstance = null;
+        opened.close();
+        if (dbInstance === opened) dbInstance = null;
       };
-      resolve(dbInstance);
+      dbInstance.onclose = () => { if (dbInstance === opened) dbInstance = null; };
+      finish(dbInstance, 'READY', '');
     };
 
     request.onerror = (event) => {
-      console.error('Failed to open IndexedDB:', event.target.error);
-      resolve(null);
+      const error = event.target.error;
+      if (error?.name === 'VersionError') {
+        // A newer installed release may own this database. Read its existing
+        // schema without forcing a downgrade; validate it before accepting it.
+        const existing = factory.open(DB_NAME);
+        existing.onsuccess = request.onsuccess;
+        existing.onerror = () => finish(null, existing.error?.name || 'OPEN_FAILED', existing.error?.message || 'Unable to open the existing database.');
+        existing.onblocked = () => finish(null, 'BLOCKED', 'Close other POS tabs/windows and retry. They are blocking access to the local database.');
+        return;
+      }
+      finish(null, error?.name || 'OPEN_FAILED', `Local database open failed (${error?.name || 'unknown error'}): ${error?.message || 'No details returned'}. Existing data has not been deleted.`);
     };
 
     request.onblocked = () => {
-      console.warn('IndexedDB upgrade is blocked by another open POS tab. Close other POS tabs and retry.');
-      resolve(null);
+      finish(null, 'BLOCKED', 'Close all other POS tabs/windows, then retry. Another window is blocking the local database upgrade. Existing data has not been deleted.');
     };
   });
+  openingPromise = attempt;
+  attempt.finally(() => { if (openingPromise === attempt) openingPromise = null; });
+  return attempt;
 }
 
 /**
@@ -150,7 +190,7 @@ export async function idbCommitSaleTransaction(modifiedMeds, billPayload) {
   }
   const db = await openPharmaDB();
   if (!db) {
-    return { success: false, error: 'Database storage (IndexedDB) is unavailable on this device.' };
+    return storageFailure();
   }
 
   return new Promise((resolve) => {
@@ -226,7 +266,7 @@ export async function idbCommitSaleTransaction(modifiedMeds, billPayload) {
 export async function idbSaveBill(bill) {
   if (!bill || !bill.billNo) return { success: false, error: 'Missing bill payload or billNo' };
   const db = await openPharmaDB();
-  if (!db) return { success: false, error: 'IndexedDB is unavailable' };
+  if (!db) return storageFailure();
 
   return new Promise((resolve) => {
     try {
@@ -295,15 +335,18 @@ export async function idbUpdateMedicines(modifiedMeds) {
   });
 }
 
-export async function idbCacheMedicines(medicinesList) {
+export async function idbCacheMedicines(medicinesList, { replace = false } = {}) {
   if (!Array.isArray(medicinesList) || medicinesList.length === 0) return { success: true, count: 0 };
+  if (medicinesList.some(med => !med || !String(med.code || '').trim())) return { success: false, error: 'Every medicine must have a source product code. Import was not committed.' };
   const db = await openPharmaDB();
-  if (!db) return { success: false, error: 'IndexedDB is unavailable' };
+  if (!db) return storageFailure();
 
   return new Promise((resolve) => {
+    let tx;
     try {
-      const tx = db.transaction('medicines', 'readwrite');
+      tx = db.transaction('medicines', 'readwrite');
       const store = tx.objectStore('medicines');
+      if (replace) store.clear();
       medicinesList.forEach((med) => {
         if (med && med.code) {
           store.put(med);
@@ -311,7 +354,9 @@ export async function idbCacheMedicines(medicinesList) {
       });
       tx.oncomplete = () => resolve({ success: true, count: medicinesList.length });
       tx.onerror = () => resolve({ success: false, error: tx.error ? tx.error.message : 'Failed to cache medicines' });
+      tx.onabort = () => resolve({ success: false, error: tx.error?.message || 'Medicine import aborted. Existing inventory was preserved.' });
     } catch (e) {
+      try { tx?.abort(); } catch (_) {}
       resolve({ success: false, error: e.message });
     }
   });
@@ -355,7 +400,7 @@ export async function idbClearMedicines() {
 export async function idbSaveDueBill(dueBill) {
   if (!dueBill || !dueBill.id) return { success: false, error: 'Missing due bill payload or ID' };
   const db = await openPharmaDB();
-  if (!db) return { success: false, error: 'IndexedDB is unavailable' };
+  if (!db) return storageFailure();
 
   return new Promise((resolve) => {
     try {
@@ -392,7 +437,7 @@ export async function idbGetAllDueBills() {
 export async function idbSaveStockTransfer(transfer) {
   if (!transfer || !transfer.id) return { success: false, error: 'Missing stock transfer payload or ID' };
   const db = await openPharmaDB();
-  if (!db) return { success: false, error: 'IndexedDB is unavailable' };
+  if (!db) return storageFailure();
 
   return new Promise((resolve) => {
     try {
@@ -596,7 +641,7 @@ export async function idbGetMedicinesCount() {
 export async function idbSaveUnverifiedReturn(record) {
   if (!record || !record.creditNoteNo) return { success: false, error: 'Missing credit note number' };
   const db = await openPharmaDB();
-  if (!db) return { success: false, error: 'IndexedDB is unavailable' };
+  if (!db) return storageFailure();
 
   return new Promise((resolve) => {
     try {

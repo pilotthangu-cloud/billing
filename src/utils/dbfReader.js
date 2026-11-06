@@ -291,7 +291,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     ).trim();
 
     let batches = [];
-    if (Array.isArray(r.BATCHES) && r.BATCHES.length > 0) {
+    if (Array.isArray(r.BATCHES)) {
       batches = r.BATCHES.map(b => ({
           batch_no: String(b.batch_no || b.batch || '').trim(),
           exp_date: normalizeExpiry(b.exp_date || b.exp || ''),
@@ -354,12 +354,12 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       if (!existing.importIssues.includes('DUPLICATE_CODE')) existing.importIssues.push('DUPLICATE_CODE');
       existing.stock = (existing.stock || 0) + (item.stock || 0);
       existing.stock_shop1 = existing.stock;
-      const existingBatchNos = new Set((existing.batches || []).map(b => b.batch_no));
+      for (const issue of item.importIssues) if (!existing.importIssues.includes(issue)) existing.importIssues.push(issue);
       for (const b of (item.batches || [])) {
-        if (!existingBatchNos.has(b.batch_no)) {
+        const matching = existing.batches.find(previous => previous.batch_no === b.batch_no && previous.exp_date === b.exp_date && previous.mrp === b.mrp);
+        if (!matching) {
           existing.batches.push(b);
-          existingBatchNos.add(b.batch_no);
-        }
+        } else matching.qty += b.qty;
       }
     }
   }
@@ -539,7 +539,7 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     const sBuf = await stockFile.arrayBuffer();
     const { records: stockRecs } = parseDbfBuffer(sBuf);
 
-    stockRecs.forEach(sr => {
+    stockRecs.forEach((sr, rowIndex) => {
       const code = String(
         sr.IT_CODE || sr.ITEMCODE || sr.ITEM_CODE || sr.CODE || sr.ICODE || 
         sr.I_CODE || sr.PROD_CODE || sr.PRODUCT_CODE || sr.MED_CODE || sr.ID || ''
@@ -549,7 +549,10 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
       const rawQty = sr.STOCK ?? sr.QTY ?? sr.BALANCE ?? sr.CLOSING_ST ?? sr.CL_STOCK ?? sr.CL_STK ?? 
         sr.OP_STOCK ?? sr.IT_QTY ?? sr.BAL_QTY ?? sr.BAL ?? sr.CLOSING ?? sr.CLOSE_STK ?? sr.CURR_STK ?? 
         sr.PHYSICAL ?? sr.STK_QTY ?? sr.S_QTY ?? sr.QUANTITY ?? sr.UNITS ?? sr.TOTAL_QTY;
-      const batchQty = rawQty !== undefined ? Number(rawQty) : 0;
+      if (rawQty === undefined || String(rawQty).trim() === '' || !Number.isFinite(Number(rawQty))) {
+        throw new Error(`${stockFile.name}, row ${rowIndex + 1} (${code}): no valid stock quantity was found. Import stopped instead of replacing the product balance with zero.`);
+      }
+      const batchQty = Number(rawQty);
 
       stockMap.set(code, (stockMap.get(code) || 0) + batchQty);
 
@@ -626,6 +629,10 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
   const totalStock = normalized.reduce((sum, med) => sum + (Number(med.stock) || 0), 0);
   const issueCount = normalized.reduce((sum, med) => sum + (med.importIssues?.length || 0), 0);
   const stockSource = stockFile ? relativePath(stockFile) : (itemFile ? `${relativePath(itemFile)}:OP_STOCK` : null);
+  const sourceModifiedAt = stockFile?.lastModified ? new Date(stockFile.lastModified).toISOString() : null;
+  for (const medicine of normalized) {
+    medicine.stockProvenance = { source: stockSource, modifiedAt: sourceModifiedAt, importedAt: new Date().toISOString(), liveBalanceVerified: false };
+  }
 
   return {
     medicines: normalized,
@@ -634,6 +641,9 @@ export async function processDbfFolderFiles(fileList, statusCallback = () => {})
     companyFile: companyFile ? relativePath(companyFile) : null,
     datasetPath,
     stockSource,
+    sourceModifiedAt,
+    liveBalanceVerified: false,
+    stockWarning: 'Imported file quantities are a snapshot, not a verified live balance. Compare with the old system after pausing billing. Monthly snapshots may exclude later sales, purchases or returns.',
     totalStock,
     issueCount,
     totalCount: normalized.length,

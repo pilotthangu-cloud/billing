@@ -84,7 +84,7 @@ export default function FastBillingTerminal({
 
   // Continuous Paper Feed Mode: 33-line Half-Sheet vs Compact Paper-Saver Feed
   const [isPaperSaver, setIsPaperSaver] = useState(() => {
-    return typeof localStorage !== 'undefined' && localStorage.getItem('beta_pharma_paper_saver') === 'true';
+    return typeof localStorage === 'undefined' || localStorage.getItem('beta_pharma_paper_saver') !== 'false';
   });
 
   const togglePaperSaver = () => {
@@ -923,9 +923,9 @@ export default function FastBillingTerminal({
                 ? 'border-emerald-600 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                 : (theme === 'dark' ? 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-200' : 'border-slate-300 bg-white text-slate-600 hover:text-slate-900')
             }`}
-            title={isPaperSaver ? "Paper-Saver Mode ACTIVE: Printer stops right after bill footer (saves continuous paper)" : "Perforation Mode ACTIVE: Printer feeds to 5.5 inch horizontal perforation tear bar"}
+            title={isPaperSaver ? 'Compact receipt: footer follows the items, with two trailing lines for tearing' : 'Full form: receipt is padded to a multiple of 32 lines'}
           >
-            <span>{isPaperSaver ? '🌿 Paper-Saver Feed' : '📄 5.5" Perforation'}</span>
+            <span>{isPaperSaver ? '🌿 Compact Receipt' : '📄 Full Form (32 lines)'}</span>
           </button>
         </div>
       </div>

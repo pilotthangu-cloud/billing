@@ -201,6 +201,7 @@ console.log('\n🖨️ Test Suite 7: TVS MSP 250 Star Native ESC/P Engine Valida
 const { formatTvsBillLines, generateTvsEscPosStream } = await import('./src/utils/tvsPrinterEngine.js');
 
 const sampleBill = {
+  paperSaver: false,
   billNo: '026096',
   date: '04/11/2026',
   time: '17:15',
@@ -267,8 +268,8 @@ assert(rollExpiryForwardIfPast('') === '', 'Blank expiry remains blank instead o
 // Paper-Saver Mode: Stops 3 lines after GET WELL SOON
 const paperSaverBill = { ...sampleBill, paperSaver: true };
 const paperSaverLines = formatTvsBillLines(paperSaverBill);
-assert(paperSaverLines.length === 23, `Paper-Saver mode keeps the legacy footer anchor plus three trailing lines (Found: ${paperSaverLines.length})`);
-assert(paperSaverLines[19].includes('** GET WELL SOON **'), 'Paper-Saver mode retains ** GET WELL SOON ** footer');
+assert(paperSaverLines.length === 16, `Compact one-item bill contains 16 lines (Found: ${paperSaverLines.length})`);
+assert(paperSaverLines[13].includes('** GET WELL SOON **'), 'Compact footer follows the item immediately and leaves only two tear-off lines');
 
 // Test that the TVS engine never invents transactional batch/expiry data
 const dummyBatchBill = {

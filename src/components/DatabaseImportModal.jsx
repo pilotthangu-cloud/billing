@@ -12,6 +12,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords, processDbfFolderFiles, extractFilesFromDrop } from '../utils/dbfReader';
+import LegacyStockReview from './LegacyStockReview';
 
 export default function DatabaseImportModal({
   isOpen,
@@ -29,6 +30,8 @@ export default function DatabaseImportModal({
   const [statusMessage, setStatusMessage] = useState('');
   const [mergeMode, setMergeMode] = useState('merge'); // 'merge' | 'replace'
   const [isDragging, setIsDragging] = useState(false);
+  const [review, setReview] = useState(null);
+  const [summary, setSummary] = useState(null);
 
   if (!isOpen) return null;
 
@@ -38,10 +41,12 @@ export default function DatabaseImportModal({
     if (files.length === 0) return;
 
     setIsParsing(true);
+    setParsedRecords([]); setReview(null); setSummary(null);
     setStatusMessage(`Scanning ${files.length} files in folder...`);
 
     try {
       const res = await processDbfFolderFiles(files, setStatusMessage);
+      setSummary(res);
       setParsedRecords(res.medicines);
       setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
@@ -58,6 +63,7 @@ export default function DatabaseImportModal({
     e.preventDefault();
     setIsDragging(false);
     setIsParsing(true);
+    setParsedRecords([]); setReview(null); setSummary(null);
     setStatusMessage('Reading dropped folder...');
 
     try {
@@ -67,6 +73,7 @@ export default function DatabaseImportModal({
       }
       setStatusMessage(`Found ${files.length} files in dropped folder...`);
       const res = await processDbfFolderFiles(files, setStatusMessage);
+      setSummary(res);
       setParsedRecords(res.medicines);
       setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
@@ -85,23 +92,24 @@ export default function DatabaseImportModal({
 
     setSelectedFile(files.length === 1 ? file : { name: `${files.length} selected files` });
     setIsParsing(true);
+    setReview(null); setSummary(null);
     setParsedRecords([]);
     setStatusMessage(files.length > 1 ? `Scanning ${files.length} selected DBF files...` : `Parsing ${file.name}...`);
 
     try {
       if (files.length > 1) {
         const res = await processDbfFolderFiles(files, setStatusMessage);
+        setSummary(res);
         setParsedRecords(res.medicines);
         setStatusMessage(`✓ Previewed ${res.totalCount.toLocaleString()} medicines from ${res.itemFile}. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
         return;
       }
       const fileName = file.name.toUpperCase();
       if (fileName.endsWith('.DBF')) {
-        const buffer = await file.arrayBuffer();
-        const { records } = parseDbfBuffer(buffer);
-        const normalized = normalizeLegacyMedicineRecords(records);
-        setParsedRecords(normalized);
-        setStatusMessage(`✓ Extracted ${normalized.length.toLocaleString()} medicine records from ${file.name}`);
+        const res = await processDbfFolderFiles(files, setStatusMessage);
+        setSummary(res);
+        setParsedRecords(res.medicines);
+        setStatusMessage(`Previewed ${res.totalCount.toLocaleString()} products. Stock source: ${res.stockSource}. Compare with the old POS before applying.`);
       } else if (fileName.endsWith('.CSV') || fileName.endsWith('.TXT')) {
         const text = await file.text();
         const records = parseCsvText(text);
@@ -121,11 +129,11 @@ export default function DatabaseImportModal({
   };
 
   const handleApplyImport = async () => {
-    if (parsedRecords.length === 0) return;
+    if (isParsing || parsedRecords.length === 0 || !review) return;
     setIsParsing(true);
     setStatusMessage('Writing the verified import to the local database...');
     try {
-      const result = await onImportMedicines(parsedRecords, mergeMode);
+      const result = await onImportMedicines(parsedRecords.map(m => ({ ...m, importReview: review })), mergeMode);
       if (!result?.success) throw new Error(result?.error || 'The local database write failed.');
       setStatusMessage(`✓ Import committed: ${result.count.toLocaleString()} medicines saved for ${result.stockKey}.`);
       onClose();
@@ -232,6 +240,7 @@ export default function DatabaseImportModal({
                 <span>Preview (First 4 extracted items):</span>
                 <span className="text-slate-500 font-mono">Total {parsedRecords.length.toLocaleString()} items ready</span>
               </div>
+              <LegacyStockReview medicines={parsedRecords} summary={summary} onVerified={setReview} />
 
               <div className={`rounded-lg border overflow-hidden text-xs font-mono ${
                 isDark ? 'border-zinc-800 bg-zinc-950' : 'border-slate-200 bg-slate-50'
@@ -356,7 +365,7 @@ export default function DatabaseImportModal({
 
           <button
             onClick={handleApplyImport}
-            disabled={parsedRecords.length === 0}
+            disabled={isParsing || parsedRecords.length === 0 || !review}
             className={`px-6 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 shadow-md ${
               parsedRecords.length > 0
                 ? 'bg-purple-600 hover:bg-purple-500 text-white cursor-pointer'

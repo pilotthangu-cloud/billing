@@ -513,7 +513,7 @@ export default function App() {
     // after this succeeds, preventing a false success message and partial import.
     let idbResult;
     try {
-      idbResult = await idbCacheMedicines(updated);
+      idbResult = await idbCacheMedicines(updated, { replace: true });
     } catch (err) {
       return { success: false, error: err.message || 'IndexedDB write failed.' };
     }

@@ -31,6 +31,7 @@ import {
 import { parseDbfBuffer, parseCsvText, normalizeLegacyMedicineRecords, processDbfFolderFiles, extractFilesFromDrop } from '../utils/dbfReader';
 import { fetchLatestVerifiedCloudBackup } from '../utils/supabaseClient';
 import { restoreFromVerifiedCloudBackup, restoreFromLocalBackupJson } from '../utils/backupEngine';
+import LegacyStockReview from './LegacyStockReview';
 
 export default function FirstTimeSetupWizardModal({
   isOpen,
@@ -64,6 +65,7 @@ export default function FirstTimeSetupWizardModal({
   const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
+  const [importReview, setImportReview] = useState(null);
   const [restoredMeds, setRestoredMeds] = useState([]);
   const [restoredBills, setRestoredBills] = useState([]);
   const [cloudBackupMeta, setCloudBackupMeta] = useState(null);
@@ -90,6 +92,7 @@ export default function FirstTimeSetupWizardModal({
   const handleProcessFolderFiles = async (files) => {
     if (!files || files.length === 0) return;
     setIsParsing(true);
+    setImportedMeds([]); setImportSummary(null); setImportReview(null);
     setImportStatus(`Analyzing ${files.length} files...`);
 
     try {
@@ -116,6 +119,7 @@ export default function FirstTimeSetupWizardModal({
       setImportStatus(`✓ Previewed ${res.totalCount.toLocaleString()} medicines. Stock source: ${res.stockSource}. Total units: ${res.totalStock.toLocaleString()}. Review flags: ${res.issueCount.toLocaleString()}.`);
     } catch (err) {
       console.error('Wizard import error:', err);
+      setImportedMeds([]); setImportSummary(null); setImportReview(null);
       setImportStatus(`Error: ${err.message || 'Invalid files'}`);
     } finally {
       setIsParsing(false);
@@ -235,6 +239,11 @@ export default function FirstTimeSetupWizardModal({
 
   // Finalize Setup
   const handleFinish = async () => {
+    if (catalogChoice === 'import' && (!importReview || isParsing || importedMeds.length === 0)) {
+      setStep(2);
+      setImportStatus('Compare imported stock with three medicines in the old POS before completing setup.');
+      return;
+    }
     let finalBranch = availableBranches.find(b => b.id === selectedBranchId);
     if (selectedBranchId === 'CUSTOM' && customBranchName.trim()) {
       finalBranch = {
@@ -252,7 +261,7 @@ export default function FirstTimeSetupWizardModal({
       counter: counterName.trim() || 'Counter 01',
       cashier: cashierName.trim() || 'Counter Staff',
       catalogType: catalogChoice,
-      importedMeds: catalogChoice === 'import' ? importedMeds : [],
+      importedMeds: catalogChoice === 'import' ? importedMeds.map(m => ({ ...m, importReview })) : [],
       restoredMeds: (catalogChoice === 'cloud' || catalogChoice === 'local_json') ? restoredMeds : null,
       restoredBills: (catalogChoice === 'cloud' || catalogChoice === 'local_json') ? restoredBills : null
     });
@@ -628,6 +637,7 @@ export default function FirstTimeSetupWizardModal({
                     </div>
                   )}
 
+                  {importedMeds.length > 0 && <LegacyStockReview medicines={importedMeds} summary={importSummary} onVerified={setImportReview} />}
                   {/* Folder Location Guide */}
                   <div className={`p-3 rounded-lg border text-xs space-y-1.5 ${
                     isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-300' : 'bg-white border-slate-200 text-slate-700'
@@ -1028,6 +1038,7 @@ export default function FirstTimeSetupWizardModal({
             {step < 4 ? (
               <button
                 onClick={() => setStep(step + 1)}
+                disabled={isParsing || (step === 2 && catalogChoice === 'import' && !importReview)}
                 className="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm cursor-pointer"
               >
                 <span>Continue to Step {step + 1}</span>

@@ -4,7 +4,7 @@ import { normalizeExpiry } from './billUtils.js';
  * TVS Electronics MSP 250 STAR Native ESC/P Print Engine
  * Generates raw 79-column character streams and byte arrays for:
  * - Half-Sheet Continuous Tractor Paper (Fanfold, 8.5" x 5.5", 11 tractor holes)
- * - Exactly 32 Lines per invoice, matching the legacy RETAILG form
+ * - Compact receipts by default; optional 32-line full forms
  * - Built-in Hardware ESC/P control codes (Condensed 17.14 CPI, Bold)
  * - Zero browser canvas rasterization, zero blurry dots, zero A4 driver scaling bugs
  * - Zero Form Feed (0x0C) to prevent 11-inch/22-hole driver overfeed & tractor jamming
@@ -67,13 +67,16 @@ export function numberToWordsIndian(num) {
 }
 
 /**
- * Generates an exact 79-column, 32-line formatted ASCII bill.
- * Perfectly mirrors legacy Clipper/DOS Indian retail pharmacy half-sheet continuous tractor bills
+ * Generates a 79-column ASCII bill with compact or full-form paper feed.
  * @param {Object} billData The invoice details
- * @returns {Array<string>} Exactly 32 lines of 79-column strings
+ * @returns {Array<string>} 79-column content lines including the selected feed
  */
 export function formatTvsBillLines(billData) {
   const WIDTH = 79;
+  const savedFeedMode = typeof localStorage !== 'undefined' ? localStorage.getItem('beta_pharma_paper_saver') : null;
+  const isPaperSaver = billData?.paperSaver !== undefined
+    ? Boolean(billData.paperSaver)
+    : savedFeedMode !== 'false';
   const {
     billNo = '000001',
     date = new Date().toLocaleDateString('en-GB'),
@@ -192,10 +195,9 @@ export function formatTvsBillLines(billData) {
   // Push items directly without injecting artificial blank lines in the middle!
   itemRows.forEach(row => lines.push(row));
 
-  // The original RETAILG form reserves six item rows.  Keeping the footer at
-  // that position prevents a short bill from leaving all unused feed below the
-  // footer, which was the visible blank-space regression on the shop printer.
-  while (lines.length < 15) lines.push(' '.repeat(WIDTH));
+  // Only full-form mode reserves unused item rows. Compact receipts place the
+  // footer directly after the items instead of adding a large middle gap.
+  if (!isPaperSaver) while (lines.length < 15) lines.push(' '.repeat(WIDTH));
 
   // Footer
   const netValStr = (netPayable > 0 ? parseFloat(netPayable) : runningSubtotal).toFixed(2);
@@ -213,15 +215,9 @@ export function formatTvsBillLines(billData) {
 
   // Trailing line feeds:
   // Checks if Paper-Saver mode is enabled in billData or localStorage.
-  // Default: Advances paper to the 32-line legacy form boundary.
-  // Paper-Saver Mode: Feeds only 3 blank lines after GET WELL SOON to save paper on short bills.
-  const isPaperSaver = Boolean(
-    billData?.paperSaver || 
-    (typeof localStorage !== 'undefined' && localStorage.getItem('beta_pharma_paper_saver') === 'true')
-  );
-
+  // Compact mode adds two tear-off lines. Full form advances to 32 lines.
   if (isPaperSaver) {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       lines.push(' '.repeat(WIDTH));
     }
   } else {
@@ -289,8 +285,7 @@ export function generateTvsEscPosStream(billData) {
     bytes.push(0x0D, 0x0A);
   });
 
-  // ZERO Form Feed (0x0C): The 33 physical line feeds mechanically equal exactly 5.5 inches
-  // (11 tractor holes), stopping the paper directly on the perforation without overfeed.
+  // No form feed. Compact mode advances only the content and two tear-off lines.
 
   return new Uint8Array(bytes);
 }
