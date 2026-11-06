@@ -136,6 +136,21 @@ export default function TopNavigationMenu({
               </a>
             )}
 
+            {!window.electronAPI?.isElectron && (
+              <a
+                href="https://github.com/pilotthangu-cloud/billing/releases/download/v1.0.0/Beta.Pharmacy.POS.Win7.32bit.repaired.exe"
+                target="_blank"
+                rel="noreferrer"
+                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
+                  isDark ? 'bg-amber-950 text-amber-200 border-amber-700 hover:bg-amber-900' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                }`}
+                title="Download Windows 7 compatible 32-bit (x86) desktop app"
+              >
+                <Download className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span>⬇️ Win7 32-bit</span>
+              </a>
+            )}
+
             {/* Force-clear service worker cache and reload fresh — use after any update */}
             {!window.electronAPI?.isElectron && (
               <button

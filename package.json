@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "node test-runner.mjs",
     "electron:start": "electron electron/main.cjs",
-    "electron:build": "vite build && electron-builder --win"
+    "electron:build": "vite build && electron-builder --win",
+    "electron:build:win7-32": "vite build && electron-builder --config electron-builder-win7-ia32.json --win --ia32"
   },
   "build": {
     "appId": "com.betapharma.pos",
