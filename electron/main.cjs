@@ -97,20 +97,15 @@ try {
     $target = $null
 
     if ($PrinterName) {
-        $target = $allPrinters | Where-Object { $_.Name -like "*$PrinterName*" } | Select-Object -First 1
+        $target = $allPrinters | Where-Object { $_.Name -eq $PrinterName } | Select-Object -First 1
     }
     if (-not $target) {
         $target = $allPrinters | Where-Object { $_.Name -like "*TVS*" -or $_.Name -like "*MSP*" } | Select-Object -First 1
     }
-    if (-not $target) {
-        $target = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
-    }
-    if (-not $target -and $allPrinters.Count -gt 0) {
-        $target = $allPrinters[0]
-    }
 
     if (-not $target) {
-        Write-Output "ERROR: No printers installed on this system."
+        $available = ($allPrinters | ForEach-Object { $_.Name }) -join ", "
+        Write-Output "ERROR: Configured TVS/MSP printer was not found. Installed printers: $available"
         exit 1
     }
 
@@ -163,7 +158,7 @@ public class RawPrinterHelper {
                     IntPtr pUnmanagedBytes = Marshal.AllocCoTaskMem(pBytes.Length);
                     Marshal.Copy(pBytes, 0, pUnmanagedBytes, pBytes.Length);
                     int dwWritten = 0;
-                    success = WritePrinter(hPrinter, pUnmanagedBytes, pBytes.Length, out dwWritten);
+                    success = WritePrinter(hPrinter, pUnmanagedBytes, pBytes.Length, out dwWritten) && dwWritten == pBytes.Length;
                     Marshal.FreeCoTaskMem(pUnmanagedBytes);
                     EndPagePrinter(hPrinter);
                 }
@@ -211,6 +206,18 @@ public class RawPrinterHelper {
 
       let stdOut = '';
       let stdErr = '';
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(result);
+      };
+      const timeout = setTimeout(() => {
+        try { ps.kill(); } catch (_) {}
+        try { if (fs.existsSync(tempPrnPath)) fs.unlinkSync(tempPrnPath); } catch (_) {}
+        finish({ success: false, error: 'TVS printer did not respond within 15 seconds. The bill remains saved for reprint.' });
+      }, 15000);
 
       ps.stdout.on('data', (data) => { stdOut += data.toString(); });
       ps.stderr.on('data', (data) => { stdErr += data.toString(); });
@@ -220,17 +227,17 @@ public class RawPrinterHelper {
 
         if (code === 0) {
           console.log('[Native Print OK]:', stdOut.trim());
-          resolve({ success: true, message: stdOut.trim() });
+          finish({ success: true, message: stdOut.trim() });
         } else {
           console.error('[Native Print Failed]:', stdErr || stdOut);
-          resolve({ success: false, error: (stdErr || stdOut).trim() });
+          finish({ success: false, error: (stdErr || stdOut).trim() });
         }
       });
 
       ps.on('error', (err) => {
         try { if (fs.existsSync(tempPrnPath)) fs.unlinkSync(tempPrnPath); } catch (e) {}
         console.error('[Native Print Spawn Error]:', err);
-        resolve({ success: false, error: err.message });
+        finish({ success: false, error: err.message });
       });
     });
   } catch (err) {

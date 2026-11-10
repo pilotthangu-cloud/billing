@@ -15,7 +15,7 @@ import {
 import PrintableReceipt from './PrintableReceipt';
 import VirtualTvsHardwareInspector from './VirtualTvsHardwareInspector';
 import { triggerWhatsAppBillShare } from '../utils/billUtils';
-import { generateTvsEscPosStream } from '../utils/tvsPrinterEngine';
+import { formatTvsBillLines, generateTvsEscPosStream } from '../utils/tvsPrinterEngine';
 
 export default function DotMatrixReceiptModal({ 
   isOpen, 

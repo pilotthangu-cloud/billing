@@ -185,6 +185,7 @@ function cleanMedicineName(rawName) {
  * names, racks, and MRPs even when importing stock-only balance files (e.g. STK2610.DBF).
  */
 export function normalizeLegacyMedicineRecords(records, customMaster = null, companyMap = null) {
+  const hasSourceMaster = Array.isArray(customMaster);
   const activeMasterByCode = customMaster 
     ? new Map(customMaster.map(m => [String(m.code || '').trim().toUpperCase(), m]))
     : masterByCode;
@@ -260,22 +261,22 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
     const rawCoCode = String(r.CO_CODE || r.COMPANY_CODE || r.MFG_CODE || '').trim().toUpperCase();
     let company = (companyMap && rawCoCode && companyMap.get(rawCoCode)) ||
       String(r.CO_NAME || r.COMPANY || r.MFG || r.MFGR || '').trim().toUpperCase();
-    if (!company || /^\d+$/.test(company) || company === 'GEN') {
+    if ((!company || /^\d+$/.test(company) || company === 'GEN') && hasSourceMaster) {
       if (master?.company && !/^\d+$/.test(master.company)) {
         company = master.company.toUpperCase();
       }
     }
 
     let generic = String(r.GEN_NAME || r.GENERIC || r.COMPOSITION || r.SALT || '').trim().toUpperCase();
-    if (!generic && master?.generic) {
+    if (!generic && hasSourceMaster && master?.generic) {
       generic = master.generic.toUpperCase();
     }
 
     // 10. GST Tax & HSN
-    const gstSource = firstPresent(r.GST, r.TAX, r.VAT, r.PUR_TAX, r.SAL_TPS, master?.tax_percent);
+    const gstSource = firstPresent(r.GST, r.TAX, r.VAT, r.PUR_TAX, r.SAL_TPS, hasSourceMaster ? (master?.gstPercent ?? master?.tax_percent) : undefined);
     const gstParsed = gstSource === undefined ? null : Number(gstSource);
     const gstPercent = Number.isFinite(gstParsed) ? gstParsed : null;
-    const hsn = String(firstPresent(r.HSN, r.HSNCODE, r.HSN_CODE, master?.hsn, '')).trim();
+    const hsn = String(firstPresent(r.HSN, r.HSNCODE, r.HSN_CODE, hasSourceMaster ? master?.hsn : undefined) ?? '').trim();
 
     // 11. Batches & expiry. Preserve only source evidence; never generate either.
     const rawBatchStr = String(
@@ -337,7 +338,7 @@ export function normalizeLegacyMedicineRecords(records, customMaster = null, com
       stock_shop3: 0,
       gstPercent,
       hsn,
-      schedule: master?.schedule || '',
+      schedule: hasSourceMaster ? (master?.schedule || '') : '',
       batches,
       importIssues,
       isImported: true

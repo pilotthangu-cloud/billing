@@ -97,3 +97,22 @@ test('unrecognized stock quantity schema stops rather than silently zeroing inve
     dbfFile('STK2611.DBF', 'DATA', [{ IT_CODE: 'DOLO', UNKNOWN: 435 }])
   ]), /no valid stock quantity/);
 });
+
+test('built-in catalog metadata cannot fabricate manufacturer, GST, HSN or schedule during DBF import', () => {
+  const [dolo] = normalizeLegacyMedicineRecords([{
+    IT_CODE: 'T241D060',
+    IT_NAME: 'DOLO 650',
+    RO_QTY: '15',
+    OP_STOCK: 0,
+    MRP: 32.28,
+    PTR: 5,
+    PER: 15,
+    RACK: 'O4'
+  }]);
+  assert.equal(dolo.company, '');
+  assert.equal(dolo.generic, '');
+  assert.equal(dolo.gstPercent, null);
+  assert.equal(dolo.hsn, '');
+  assert.equal(dolo.schedule, '');
+  assert.ok(dolo.importIssues.includes('MISSING_GST'));
+});
