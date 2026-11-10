@@ -36,15 +36,18 @@ import {
   idbCacheMedicines, 
   idbClearMedicines, 
   idbUpdateMedicines, 
+  idbAddMedicine,
   idbSaveBill, 
   idbCommitSaleTransaction,
   idbGetMedicinesCount,
   idbGetCachedMedicines,
+  idbGetAllBills,
   idbSaveUnverifiedReturn,
   idbGetUnverifiedReturns,
   idbIsInitialized,
   idbSetInitialized,
-  idbGetMaxBillNo
+  idbGetMaxBillNo,
+  idbMarkPrintJob
 } from './utils/indexedDb';
 import UnverifiedReturnsReviewModal from './components/UnverifiedReturnsReviewModal';
 import { autoRepairCorruptedMedicines } from './utils/dbfReader';
@@ -62,6 +65,12 @@ import { planBatchTransfer } from './utils/inventoryTransfer';
 import { preserveOtherBranchRecord, replaceBranchBatches } from './utils/branchImport';
 
 import initialMedicines from './data/medicines.json';
+
+// Safe counter release: unfinished shift/admin/cloud workflows stay out of the
+// pharmacy UI unless an explicitly audited build opts back in.
+export const COUNTER_ONLY_MODE = import.meta.env.VITE_COUNTER_ONLY_MODE !== 'false';
+const COUNTER_ONLY_ALLOWED_PAGES = new Set(['billing', 'product-master', 'expiry', 'batch-enquiry']);
+const isCounterOnlyPageAllowed = page => !COUNTER_ONLY_MODE || COUNTER_ONLY_ALLOWED_PAGES.has(page);
 
 // Protected modules requiring Administrator PIN authentication
 // Protected modules requiring Administrator PIN authentication (Restricted strictly to Sales & Margins)
@@ -241,6 +250,7 @@ export default function App() {
   const initialRoute = getInitialPage();
   const [theme, setTheme] = useState('light');
   const [activePage, setActivePage] = useState(() => {
+    if (!isCounterOnlyPageAllowed(initialRoute)) return 'billing';
     if (PROTECTED_PAGES[initialRoute]) return 'billing';
     return initialRoute;
   });
@@ -365,6 +375,7 @@ export default function App() {
 
   // First-Time Setup & Onboarding Wizard State (Counter Billing only; never in Admin HQ)
   const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(() => {
+    if (COUNTER_ONLY_MODE) return false;
     try {
       const path = (window.location.pathname || '').toLowerCase();
       const hash = (window.location.hash || '').toLowerCase();
@@ -538,15 +549,13 @@ export default function App() {
     medicinesRef.current = updated;
     setMedicines(updated);
 
-    uploadMedicinesCatalogToSupabase(updated)
-      .then(result => {
-        if (!result?.success) {
-          console.warn('Cloud catalog sync is incomplete; the verified local import remains authoritative.', result);
-        }
-      })
-      .catch(err => {
-        console.warn('Cloud catalog sync failed after the verified local import:', err);
-      });
+    if (!COUNTER_ONLY_MODE && import.meta.env.VITE_ENABLE_CLOUD_SYNC === 'true') {
+      uploadMedicinesCatalogToSupabase(updated)
+        .then(result => {
+          if (!result?.success) console.warn('Cloud catalog sync is incomplete; the verified local import remains authoritative.', result);
+        })
+        .catch(err => console.warn('Cloud catalog sync failed after the verified local import:', err));
+    }
 
     return { success: true, count: updated.length, stockKey: targetStockKey };
   };
@@ -593,6 +602,7 @@ export default function App() {
   const [handoverNotice, setHandoverNotice] = useState(null);
 
   const handleOpenShiftHandover = (preselectedIncomingStaff) => {
+    if (COUNTER_ONLY_MODE) return;
     if (preselectedIncomingStaff && typeof preselectedIncomingStaff === 'string' && preselectedIncomingStaff !== activeShift?.staffName && preselectedIncomingStaff !== '__add_new__') {
       setTargetIncomingStaff(preselectedIncomingStaff);
     } else {
@@ -622,6 +632,7 @@ export default function App() {
 
   // Terminal Lock & Shift Sign-In Gate (Zero-Trust Counter Protection)
   const [isTerminalLocked, setIsTerminalLocked] = useState(() => {
+    if (COUNTER_ONLY_MODE) return false;
     try {
       const unlocked = localStorage.getItem('beta_pharma_terminal_unlocked');
       const activeShiftSaved = localStorage.getItem('beta_pharma_active_shift');
@@ -642,6 +653,7 @@ export default function App() {
   };
 
   const handleLockTerminal = () => {
+    if (COUNTER_ONLY_MODE) return;
     setIsTerminalLocked(true);
     try {
       localStorage.removeItem('beta_pharma_terminal_unlocked');
@@ -649,7 +661,7 @@ export default function App() {
   };
 
   // Live Cloud Storage Metric Watchdog (Supabase 500 MB Free Tier)
-  const [cloudMetrics, setCloudMetrics] = useState({ usedMB: 18.5, maxMB: 500, pctUsed: 3.7, estRunwayYears: 8.0, isWarningThreshold: false });
+  const [cloudMetrics, setCloudMetrics] = useState({ verified: false, usedMB: null, maxMB: null, pctUsed: null, isWarningThreshold: false });
   const [isCloudPurgeModalOpen, setIsCloudPurgeModalOpen] = useState(false);
 
   const refreshCloudMetrics = () => {
@@ -666,7 +678,7 @@ export default function App() {
   const handleRestoreBackupData = ({ restoredMeds, restoredBills, restoredOverrides, restoredBranch, restoredStoreConfig }) => {
     if (restoredMeds && restoredMeds.length > 0) {
       setMedicines(restoredMeds);
-      idbCacheMedicines(restoredMeds).then(res => {
+      idbCacheMedicines(restoredMeds, { replace: true }).then(res => {
         if (!res || !res.success) {
           console.error('[STORAGE_ERROR] Failed to persist restored medicines to IndexedDB:', res?.error);
         }
@@ -806,10 +818,12 @@ export default function App() {
         if (!result?.success) {
           throw new Error(result?.error || 'Windows spooler did not confirm the print job.');
         }
+        if (currentBill.id) await idbMarkPrintJob(currentBill.id, { success: true });
         console.log(`[PRINT] Confirmed ${isReprint ? 'reprint' : 'bill'} #${currentBill.billNo} sent to TVS MSP 250`);
         return { success: true };
       } catch (e) {
         console.error('[PRINT] Instant raw TVS print failed:', e);
+        if (currentBill.id) await idbMarkPrintJob(currentBill.id, { success: false, error: e.message || 'Printer error' });
         return { success: false, error: e.message || 'Printer error' };
       }
     } else {
@@ -844,6 +858,10 @@ export default function App() {
 
   // Navigation to pages (Admin PIN check on protected modules)
   const handleNavigatePage = (page) => {
+    if (!isCounterOnlyPageAllowed(page)) {
+      alert('This unfinished management workflow is disabled in the counter-only safety build.');
+      return;
+    }
     if (PROTECTED_PAGES[page] && authenticatedRole !== 'MANAGER') {
       setPendingPage(page);
       setPasswordModalInfo(PROTECTED_PAGES[page]);
@@ -870,6 +888,10 @@ export default function App() {
   useEffect(() => {
     const handleUrlChange = () => {
       const page = getInitialPage();
+      if (!isCounterOnlyPageAllowed(page)) {
+        setActivePage('billing');
+        return;
+      }
       if (PROTECTED_PAGES[page] && authenticatedRole !== 'MANAGER') {
         setPendingPage(page);
         setPasswordModalInfo(PROTECTED_PAGES[page]);
@@ -938,7 +960,7 @@ export default function App() {
     try {
       let candidateBill = null;
       if (recentBills && recentBills.length > 0) {
-        candidateBill = recentBills[0];
+        candidateBill = recentBills.find(b => (b.branchId || 'MAIN') === (activeBranch?.id || 'MAIN')) || null;
       } else {
         try {
           const stored = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
@@ -1032,7 +1054,12 @@ export default function App() {
 
         // Reconcile bill number sequence against authoritative stored bills in IndexedDB
         try {
-          const maxBill = await idbGetMaxBillNo();
+          const canonicalBills = await idbGetAllBills();
+          if (isMounted) {
+            canonicalBills.sort((a, b) => String(b.createdAt || `${b.date} ${b.time}`).localeCompare(String(a.createdAt || `${a.date} ${a.time}`)));
+            setRecentBills(canonicalBills);
+          }
+          const maxBill = await idbGetMaxBillNo(activeBranch?.id || 'MAIN');
           if (maxBill > 0) {
             const currentBillNum = parseInt(billNo, 10) || 0;
             if (maxBill >= currentBillNum) {
@@ -1207,7 +1234,7 @@ export default function App() {
         handleReprintLastBill();
       }
       // Ctrl+L / Cmd+L locks the counter terminal
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
+      if (!COUNTER_ONLY_MODE && (e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
         e.preventDefault();
         handleLockTerminal();
       }
@@ -1227,6 +1254,7 @@ export default function App() {
 
   // Live Cloud Metrics Polling (500 MB Free Tier Watchdog)
   useEffect(() => {
+    if (COUNTER_ONLY_MODE) return undefined;
     refreshCloudMetrics();
     const interval = setInterval(refreshCloudMetrics, 60000);
     return () => clearInterval(interval);
@@ -1234,20 +1262,37 @@ export default function App() {
 
   // Automated 2+ Years Daily Backup Snapshot Engine (Local Hard Drive)
   useEffect(() => {
-    if (medicines && medicines.length > 0 && activeShift) {
+    if (medicines && medicines.length > 0) {
       saveDailyBackupSnapshot(medicines, recentBills, activeBranch, activeShift).then(result => {
         if (!result?.success) console.error('[BACKUP] Daily snapshot was not committed:', result?.error || 'Unknown error');
       });
     }
-  }, [activeShift, recentBills.length]);
+  }, [activeShift, activeBranch, recentBills.length, medicines.length]);
 
   // Add new medicine to master catalog with IndexedDB & Supabase cloud sync
   const handleAddNewMedicine = async (newMed) => {
+    const code = String(newMed.code || `NEW-${Date.now().toString(36).toUpperCase()}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase()}`);
+    if (medicinesRef.current.some(m => m.code === code)) {
+      return { success: false, error: `Medicine code ${code} already exists.` };
+    }
+    const targetStockKey = activeBranch?.stockKey || 'stock_shop1';
+    const targetBranchId = activeBranch?.id || 'MAIN';
+    const sourceStock = Number(newMed.stock ?? newMed[targetStockKey] ?? 0);
     const stampedMed = {
       ...newMed,
+      code,
+      stock: sourceStock,
+      [targetStockKey]: sourceStock,
+      batches: (newMed.batches || []).map(batch => ({ ...batch, branch_id: targetBranchId })),
       updatedAt: new Date().toISOString()
     };
-    setMedicines(prev => [stampedMed, ...prev]);
+    const idbResult = await idbAddMedicine(stampedMed);
+    if (!idbResult?.success) {
+      alert(`Medicine was not added: ${idbResult?.error || 'Database write failed.'}`);
+      return { success: false, error: idbResult?.error || 'Database write failed.' };
+    }
+    medicinesRef.current = [stampedMed, ...medicinesRef.current];
+    setMedicines(medicinesRef.current);
     try {
       const added = JSON.parse(localStorage.getItem('beta_pharma_added_meds') || '[]');
       added.unshift(stampedMed);
@@ -1255,14 +1300,9 @@ export default function App() {
     } catch (e) {
       console.error('Error saving added medicine to localStorage', e);
     }
-    const idbResult = await idbUpdateMedicines([stampedMed]);
-    if (!idbResult || !idbResult.success) {
-      console.error('[STORAGE_ERROR] Failed to persist new medicine to IndexedDB:', idbResult?.error);
-      alert(`Storage Warning: "${newMed.name}" added to session catalog, but local database persistence failed: ${idbResult?.error || 'Write error'}. Data remains saved in fallback storage.`);
-    } else {
-      alert(`Success! "${newMed.name}" added to Product Master in RACK ${newMed.rack}. You can now search and bill it immediately.`);
-    }
+    alert(`Success! "${newMed.name}" added to Product Master in RACK ${newMed.rack}.`);
     syncEngine.recordMedicineDelta(stampedMed);
+    return { success: true, medicine: stampedMed };
   };
 
   // Update existing medicine in master catalog with IndexedDB & Supabase cloud sync
@@ -1271,7 +1311,15 @@ export default function App() {
       ...updatedMed,
       updatedAt: new Date().toISOString()
     };
-    setMedicines(prev => prev.map(m => (m.code === stampedMed.code || m.name.toLowerCase() === stampedMed.name.toLowerCase()) ? stampedMed : m));
+    const idbResult = await idbUpdateMedicines([stampedMed]);
+    if (!idbResult?.success) {
+      console.error('[STORAGE_ERROR] Failed to persist updated medicine to IndexedDB:', idbResult?.error);
+      alert(`Update cancelled: ${idbResult?.error || 'Database write failed.'}`);
+      return { success: false, error: idbResult?.error || 'Database write failed.' };
+    }
+    const committed = medicinesRef.current.map(m => (m.code === stampedMed.code ? stampedMed : m));
+    medicinesRef.current = committed;
+    setMedicines(committed);
     try {
       const overrides = JSON.parse(localStorage.getItem('beta_pharma_med_overrides') || '{}');
       const key = stampedMed.code || stampedMed.name.toLowerCase();
@@ -1280,12 +1328,8 @@ export default function App() {
     } catch (e) {
       console.error('Error saving medicine override to localStorage', e);
     }
-    const idbResult = await idbUpdateMedicines([stampedMed]);
-    if (!idbResult || !idbResult.success) {
-      console.error('[STORAGE_ERROR] Failed to persist updated medicine to IndexedDB:', idbResult?.error);
-      alert(`Storage Warning: "${stampedMed.name}" updated in session, but local database persistence failed: ${idbResult?.error || 'Write error'}. Data remains saved in fallback storage.`);
-    }
     syncEngine.recordMedicineDelta(stampedMed);
+    return { success: true };
   };
 
   // Update stock when Purchase Invoice is saved with Batch increments, IndexedDB & Cloud Sync
@@ -2053,10 +2097,11 @@ export default function App() {
     const gross = items.reduce((acc, it) => acc + it.totalValue, 0);
     const net = Math.round(gross);
 
-    const billPayload = {
+    let billPayload = {
       billNo,
       date: billDate,
       time: currentTime,
+      createdAt: new Date().toISOString(),
       patientName: patientName || 'CUSTOMER',
       customerPhone: customerPhone ? customerPhone.trim() : '',
       doctorName: doctorName || 'Self / OTC',
@@ -2121,6 +2166,7 @@ export default function App() {
     }
 
     // Step 3: Atomic Multi-Store Commit to IndexedDB (Medicines Stock + Bill Record in ONE transaction)
+    let atomicDueRecord = null;
     try {
       const txRes = await idbCommitSaleTransaction(stagedModifiedMeds, billPayload);
       if (!txRes || !txRes.success) {
@@ -2155,7 +2201,7 @@ export default function App() {
             // Do NOT clear cart, do NOT print false receipt, do NOT deduct stock!
             let nextAvailable = '';
             try {
-              const maxNum = await idbGetMaxBillNo();
+              const maxNum = await idbGetMaxBillNo(activeBranch?.id || 'MAIN');
               nextAvailable = (maxNum + 1).toString().padStart(6, '0');
               setBillNo(nextAvailable);
               localStorage.setItem('beta_pharma_next_bill_no', nextAvailable);
@@ -2172,6 +2218,8 @@ export default function App() {
         releaseGuard();
         return; // EXIT: Cart preserved, zero state mutation, zero printing triggered
       }
+      billPayload = txRes.billRecord || billPayload;
+      atomicDueRecord = txRes.dueRecord || null;
     } catch (err) {
       console.error('[TRANSACTION EXCEPTION]', err);
       alert(`Bill Finalization Failed:\n${err.message || 'Unexpected storage exception.'}\n\nStock was NOT deducted and the bill was NOT saved. Your cart items have been preserved.`);
@@ -2244,21 +2292,11 @@ export default function App() {
     if (paymentMode === 'credit') {
       try {
         const dues = JSON.parse(localStorage.getItem('beta_pharma_due_bills') || '[]');
-        const dueRecord = {
-          id: `DUE-${Date.now()}`,
-          billNo,
-          date: billDate,
-          customerName: patientName || 'CUSTOMER',
-          customerPhone: customerPhone ? customerPhone.trim() : '',
-          doctorName: doctorName || 'Self / OTC',
-          amount: net,
-          balance: net,
-          dueDate: '30 days',
-          status: 'UNPAID',
-          store: activeBranch?.name || 'Beta Pharmacy'
-        };
-        dues.unshift(dueRecord);
-        localStorage.setItem('beta_pharma_due_bills', JSON.stringify(dues));
+        const dueRecord = atomicDueRecord;
+        if (!dueRecord) throw new Error('Atomic due ledger record was not returned after credit sale commit.');
+        const withoutDuplicate = dues.filter(existing => existing.id !== dueRecord.id);
+        withoutDuplicate.unshift(dueRecord);
+        localStorage.setItem('beta_pharma_due_bills', JSON.stringify(withoutDuplicate));
       } catch (e) {
         console.warn('Error recording customer due bill', e);
       }
@@ -2468,6 +2506,7 @@ export default function App() {
           onOpenCloudStorageModal={() => setIsCloudPurgeModalOpen(true)}
           onOpenBackupModal={() => setIsBackupModalOpen(true)}
           cloudMetrics={cloudMetrics}
+          counterOnlyMode={COUNTER_ONLY_MODE}
         />
         </>
       )}
@@ -2657,7 +2696,7 @@ export default function App() {
       )}
 
       {/* Password Authentication Modal (Clipper Security CC / DD) */}
-      <PasswordAuthModal
+      {!COUNTER_ONLY_MODE && <PasswordAuthModal
         isOpen={isPasswordModalOpen}
         onClose={() => {
           setIsPasswordModalOpen(false);
@@ -2673,7 +2712,7 @@ export default function App() {
         actionTitle={passwordModalInfo.title}
         actionDescription={passwordModalInfo.description}
         theme={theme}
-      />
+      />}
 
       {/* New Medicine Master Modal */}
       <NewMedicineModal
@@ -2711,7 +2750,7 @@ export default function App() {
       />
 
       {/* Staff Shift Session Handover & Blind Cash Reconciliation Modal */}
-      <ShiftReconciliationModal
+      {!COUNTER_ONLY_MODE && <ShiftReconciliationModal
         isOpen={isShiftModalOpen}
         onClose={() => {
           setIsShiftModalOpen(false);
@@ -2725,10 +2764,10 @@ export default function App() {
         staffList={staffList}
         onAddStaff={handleAddStaff}
         targetIncomingStaff={targetIncomingStaff}
-      />
+      />}
 
       {/* First-Time Guided Onboarding & Terminal Setup Wizard (Counter Billing only) */}
-      {activePage !== 'admin' && (
+      {!COUNTER_ONLY_MODE && activePage !== 'admin' && (
         <FirstTimeSetupWizardModal
           isOpen={isSetupWizardOpen && activePage !== 'admin'}
           onClose={() => setIsSetupWizardOpen(false)}
@@ -2809,7 +2848,7 @@ export default function App() {
       />
 
       {/* Terminal Lock & Shift Sign-In Gate (Never blocks initial Onboarding/Setup Wizard) */}
-      {isTerminalLocked && !isSetupWizardOpen && (
+      {!COUNTER_ONLY_MODE && isTerminalLocked && !isSetupWizardOpen && (
         <TerminalLockScreen
           theme={theme}
           activeBranch={activeBranch}
@@ -2822,7 +2861,7 @@ export default function App() {
       )}
 
       {/* Live Cloud Storage Quota Health & 2-Step Safe Purge Modal */}
-      <CloudStoragePurgeModal
+      {!COUNTER_ONLY_MODE && <CloudStoragePurgeModal
         isOpen={isCloudPurgeModalOpen}
         onClose={() => setIsCloudPurgeModalOpen(false)}
         theme={theme}
@@ -2830,7 +2869,7 @@ export default function App() {
         onRefreshMetrics={refreshCloudMetrics}
         recentBills={recentBills}
         activeBranch={activeBranch}
-      />
+      />}
 
       {/* 2+ Years Local Disk Backup Hub (730+ Days Retention & USB Export) */}
       <BackupManagerModal

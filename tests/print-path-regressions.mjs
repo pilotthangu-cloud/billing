@@ -21,3 +21,11 @@ test('raw printing requires a complete byte write and has a bounded timeout', ()
   assert.match(electronSource, /TVS printer did not respond within 15 seconds/);
   assert.match(electronSource, /setTimeout\([^]*15000\)/s);
 });
+
+test('packaged Electron window keeps browser security enabled and production devtools disabled', () => {
+  assert.match(electronSource, /sandbox:\s*true/);
+  assert.match(electronSource, /webSecurity:\s*true/);
+  assert.match(electronSource, /devTools:\s*!app\.isPackaged/);
+  assert.doesNotMatch(electronSource, /-ExecutionPolicy['"],\s*['"]Bypass/);
+  assert.match(electronSource, /printerNameB64/);
+});

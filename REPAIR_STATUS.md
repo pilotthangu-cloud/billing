@@ -1,3 +1,10 @@
+# WITHDRAWN — historical 1.0.1-rc.2 checkpoint
+
+**Do not install either rc.2 executable listed below.** This file is retained
+only as historical evidence. The current release decision and feature matrix
+are in `FULL_RELEASE_AUDIT_2026-11-10.md`; the repaired source line is rc.3 and
+must still pass physical printer and target-PC acceptance before packaging.
+
 # 1.0.1-rc.2 repair checkpoint
 
 ## rc.2 branch-isolation repair

@@ -12,47 +12,55 @@ export default function NewMedicineModal({ isOpen, onClose, onAddMedicine, theme
     per: '10',
     batch_no: '',
     exp_date: '',
-    stock: '20',
+    stock: '0',
     supplier: ''
   });
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    const openingStock = parseInt(formData.stock, 10) || 0;
+    if (openingStock > 0 && (!formData.batch_no.trim() || !formData.exp_date.trim())) {
+      alert('A real batch number and expiry are required when opening stock is greater than zero. Nothing was saved.');
+      return;
+    }
+
     const newMed = {
-      code: 'NEW' + Math.floor(1000 + Math.random() * 9000),
       name: formData.name.toUpperCase().trim(),
       group: formData.group,
       group_label: formData.group === 'T' ? 'Tablet' : (formData.group === 'L' ? 'Liquid' : (formData.group === 'C' ? 'Capsule' : 'Other')),
       rack: formData.rack.trim() || 'GEN',
-      company: formData.company.toUpperCase().trim() || 'PHARMA',
+      company: formData.company.toUpperCase().trim(),
       generic: formData.generic.toUpperCase().trim(),
-      mrp: parseFloat(formData.mrp) || 100.00,
-      ptr: Math.round((parseFloat(formData.mrp) || 100) * 0.78),
+      mrp: parseFloat(formData.mrp) || 0,
+      ptr: 0,
       per: parseInt(formData.per) || 10,
-      hsn: '3004',
-      tax_percent: 12.0,
-      stock_shop1: parseInt(formData.stock) || 0,
+      hsn: '',
+      tax_percent: null,
+      stock: openingStock,
+      stock_shop1: openingStock,
       stock_shop2: 0,
       stock_shop3: 0,
-      schedule: 'Normal',
+      schedule: '',
       ro_level: 10,
-      batches: [
+      batches: openingStock > 0 ? [
         {
-          batch_no: formData.batch_no.trim() || 'B101',
-          exp_date: formData.exp_date.trim() || '',
-          mrp: parseFloat(formData.mrp) || 100.00,
+          batch_no: formData.batch_no.trim(),
+          exp_date: formData.exp_date.trim(),
+          mrp: parseFloat(formData.mrp) || 0,
           per: parseInt(formData.per) || 10,
-          supplier: formData.supplier || ''
+          supplier: formData.supplier || '',
+          qty: openingStock,
+          stock: openingStock
         }
-      ]
+      ] : []
     };
 
-    onAddMedicine(newMed);
-    onClose();
+    const result = await onAddMedicine(newMed);
+    if (result?.success) onClose();
   };
 
   return (

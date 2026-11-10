@@ -29,13 +29,14 @@ import {
 
 class DeltaSyncEngine {
   constructor() {
+    this.enabled = import.meta.env?.VITE_ENABLE_CLOUD_SYNC === 'true';
     this.isOnline = (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') ? navigator.onLine : true;
     this.isSyncing = false;
     this.subscribers = new Set();
     this.pendingCount = 0;
     this.lastSyncTime = null;
     this.lastError = null;
-    this.syncState = 'SYNCED'; // 'SYNCED' | 'PENDING' | 'RECONCILIATION_REQUIRED' | 'RLS_BLOCKED' | 'OFFLINE'
+    this.syncState = this.enabled ? 'PENDING' : 'LOCAL_ONLY';
     this.backoffMs = 30000;
     this.heartbeatTimer = null;
     this.unresolvedConflicts = this.loadStoredConflicts();
@@ -44,8 +45,10 @@ class DeltaSyncEngine {
       window.addEventListener('online', () => this.handleNetworkChange(true));
       window.addEventListener('offline', () => this.handleNetworkChange(false));
       
-      this.refreshPendingCount();
-      this.startHeartbeat();
+      if (this.enabled) {
+        this.refreshPendingCount();
+        this.startHeartbeat();
+      }
     }
   }
 
@@ -110,6 +113,11 @@ class DeltaSyncEngine {
 
   handleNetworkChange(online) {
     this.isOnline = online;
+    if (!this.enabled) {
+      this.syncState = 'LOCAL_ONLY';
+      this.notifySubscribers();
+      return;
+    }
     if (!online) {
       this.syncState = 'OFFLINE';
       this.notifySubscribers();
@@ -183,6 +191,7 @@ class DeltaSyncEngine {
 
   getStatus() {
     return {
+      enabled: this.enabled,
       isOnline: this.isOnline,
       isSyncing: this.isSyncing,
       pendingCount: this.pendingCount,
@@ -284,6 +293,9 @@ class DeltaSyncEngine {
    * exact queued record only after the cloud confirms success.
    */
   async persistThenPush(actionType, payload, pushFn) {
+    if (!this.enabled) {
+      return { success: true, localOnly: true, queued: false };
+    }
     const queueId = await idbEnqueueDelta(actionType, payload);
     if (queueId === null || queueId === undefined) {
       this.lastError = 'Could not persist sync event to the local outbox';
@@ -400,6 +412,7 @@ class DeltaSyncEngine {
    * Flush pending delta queue to Supabase with exponential backoff on failures
    */
   async flushQueue() {
+    if (!this.enabled) return { success: false, localOnly: true, error: 'Cloud sync is disabled in this release.' };
     if (this.isSyncing || !this.isOnline) return;
     this.isSyncing = true;
     this.notifySubscribers();
@@ -487,6 +500,7 @@ class DeltaSyncEngine {
    * Manual 1-click sync trigger from UI button
    */
   async triggerManualSync() {
+    if (!this.enabled) return this.getStatus();
     this.backoffMs = 30000;
     await this.flushQueue();
     return this.getStatus();

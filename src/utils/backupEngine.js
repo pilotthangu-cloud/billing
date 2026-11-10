@@ -13,14 +13,10 @@
 
 import { 
   openPharmaDB, 
-  idbCacheMedicines, 
-  idbSaveBill, 
-  idbSaveUnverifiedReturn, 
   idbGetUnverifiedReturns,
-  idbSaveStockTransfer,
   idbGetAllStockTransfers,
-  idbSaveDueBill,
   idbGetAllDueBills,
+  idbRestoreCoreSnapshotAtomic,
   idbSetInitialized 
 } from './indexedDb.js';
 import { uploadVerifiedCloudBackup, fetchLatestVerifiedCloudBackup } from './supabaseClient.js';
@@ -353,74 +349,12 @@ export async function restoreFromVerifiedCloudBackup(branchId = 'MAIN', options 
   const storeConfig = payload.storeConfig || {};
   const staffList = payload.staffList || [];
 
-  // Restore into authoritative local IndexedDB with failure tracking
+  // Restore all canonical core stores in one transaction. Any invalid row or
+  // write failure aborts the entire replacement and preserves existing data.
   const persistenceFailures = [];
-  const isIndexedDBAvailable = (typeof indexedDB !== 'undefined') || (typeof window !== 'undefined' && Boolean(window.indexedDB));
-
-  const medRes = await idbCacheMedicines(meds);
-  const isMedOk = medRes === true || (medRes && medRes.success);
-  if (!isMedOk && isIndexedDBAvailable) {
-    persistenceFailures.push(`Medicines: ${medRes?.error || 'Failed to cache medicines into IndexedDB'}`);
-  }
-
-  // Restore bills
-  let failedBills = 0;
-  for (const b of bills) {
-    if (b && (b.billNo || b.id)) {
-      const bRes = await idbSaveBill(b);
-      const isBOk = bRes === true || (bRes && bRes.success);
-      if (!isBOk) {
-        failedBills++;
-      }
-    }
-  }
-  if (failedBills > 0 && isIndexedDBAvailable) {
-    persistenceFailures.push(`Bills: Failed to persist ${failedBills}/${bills.length} bills into IndexedDB`);
-  }
-
-  // Restore quarantined unverified returns
-  let failedReturns = 0;
-  for (const uv of unverifiedReturns) {
-    if (uv && uv.creditNoteNo) {
-      const uvRes = await idbSaveUnverifiedReturn(uv);
-      const isUvOk = uvRes === true || (uvRes && uvRes.success);
-      if (!isUvOk) {
-        failedReturns++;
-      }
-    }
-  }
-  if (failedReturns > 0 && isIndexedDBAvailable) {
-    persistenceFailures.push(`Unverified Returns: Failed to persist ${failedReturns}/${unverifiedReturns.length} records into IndexedDB`);
-  }
-
-  // Restore stock transfers
-  let failedTransfers = 0;
-  for (const tr of stockTransfers) {
-    if (tr && tr.id) {
-      const trRes = await idbSaveStockTransfer(tr);
-      const isTrOk = trRes === true || (trRes && trRes.success);
-      if (!isTrOk) {
-        failedTransfers++;
-      }
-    }
-  }
-  if (failedTransfers > 0 && isIndexedDBAvailable) {
-    persistenceFailures.push(`Stock Transfers: Failed to persist ${failedTransfers}/${stockTransfers.length} records into IndexedDB`);
-  }
-
-  // Restore due bills
-  let failedDueBills = 0;
-  for (const db of dueBills) {
-    if (db && db.id) {
-      const dbRes = await idbSaveDueBill(db);
-      const isDbOk = dbRes === true || (dbRes && dbRes.success);
-      if (!isDbOk) {
-        failedDueBills++;
-      }
-    }
-  }
-  if (failedDueBills > 0 && isIndexedDBAvailable) {
-    persistenceFailures.push(`Due Bills: Failed to persist ${failedDueBills}/${dueBills.length} records into IndexedDB`);
+  const restoreResult = await idbRestoreCoreSnapshotAtomic({ medicines: meds, bills, dueBills, stockTransfers, unverifiedReturns });
+  if (!restoreResult?.success) {
+    return { success: false, persistenceFailures: [`Core database: ${restoreResult?.error || 'Atomic restore failed'}`], error: restoreResult?.error || 'Atomic restore failed. Existing data was preserved.' };
   }
 
   // Restore LocalStorage configurations safely with branch isolation
@@ -514,70 +448,11 @@ export async function restoreFromLocalBackupJson(rawInput, options = {}) {
     const storeConfig = payload.storeConfig || {};
     const staffList = payload.staffList || [];
 
-    // Persist into authoritative IndexedDB with failure tracking
+    // Persist into authoritative IndexedDB atomically.
     const persistenceFailures = [];
-    const isIndexedDBAvailable = (typeof indexedDB !== 'undefined') || (typeof window !== 'undefined' && Boolean(window.indexedDB));
-
-    const medRes = await idbCacheMedicines(meds);
-    const isMedOk = medRes === true || (medRes && medRes.success);
-    if (!isMedOk && isIndexedDBAvailable) {
-      persistenceFailures.push(`Medicines: ${medRes?.error || 'Failed to cache medicines into IndexedDB'}`);
-    }
-
-    let failedBills = 0;
-    for (const b of bills) {
-      if (b && (b.billNo || b.id)) {
-        const bRes = await idbSaveBill(b);
-        const isBOk = bRes === true || (bRes && bRes.success);
-        if (!isBOk) {
-          failedBills++;
-        }
-      }
-    }
-    if (failedBills > 0 && isIndexedDBAvailable) {
-      persistenceFailures.push(`Bills: Failed to persist ${failedBills}/${bills.length} bills into IndexedDB`);
-    }
-
-    let failedReturns = 0;
-    for (const uv of unverifiedReturns) {
-      if (uv && uv.creditNoteNo) {
-        const uvRes = await idbSaveUnverifiedReturn(uv);
-        const isUvOk = uvRes === true || (uvRes && uvRes.success);
-        if (!isUvOk) {
-          failedReturns++;
-        }
-      }
-    }
-    if (failedReturns > 0 && isIndexedDBAvailable) {
-      persistenceFailures.push(`Unverified Returns: Failed to persist ${failedReturns}/${unverifiedReturns.length} records into IndexedDB`);
-    }
-
-    let failedTransfers = 0;
-    for (const tr of stockTransfers) {
-      if (tr && tr.id) {
-        const trRes = await idbSaveStockTransfer(tr);
-        const isTrOk = trRes === true || (trRes && trRes.success);
-        if (!isTrOk) {
-          failedTransfers++;
-        }
-      }
-    }
-    if (failedTransfers > 0 && isIndexedDBAvailable) {
-      persistenceFailures.push(`Stock Transfers: Failed to persist ${failedTransfers}/${stockTransfers.length} records into IndexedDB`);
-    }
-
-    let failedDueBills = 0;
-    for (const db of dueBills) {
-      if (db && db.id) {
-        const dbRes = await idbSaveDueBill(db);
-        const isDbOk = dbRes === true || (dbRes && dbRes.success);
-        if (!isDbOk) {
-          failedDueBills++;
-        }
-      }
-    }
-    if (failedDueBills > 0 && isIndexedDBAvailable) {
-      persistenceFailures.push(`Due Bills: Failed to persist ${failedDueBills}/${dueBills.length} records into IndexedDB`);
+    const restoreResult = await idbRestoreCoreSnapshotAtomic({ medicines: meds, bills, dueBills, stockTransfers, unverifiedReturns });
+    if (!restoreResult?.success) {
+      return { success: false, persistenceFailures: [`Core database: ${restoreResult?.error || 'Atomic restore failed'}`], error: restoreResult?.error || 'Atomic restore failed. Existing data was preserved.' };
     }
 
     try {

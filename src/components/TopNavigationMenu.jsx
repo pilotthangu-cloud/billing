@@ -69,7 +69,8 @@ export default function TopNavigationMenu({
   onLockTerminal,
   onOpenCloudStorageModal,
   onOpenBackupModal,
-  cloudMetrics
+  cloudMetrics,
+  counterOnlyMode = true
 }) {
   const isDark = theme === 'dark';
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -122,33 +123,15 @@ export default function TopNavigationMenu({
             )}
 
             {!window.electronAPI?.isElectron && (
-              <a
-                href="https://github.com/pilotthangu-cloud/billing/releases/download/v1.0.0/Beta.Pharmacy.POS.64bit.SELECT-ALL-FINAL.exe"
-                target="_blank"
-                rel="noreferrer"
-                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
-                  isDark ? 'bg-emerald-950 text-emerald-200 border-emerald-700 hover:bg-emerald-900' : 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+              <span
+                data-release-status="withdrawn"
+                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold ${
+                  isDark ? 'bg-rose-950 text-rose-200 border-rose-700' : 'bg-rose-50 text-rose-900 border-rose-300'
                 }`}
-                title="Download Standalone Windows Desktop Counter App (.exe) directly in Chrome"
+                title="Desktop installers are hidden until x64 and Windows 7 x86 acceptance tests pass."
               >
-                <Download className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                <span>⬇️ Download Counter App</span>
-              </a>
-            )}
-
-            {!window.electronAPI?.isElectron && (
-              <a
-                href="https://github.com/pilotthangu-cloud/billing/releases/download/v1.0.0/Beta.Pharmacy.POS.Win7.32bit.repaired.exe"
-                target="_blank"
-                rel="noreferrer"
-                className={`px-2.5 py-0.5 rounded border text-[11px] font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs ${
-                  isDark ? 'bg-amber-950 text-amber-200 border-amber-700 hover:bg-amber-900' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                }`}
-                title="Download Windows 7 compatible 32-bit (x86) desktop app"
-              >
-                <Download className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                <span>⬇️ Win7 32-bit</span>
-              </a>
+                Desktop installers under verification
+              </span>
             )}
 
             {/* Force-clear service worker cache and reload fresh — use after any update */}
@@ -444,7 +427,7 @@ export default function TopNavigationMenu({
                   >
                     <span>Day Begin & Cash Tally</span>
                   </button>
-                  <button 
+                  {!counterOnlyMode && <button
                     onClick={() => {
                       setOpenDropdown(null);
                       if (onOpenSetupWizard) onOpenSetupWizard();
@@ -453,7 +436,7 @@ export default function TopNavigationMenu({
                   >
                     <span>Terminal Setup & Features Guide</span>
                     <span className="text-[10px] font-mono opacity-80 text-emerald-500 font-bold">TOUR</span>
-                  </button>
+                  </button>}
                   {!isAppInstalled && onInstallApp && (
                     <button 
                       onClick={() => {
@@ -475,7 +458,7 @@ export default function TopNavigationMenu({
         {/* Right: Cashier Shift Handover, Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
         <div className="flex items-center space-x-2 font-mono text-[11px]">
           {/* Active Cashier Shift, Handover & Lock Terminal */}
-          <div className="flex items-center space-x-1">
+          {!counterOnlyMode && <div className="flex items-center space-x-1">
             <div className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-bold ${
               isDark
                 ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
@@ -538,7 +521,7 @@ export default function TopNavigationMenu({
                 <span className="hidden xl:inline text-[10px]">Lock</span>
               </button>
             )}
-          </div>
+          </div>}
 
           {/* Universal Command Palette Spotlight Trigger (Ctrl+K) */}
           {onOpenCommandPalette && (
@@ -578,7 +561,7 @@ export default function TopNavigationMenu({
           )}
 
           {/* Owner Admin HQ Portal Quick Access */}
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('admin')}
             className={`px-2.5 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-black transition ${
               activePage === 'admin'
@@ -591,10 +574,10 @@ export default function TopNavigationMenu({
           >
             <Building2 className={`w-3.5 h-3.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
             <span>ADMIN HQ</span>
-          </button>
+          </button>}
 
           {/* Cloud Delta Sync Status Indicator */}
-          <button
+          {!counterOnlyMode && <button
             onClick={() => {
               if (onTriggerSync) {
                 onTriggerSync();
@@ -638,13 +621,13 @@ export default function TopNavigationMenu({
             ) : (
               <>
                 <Wifi className={`w-3 h-3 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <span>CLOUD SYNC: ACTIVE</span>
+                <span>LOCAL ONLY — CLOUD UNVERIFIED</span>
               </>
             )}
-          </button>
+          </button>}
 
           {/* Live Cloud Storage Quota Watchdog Meter */}
-          {onOpenCloudStorageModal && (
+          {!counterOnlyMode && onOpenCloudStorageModal && cloudMetrics?.verified && (
             <button
               onClick={onOpenCloudStorageModal}
               className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
@@ -655,7 +638,7 @@ export default function TopNavigationMenu({
               title="Cloud Storage Health & Quota Watchdog (500 MB Free Tier) • Click to inspect or purge old archive"
             >
               <Cloud className="w-3 h-3 text-sky-500 shrink-0" />
-              <span>{cloudMetrics?.usedMB || 18.5}/{cloudMetrics?.maxMB || 500}M</span>
+              <span>{cloudMetrics.usedMB}/{cloudMetrics.maxMB}M</span>
             </button>
           )}
 

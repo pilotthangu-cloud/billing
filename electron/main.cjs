@@ -25,8 +25,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
-      webSecurity: false
+      sandbox: true,
+      webSecurity: true,
+      devTools: !app.isPackaged
     }
   });
 
@@ -39,13 +40,13 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:3000');
   }
 
-  // Keyboard shortcut: F12 for DevTools, Ctrl+R / F5 for reload
+  // Development shortcuts are unavailable in packaged pharmacy builds.
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12' && input.type === 'keyDown') {
+    if (!app.isPackaged && input.key === 'F12' && input.type === 'keyDown') {
       mainWindow.webContents.toggleDevTools();
       event.preventDefault();
     }
-    if ((input.key === 'F5' || (input.control && input.key === 'r')) && input.type === 'keyDown') {
+    if (!app.isPackaged && (input.key === 'F5' || (input.control && input.key === 'r')) && input.type === 'keyDown') {
       mainWindow.reload();
       event.preventDefault();
     }
@@ -84,9 +85,11 @@ async function printRawTvs(payload = {}) {
     fs.writeFileSync(tempPrnPath, bufferToWrite);
 
     // 2. Generate self-contained winspool.drv raw print script (No external file dependency, runs safely inside app.asar)
+    const printerNameB64 = Buffer.from(String(printerName || 'TVS'), 'utf8').toString('base64');
+    const filePathB64 = Buffer.from(tempPrnPath, 'utf8').toString('base64');
     const psScript = `
-$PrinterName = "${(printerName || 'TVS').replace(/"/g, '')}"
-$FilePath = "${tempPrnPath.replace(/\\/g, '\\\\')}"
+$PrinterName = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("${printerNameB64}"))
+$FilePath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("${filePathB64}"))
 
 try {
     $allPrinters = if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
@@ -200,7 +203,6 @@ public class RawPrinterHelper {
     return new Promise((resolve) => {
       const ps = spawn('powershell.exe', [
         '-NoProfile',
-        '-ExecutionPolicy', 'Bypass',
         '-EncodedCommand', encodedCommand
       ]);
 

@@ -172,6 +172,8 @@ const topNavigationSource = fs.readFileSync('src/components/TopNavigationMenu.js
 const dbfReaderSource = fs.readFileSync('src/utils/dbfReader.js', 'utf8');
 const databaseImportSource = fs.readFileSync('src/components/DatabaseImportModal.jsx', 'utf8');
 const indexedDbSource = fs.readFileSync('src/utils/indexedDb.js', 'utf8');
+const newMedicineSource = fs.readFileSync('src/components/NewMedicineModal.jsx', 'utf8');
+const syncEngineSource = fs.readFileSync('src/utils/syncEngine.js', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
 assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
@@ -185,14 +187,18 @@ assert(supabaseClientSource.includes(".upsert(chunk, { onConflict: 'medicine_cod
 assert(supabaseClientSource.includes('success: failures.length === 0'), 'Partial catalog upload cannot report success');
 assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent printer fallback awaits and returns the real spooler result');
 assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
-assert(topNavigationSource.includes('Beta.Pharmacy.POS.64bit.SELECT-ALL-FINAL.exe'), 'Website exposes the final repaired 64-bit desktop download');
-assert(topNavigationSource.includes('Beta.Pharmacy.POS.Win7.32bit.repaired.exe'), 'Website exposes a separate repaired Windows 7 32-bit download');
+assert(topNavigationSource.includes('data-release-status="withdrawn"') && !topNavigationSource.includes('/releases/download/'), 'Website blocks unverified desktop installer downloads');
+assert(appJsx.includes("VITE_COUNTER_ONLY_MODE !== 'false'") && appJsx.includes('if (COUNTER_ONLY_MODE) return false'), 'Counter-only release disables onboarding and terminal lock by default');
 assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 assert(dbfReaderSource.includes("folderName.toUpperCase() === 'DATA'"), 'RETAILG parent import prefers current DATA over DATA-OLD');
 assert(databaseImportSource.includes('files.length > 1') && databaseImportSource.includes('multiple'), 'DBF picker supports Ctrl+A multi-file import');
 assert(databaseImportSource.includes('setParsedRecords([])'), 'Failed import clears stale preview and disables accidental Apply');
-assert(indexedDbSource.includes('const DB_VERSION = 20'), 'Browser database schema upgrades beyond every previously shipped POS version');
+assert(/const DB_VERSION = (2[1-9]|[3-9]\d|\d{3,});/.test(indexedDbSource), 'Browser database schema upgrades beyond every previously shipped POS version');
 assert(indexedDbSource.includes('request.onblocked'), 'Blocked browser database upgrade fails explicitly instead of hanging');
+assert(indexedDbSource.includes("branchBillKey: `${branchId}:${billNo}`") && indexedDbSource.includes("keyPath: 'id'"), 'Canonical sales ledger uses branch-qualified bill identity');
+assert(indexedDbSource.includes("['medicines', 'sales', 'due_bills', 'payments', 'customer_profiles', 'print_jobs', 'app_meta']"), 'Sale, stock, payment, credit, customer, sequence and print job commit atomically');
+assert(!newMedicineSource.includes("'B101'") && !newMedicineSource.includes('tax_percent: 12.0') && !newMedicineSource.includes('Math.random'), 'New medicine workflow does not fabricate batch, tax or random four-digit codes');
+assert(syncEngineSource.includes("VITE_ENABLE_CLOUD_SYNC === 'true'") && syncEngineSource.includes("syncState = this.enabled ? 'PENDING' : 'LOCAL_ONLY'"), 'Cloud sync defaults to truthful local-only mode');
 
 // -------------------------------------------------------------
 // TEST SUITE 7: TVS MSP 250 Star ESC/P Hardware Engine Validation

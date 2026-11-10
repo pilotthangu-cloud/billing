@@ -778,45 +778,35 @@ export async function fetchLiveMedicineDeltas(branchId = 'MAIN', limit = 100) {
  * Live Cloud Storage Metric Watchdog (Supabase 500 MB Free Tier)
  */
 export async function getCloudStorageEstimate() {
-  const MAX_FREE_TIER_MB = 500;
-  const CATALOG_BASE_MB = 18.5; // Estimated footprint of 24k medicine master
-  
   let billCount = 0;
-  let isConnected = true;
+  let isConnected = false;
 
   try {
     const { count, error } = await supabase
       .from('sales_bills')
       .select('*', { count: 'exact', head: true });
 
-    if (error) {
-      isConnected = false;
-      const local = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
-      billCount = local.length;
-    } else {
+    if (!error) {
+      isConnected = true;
       billCount = count || 0;
     }
-  } catch (e) {
-    isConnected = false;
-    const local = JSON.parse(localStorage.getItem('beta_pharma_recent_bills') || '[]');
-    billCount = local.length;
-  }
-
-  const billsMB = (billCount * 0.85) / 1024;
-  const totalUsedMB = Number((CATALOG_BASE_MB + billsMB).toFixed(1));
-  const pctUsed = Number(((totalUsedMB / MAX_FREE_TIER_MB) * 100).toFixed(1));
-  const remainingMB = Math.max(0, MAX_FREE_TIER_MB - totalUsedMB);
-  const estRunwayYears = Number(((remainingMB / 0.16) / 365).toFixed(1));
+  } catch (e) {}
 
   return {
+    // Supabase does not expose authoritative project-byte usage through this
+    // table query. Never present a calculated row estimate as measured quota.
+    verified: false,
     isConnected,
     billCount,
-    usedMB: totalUsedMB,
-    maxMB: MAX_FREE_TIER_MB,
-    pctUsed,
-    remainingMB,
-    estRunwayYears,
-    isWarningThreshold: pctUsed >= 80.0
+    usedMB: null,
+    maxMB: null,
+    pctUsed: null,
+    remainingMB: null,
+    estRunwayYears: null,
+    isWarningThreshold: false,
+    message: isConnected
+      ? 'Cloud table connectivity verified; storage quota is unavailable.'
+      : 'Cloud connectivity and storage quota are unverified.'
   };
 }
 

@@ -9,13 +9,26 @@
  */
 
 const DB_NAME = 'BetaPharmaDB';
-// Version 20 has shipped. Retain it to avoid downgrading existing databases.
-const DB_VERSION = 20;
+// Version 21 introduces a canonical branch-safe sales ledger. The legacy
+// `bills` store is retained read-only for migration/rollback compatibility.
+const DB_VERSION = 21;
 
 let dbInstance = null;
 let openingPromise = null;
 let storageStatus = { available: false, code: 'NOT_OPENED', error: 'Local database has not opened yet.' };
-const REQUIRED_STORES = ['bills', 'medicines', 'due_bills', 'stock_transfers', 'sync_queue', 'backups', 'unverified_returns', 'app_meta'];
+const REQUIRED_STORES = ['bills', 'sales', 'medicines', 'due_bills', 'payments', 'customer_profiles', 'print_jobs', 'stock_transfers', 'sync_queue', 'backups', 'unverified_returns', 'app_meta'];
+
+function normalizeBranchId(value) {
+  return String(value || 'MAIN').trim().toUpperCase() || 'MAIN';
+}
+
+export function normalizeSaleIdentity(bill) {
+  const branchId = normalizeBranchId(bill?.branchId || bill?.branch_id || bill?.storeId);
+  const billNo = String(bill?.billNo || bill?.bill_no || '').trim();
+  if (!billNo) throw new Error('Missing bill number');
+  const id = String(bill?.id || `${branchId}:${billNo}`);
+  return { ...bill, id, branchId, billNo, branchBillKey: `${branchId}:${billNo}` };
+}
 
 export function getPharmaStorageStatus() {
   return { ...storageStatus };
@@ -62,6 +75,28 @@ export function openPharmaDB() {
         billsStore.createIndex('patientName', 'patientName', { unique: false });
       }
 
+      // Canonical sales ledger: unlike the legacy store, the primary key is
+      // branch-qualified so MAIN:000001 and POLYCLINIC:000001 can coexist.
+      let salesStore;
+      if (!db.objectStoreNames.contains('sales')) {
+        salesStore = db.createObjectStore('sales', { keyPath: 'id' });
+        salesStore.createIndex('branchBillKey', 'branchBillKey', { unique: true });
+        salesStore.createIndex('branchId', 'branchId', { unique: false });
+        salesStore.createIndex('date', 'date', { unique: false });
+        salesStore.createIndex('patientName', 'patientName', { unique: false });
+
+        // Migrate every legacy bill that survived the old billNo-only schema.
+        if (db.objectStoreNames.contains('bills')) {
+          const legacyStore = event.target.transaction.objectStore('bills');
+          legacyStore.openCursor().onsuccess = cursorEvent => {
+            const cursor = cursorEvent.target.result;
+            if (!cursor) return;
+            try { salesStore.put(normalizeSaleIdentity(cursor.value)); } catch (_) {}
+            cursor.continue();
+          };
+        }
+      }
+
       // 2. Medicines Catalog Store
       if (!db.objectStoreNames.contains('medicines')) {
         const medsStore = db.createObjectStore('medicines', { keyPath: 'code' });
@@ -74,6 +109,26 @@ export function openPharmaDB() {
         const duesStore = db.createObjectStore('due_bills', { keyPath: 'id' });
         duesStore.createIndex('billNo', 'billNo', { unique: false });
         duesStore.createIndex('status', 'status', { unique: false });
+      }
+
+
+      if (!db.objectStoreNames.contains('payments')) {
+        const paymentStore = db.createObjectStore('payments', { keyPath: 'id' });
+        paymentStore.createIndex('saleId', 'saleId', { unique: true });
+        paymentStore.createIndex('mode', 'mode', { unique: false });
+        paymentStore.createIndex('date', 'date', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('customer_profiles')) {
+        const customerStore = db.createObjectStore('customer_profiles', { keyPath: 'phone' });
+        customerStore.createIndex('name', 'name', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('print_jobs')) {
+        const printStore = db.createObjectStore('print_jobs', { keyPath: 'id' });
+        printStore.createIndex('saleId', 'saleId', { unique: true });
+        printStore.createIndex('status', 'status', { unique: false });
+        printStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
 
       // 4. Inter-Store Stock Transfers Store
@@ -203,12 +258,94 @@ export async function idbCommitSaleTransaction(modifiedMeds, billPayload) {
     };
 
     try {
-      const tx = db.transaction(['medicines', 'bills'], 'readwrite');
+      const tx = db.transaction(['medicines', 'sales', 'due_bills', 'payments', 'customer_profiles', 'print_jobs', 'app_meta'], 'readwrite');
       const medStore = tx.objectStore('medicines');
-      const billStore = tx.objectStore('bills');
+      const billStore = tx.objectStore('sales');
+      const dueStore = tx.objectStore('due_bills');
+      const paymentStore = tx.objectStore('payments');
+      const customerStore = tx.objectStore('customer_profiles');
+      const printStore = tx.objectStore('print_jobs');
+      const metaStore = tx.objectStore('app_meta');
 
-      const billKey = String(billPayload.billNo);
-      billPayload.billNo = billKey;
+      const canonicalBill = normalizeSaleIdentity(billPayload);
+      const billKey = canonicalBill.id;
+      const customerPhone = String(canonicalBill.customerPhone || '').trim();
+      let dueRecord = null;
+
+      const writeSale = (existingCustomer = null) => {
+        // Put updated medicines
+        if (Array.isArray(modifiedMeds)) {
+          for (const med of modifiedMeds) {
+            if (med && med.code) medStore.put(med);
+          }
+        }
+
+        billStore.add(canonicalBill);
+
+        const paymentRecord = {
+          id: `PAY:${billKey}`,
+          saleId: billKey,
+          branchId: canonicalBill.branchId,
+          billNo: canonicalBill.billNo,
+          date: canonicalBill.date,
+          mode: String(canonicalBill.paymentMode || 'cash').toLowerCase(),
+          amount: Number(canonicalBill.netPayable || 0),
+          createdAt: canonicalBill.createdAt || new Date().toISOString()
+        };
+        paymentStore.add(paymentRecord);
+
+        if (paymentRecord.mode === 'credit') {
+          dueRecord = {
+            id: `DUE:${billKey}`,
+            saleId: billKey,
+            branchId: canonicalBill.branchId,
+            billNo: canonicalBill.billNo,
+            date: canonicalBill.date,
+            customerName: canonicalBill.patientName || 'CUSTOMER',
+            customerPhone,
+            doctorName: canonicalBill.doctorName || 'Self / OTC',
+            amount: paymentRecord.amount,
+            balance: paymentRecord.amount,
+            dueDate: '30 days',
+            status: 'UNPAID',
+            store: canonicalBill.store || 'Beta Pharmacy'
+          };
+          dueStore.add(dueRecord);
+        }
+
+        if (customerPhone.length >= 4) {
+          const previous = existingCustomer || {};
+          customerStore.put({
+            phone: customerPhone,
+            name: canonicalBill.patientName || previous.name || 'CUSTOMER',
+            preferredDoctor: canonicalBill.doctorName || previous.preferredDoctor || 'Self / OTC',
+            totalVisits: Number(previous.totalVisits || 0) + 1,
+            totalSpent: Number(previous.totalSpent || 0) + paymentRecord.amount,
+            lastSaleId: billKey,
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        const nextBillNo = (parseInt(canonicalBill.billNo, 10) + 1).toString().padStart(6, '0');
+        metaStore.put({
+          key: `next_bill_no:${canonicalBill.branchId}`,
+          branchId: canonicalBill.branchId,
+          nextBillNo,
+          lastSaleId: billKey,
+          updatedAt: new Date().toISOString()
+        });
+
+        printStore.add({
+          id: `PRINT:${billKey}`,
+          saleId: billKey,
+          branchId: canonicalBill.branchId,
+          billNo: canonicalBill.billNo,
+          status: 'PENDING',
+          attempts: 0,
+          createdAt: new Date().toISOString(),
+          lastError: ''
+        });
+      };
 
       // Check if bill already exists to prevent duplicate commit
       const checkBillReq = billStore.get(billKey);
@@ -225,17 +362,16 @@ export async function idbCommitSaleTransaction(modifiedMeds, billPayload) {
           return;
         }
 
-        // Put updated medicines
-        if (Array.isArray(modifiedMeds)) {
-          for (const med of modifiedMeds) {
-            if (med && med.code) {
-              medStore.put(med);
-            }
-          }
+        if (customerPhone.length >= 4) {
+          const customerReq = customerStore.get(customerPhone);
+          customerReq.onsuccess = () => writeSale(customerReq.result || null);
+          customerReq.onerror = () => {
+            try { tx.abort(); } catch (_) {}
+            safeResolve({ success: false, error: 'Failed to read the customer ledger before committing the sale.' });
+          };
+        } else {
+          writeSale();
         }
-
-        // Put bill
-        billStore.put(billPayload);
       };
 
       checkBillReq.onerror = () => {
@@ -244,7 +380,7 @@ export async function idbCommitSaleTransaction(modifiedMeds, billPayload) {
       };
 
       tx.oncomplete = () => {
-        safeResolve({ success: true });
+        safeResolve({ success: true, billRecord: canonicalBill, dueRecord });
       };
 
       tx.onerror = () => {
@@ -270,9 +406,9 @@ export async function idbSaveBill(bill) {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction('bills', 'readwrite');
-      const store = tx.objectStore('bills');
-      store.put(bill);
+      const tx = db.transaction('sales', 'readwrite');
+      const store = tx.objectStore('sales');
+      store.put(normalizeSaleIdentity(bill));
       tx.oncomplete = () => resolve({ success: true });
       tx.onerror = () => resolve({ success: false, error: tx.error ? tx.error.message : 'Failed to save bill in IndexedDB' });
     } catch (e) {
@@ -287,8 +423,8 @@ export async function idbGetAllBills() {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction('bills', 'readonly');
-      const store = tx.objectStore('bills');
+      const tx = db.transaction('sales', 'readonly');
+      const store = tx.objectStore('sales');
       const request = store.getAll();
       request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => resolve([]);
@@ -335,6 +471,23 @@ export async function idbUpdateMedicines(modifiedMeds) {
   });
 }
 
+export async function idbAddMedicine(medicine) {
+  if (!medicine?.code) return { success: false, error: 'Medicine code is required.' };
+  const db = await openPharmaDB();
+  if (!db) return storageFailure();
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction('medicines', 'readwrite');
+      tx.objectStore('medicines').add(medicine);
+      tx.oncomplete = () => resolve({ success: true });
+      tx.onerror = () => resolve({ success: false, error: tx.error?.name === 'ConstraintError' ? `Medicine code ${medicine.code} already exists.` : (tx.error?.message || 'Failed to add medicine') });
+      tx.onabort = () => resolve({ success: false, error: tx.error?.message || 'Medicine creation was aborted.' });
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
 export async function idbCacheMedicines(medicinesList, { replace = false } = {}) {
   if (!Array.isArray(medicinesList) || medicinesList.length === 0) return { success: true, count: 0 };
   if (medicinesList.some(med => !med || !String(med.code || '').trim())) return { success: false, error: 'Every medicine must have a source product code. Import was not committed.' };
@@ -358,6 +511,54 @@ export async function idbCacheMedicines(medicinesList, { replace = false } = {})
     } catch (e) {
       try { tx?.abort(); } catch (_) {}
       resolve({ success: false, error: e.message });
+    }
+  });
+}
+
+export async function idbRestoreCoreSnapshotAtomic(snapshot = {}) {
+  const medicines = Array.isArray(snapshot.medicines) ? snapshot.medicines : [];
+  const bills = Array.isArray(snapshot.bills) ? snapshot.bills : [];
+  const dueBills = Array.isArray(snapshot.dueBills) ? snapshot.dueBills : [];
+  const stockTransfers = Array.isArray(snapshot.stockTransfers) ? snapshot.stockTransfers : [];
+  const unverifiedReturns = Array.isArray(snapshot.unverifiedReturns) ? snapshot.unverifiedReturns : [];
+  if (medicines.some(m => !m?.code)) return { success: false, error: 'Restore contains a medicine without a code.' };
+
+  let normalizedBills;
+  try { normalizedBills = bills.map(normalizeSaleIdentity); }
+  catch (error) { return { success: false, error: `Restore contains an invalid bill: ${error.message}` }; }
+
+  const db = await openPharmaDB();
+  if (!db) return storageFailure();
+  const stores = ['medicines', 'sales', 'due_bills', 'stock_transfers', 'unverified_returns'];
+  return new Promise(resolve => {
+    let tx;
+    try {
+      tx = db.transaction(stores, 'readwrite');
+      const replace = (storeName, rows) => {
+        const store = tx.objectStore(storeName);
+        store.clear();
+        rows.forEach(row => store.add(row));
+      };
+      replace('medicines', medicines);
+      replace('sales', normalizedBills);
+      replace('due_bills', dueBills);
+      replace('stock_transfers', stockTransfers);
+      replace('unverified_returns', unverifiedReturns);
+      tx.oncomplete = () => resolve({
+        success: true,
+        counts: {
+          medicines: medicines.length,
+          bills: normalizedBills.length,
+          dueBills: dueBills.length,
+          stockTransfers: stockTransfers.length,
+          unverifiedReturns: unverifiedReturns.length
+        }
+      });
+      tx.onerror = () => resolve({ success: false, error: tx.error?.message || 'Atomic restore failed.' });
+      tx.onabort = () => resolve({ success: false, error: tx.error?.message || 'Atomic restore was aborted; existing data was preserved.' });
+    } catch (error) {
+      try { tx?.abort(); } catch (_) {}
+      resolve({ success: false, error: error.message });
     }
   });
 }
@@ -783,21 +984,21 @@ export async function idbSetInitialized(meta = {}) {
  * Retrieve maximum bill number stored in IndexedDB bills store to ensure sequence integrity.
  * @returns {Promise<number>}
  */
-export async function idbGetMaxBillNo() {
+export async function idbGetMaxBillNo(branchId = 'MAIN') {
   const db = await openPharmaDB();
   if (!db) return 0;
 
   return new Promise((resolve) => {
     try {
-      if (!db.objectStoreNames.contains('bills')) return resolve(0);
-      const tx = db.transaction('bills', 'readonly');
-      const store = tx.objectStore('bills');
-      const req = store.getAllKeys();
+      if (!db.objectStoreNames.contains('sales')) return resolve(0);
+      const tx = db.transaction('sales', 'readonly');
+      const store = tx.objectStore('sales');
+      const req = store.index('branchId').getAll(normalizeBranchId(branchId));
       req.onsuccess = () => {
-        const keys = req.result || [];
+        const bills = req.result || [];
         let max = 0;
-        for (const k of keys) {
-          const num = parseInt(k, 10);
+        for (const bill of bills) {
+          const num = parseInt(bill.billNo, 10);
           if (!isNaN(num) && num > max) {
             max = num;
           }
@@ -807,6 +1008,55 @@ export async function idbGetMaxBillNo() {
       req.onerror = () => resolve(0);
     } catch (e) {
       resolve(0);
+    }
+  });
+}
+
+export async function idbMarkPrintJob(saleId, result = {}) {
+  const db = await openPharmaDB();
+  if (!db) return storageFailure();
+  const id = `PRINT:${saleId}`;
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction('print_jobs', 'readwrite');
+      const store = tx.objectStore('print_jobs');
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const current = req.result;
+        if (!current) {
+          try { tx.abort(); } catch (_) {}
+          resolve({ success: false, error: `Print job not found for ${saleId}` });
+          return;
+        }
+        store.put({
+          ...current,
+          status: result.success ? 'PRINTED' : 'FAILED',
+          attempts: Number(current.attempts || 0) + 1,
+          lastAttemptAt: new Date().toISOString(),
+          printedAt: result.success ? new Date().toISOString() : current.printedAt,
+          lastError: result.success ? '' : String(result.error || 'Unknown printer error')
+        });
+      };
+      tx.oncomplete = () => resolve({ success: true });
+      tx.onerror = () => resolve({ success: false, error: tx.error?.message || 'Failed to update print job' });
+      tx.onabort = () => resolve({ success: false, error: 'Print job update aborted' });
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
+}
+
+export async function idbGetPendingPrintJobs() {
+  const db = await openPharmaDB();
+  if (!db) return [];
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction('print_jobs', 'readonly');
+      const req = tx.objectStore('print_jobs').getAll();
+      req.onsuccess = () => resolve((req.result || []).filter(job => job.status !== 'PRINTED'));
+      req.onerror = () => resolve([]);
+    } catch (_) {
+      resolve([]);
     }
   });
 }

@@ -16,6 +16,7 @@ import PrintableReceipt from './PrintableReceipt';
 import VirtualTvsHardwareInspector from './VirtualTvsHardwareInspector';
 import { triggerWhatsAppBillShare } from '../utils/billUtils';
 import { formatTvsBillLines, generateTvsEscPosStream } from '../utils/tvsPrinterEngine';
+import { idbMarkPrintJob } from '../utils/indexedDb';
 
 export default function DotMatrixReceiptModal({ 
   isOpen, 
@@ -75,8 +76,10 @@ export default function DotMatrixReceiptModal({
         if (!result?.success) {
           throw new Error(result?.error || 'Windows spooler did not confirm the print job.');
         }
+        if (billData?.id) await idbMarkPrintJob(billData.id, { success: true });
       } catch (e) {
         console.error('Raw TVS print error:', e);
+        if (billData?.id) await idbMarkPrintJob(billData.id, { success: false, error: e.message || 'Printer error' });
         alert(`Printing failed: ${e.message || 'Printer error'}\n\nThe bill remains available for reprint.`);
         return;
       }
