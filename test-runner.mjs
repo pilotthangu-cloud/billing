@@ -174,6 +174,7 @@ const databaseImportSource = fs.readFileSync('src/components/DatabaseImportModal
 const indexedDbSource = fs.readFileSync('src/utils/indexedDb.js', 'utf8');
 const newMedicineSource = fs.readFileSync('src/components/NewMedicineModal.jsx', 'utf8');
 const syncEngineSource = fs.readFileSync('src/utils/syncEngine.js', 'utf8');
+const fastBillingSource = fs.readFileSync('src/components/FastBillingTerminal.jsx', 'utf8');
 
 assert(appJsx.includes('getInitialPage') && appJsx.includes('PROTECTED_PAGES'), 'URL Cold load protection maps protected routes');
 assert(!terminalLock.includes("managerPin !== '1536'") && !terminalLock.includes("|| '1536'"), 'No universal hard-coded manager PIN remains in terminal lock screen');
@@ -194,6 +195,14 @@ assert(restrictedCounterLabels.every(label => {
   const labelIndex = topNavigationSource.lastIndexOf(`>${label}<`);
   return labelIndex >= 0 && topNavigationSource.slice(Math.max(0, labelIndex - 2200), labelIndex).includes('!counterOnlyMode');
 }) && topNavigationSource.includes('{!counterOnlyMode && <div className="flex items-center space-x-1 font-medium">'), 'Counter-only navigation hides every unfinished management shortcut and dropdown');
+assert(
+  fastBillingSource.includes('!counterOnlyMode && onOpenCustomerHistory') &&
+  fastBillingSource.includes('!counterOnlyMode && onOpenSalesReturn') &&
+  fastBillingSource.includes('onClick={handleSendWhatsAppBill}') &&
+  fastBillingSource.includes('!counterOnlyMode && heldBillsCount > 0') &&
+  appJsx.includes("!COUNTER_ONLY_MODE && e.key === 'F12'"),
+  'Counter-only billing hides history, returns, WhatsApp and held-bill workflows'
+);
 assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 assert(dbfReaderSource.includes("folderName.toUpperCase() === 'DATA'"), 'RETAILG parent import prefers current DATA over DATA-OLD');
 assert(databaseImportSource.includes('files.length > 1') && databaseImportSource.includes('multiple'), 'DBF picker supports Ctrl+A multi-file import');

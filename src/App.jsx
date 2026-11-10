@@ -1239,7 +1239,7 @@ export default function App() {
         handleLockTerminal();
       }
       // F12 holds bill if on billing page
-      if (e.key === 'F12' && activePage === 'billing') {
+      if (!COUNTER_ONLY_MODE && e.key === 'F12' && activePage === 'billing') {
         e.preventDefault();
         if (items.length > 0) {
           handleHoldBill();
@@ -2547,6 +2547,7 @@ export default function App() {
           setHandoverNotice={setHandoverNotice}
           onOpenSalesReturn={() => setIsSalesReturnOpen(true)}
           onOpenImportModal={() => setIsImportModalOpen(true)}
+          counterOnlyMode={COUNTER_ONLY_MODE}
         />
       )}
 

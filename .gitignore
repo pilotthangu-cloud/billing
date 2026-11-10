@@ -37,5 +37,7 @@ scratch/
 # Electron packaging
 release/
 release*/
+audit-x64/
+audit-x86/
 *.exe
 /.runtime-tests/

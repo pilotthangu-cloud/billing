@@ -59,7 +59,8 @@ export default function FastBillingTerminal({
   handoverNotice,
   setHandoverNotice,
   authenticatedRole = null,
-  onOpenImportModal
+  onOpenImportModal,
+  counterOnlyMode = true
 }) {
   // Input refs
   const searchInputRef = useRef(null);
@@ -204,11 +205,11 @@ export default function FastBillingTerminal({
           setSubstituteModalMed(target);
         }
       }
-      if (e.key === 'F4') {
+      if (!counterOnlyMode && e.key === 'F4') {
         e.preventDefault();
         if (onOpenCustomerHistory) onOpenCustomerHistory();
       }
-      if (e.key === 'F8') {
+      if (!counterOnlyMode && e.key === 'F8') {
         e.preventDefault();
         if (onOpenSalesReturn) onOpenSalesReturn();
       }
@@ -551,7 +552,7 @@ export default function FastBillingTerminal({
                 theme === 'dark' ? 'text-zinc-100 placeholder-zinc-600' : 'text-slate-900 placeholder-slate-400'
               }`}
             />
-            {onOpenCustomerHistory && (
+            {!counterOnlyMode && onOpenCustomerHistory && (
               <button
                 type="button"
                 onClick={onOpenCustomerHistory}
@@ -598,7 +599,7 @@ export default function FastBillingTerminal({
           </div>
 
           {/* Sales Return / Credit Note (F8) */}
-          {onOpenSalesReturn && (
+          {!counterOnlyMode && onOpenSalesReturn && (
             <button
               type="button"
               onClick={onOpenSalesReturn}
@@ -1187,7 +1188,7 @@ export default function FastBillingTerminal({
           </button>
 
           {/* Digital WhatsApp Invoice Button */}
-          <button
+          {!counterOnlyMode && <button
             type="button"
             onClick={handleSendWhatsAppBill}
             disabled={items.length === 0}
@@ -1202,9 +1203,9 @@ export default function FastBillingTerminal({
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
             <span>WhatsApp Bill</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={onHoldBill}
             disabled={items.length === 0}
             className={`px-3 py-1.5 rounded font-mono font-bold text-xs uppercase border transition ${
@@ -1216,7 +1217,7 @@ export default function FastBillingTerminal({
             }`}
           >
             Hold Bill (F12)
-          </button>
+          </button>}
 
           <div className={`border px-4 py-1.5 rounded text-right ${
             theme === 'dark' ? 'bg-zinc-950 border-zinc-700' : 'bg-white border-slate-300 shadow-sm'
@@ -1253,6 +1254,7 @@ export default function FastBillingTerminal({
             }`}>F2</kbd>
             <span>Patient</span>
           </span>
+          {!counterOnlyMode && <>
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1260,6 +1262,8 @@ export default function FastBillingTerminal({
             }`}>F3</kbd>
             <span className="font-bold text-amber-600">Substitutes</span>
           </span>
+          </>}
+          {!counterOnlyMode && <>
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1274,6 +1278,7 @@ export default function FastBillingTerminal({
             }`}>Enter</kbd>
             <span>Add / Next</span>
           </span>
+          </>}
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1312,7 +1317,7 @@ export default function FastBillingTerminal({
         </div>
 
         <div className="flex items-center space-x-3">
-          {heldBillsCount > 0 && (
+          {!counterOnlyMode && heldBillsCount > 0 && (
             <button
               onClick={onRestoreHeldBill}
               className={`flex items-center space-x-1.5 border px-2.5 py-0.5 rounded-full font-bold text-[10px] animate-pulse ${

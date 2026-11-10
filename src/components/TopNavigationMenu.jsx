@@ -524,7 +524,7 @@ export default function TopNavigationMenu({
           </div>}
 
           {/* Universal Command Palette Spotlight Trigger (Ctrl+K) */}
-          {onOpenCommandPalette && (
+          {!counterOnlyMode && onOpenCommandPalette && (
             <button
               onClick={onOpenCommandPalette}
               className={`px-2 py-0.5 rounded border text-[11px] font-mono flex items-center space-x-1.5 font-bold transition cursor-pointer ${
@@ -658,7 +658,7 @@ export default function TopNavigationMenu({
           )}
 
           {/* 1-Click Install App Badge (Hidden if already standalone desktop app) */}
-          {!isAppInstalled && onInstallApp && (
+          {!counterOnlyMode && !isAppInstalled && onInstallApp && (
             <button
               onClick={onInstallApp}
               className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-black cursor-pointer transition uppercase ${
