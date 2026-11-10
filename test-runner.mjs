@@ -203,6 +203,11 @@ assert(
   appJsx.includes("!COUNTER_ONLY_MODE && e.key === 'F12'"),
   'Counter-only billing hides history, returns, WhatsApp and held-bill workflows'
 );
+const functionKeyFooter = fastBillingSource.slice(fastBillingSource.indexOf('{/* 6. Function Key Footer Strip */}'));
+assert(
+  />F3<\/kbd>[\s\S]*?Substitutes[\s\S]*?\{!counterOnlyMode && <>[\s\S]*?>F4<\/kbd>[\s\S]*?Rx History[\s\S]*?<\/>\}[\s\S]*?>Enter<\/kbd>[\s\S]*?Add \/ Next[\s\S]*?\{!counterOnlyMode && <>[\s\S]*?>F8<\/kbd>[\s\S]*?Return[\s\S]*?>F12<\/kbd>[\s\S]*?Hold \/ Park[\s\S]*?<\/>\}/.test(functionKeyFooter),
+  'Counter-only footer keeps F3 and Enter visible while hiding F4, F8 and F12'
+);
 assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 assert(dbfReaderSource.includes("folderName.toUpperCase() === 'DATA'"), 'RETAILG parent import prefers current DATA over DATA-OLD');
 assert(databaseImportSource.includes('files.length > 1') && databaseImportSource.includes('multiple'), 'DBF picker supports Ctrl+A multi-file import');

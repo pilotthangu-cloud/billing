@@ -37,8 +37,8 @@ acceptance gates.
 ## Verification evidence
 
 - Node behavior/database suite: **29/29 passed**.
-- Counter verification runner: **96/96 passed**.
-- Combined automated result: **125/125 passed**.
+- Counter verification runner: **97/97 passed**.
+- Combined automated result: **126/126 passed**.
 - Production Vite build: **passed**.
 - Source whitespace/error check: **passed**.
 - Local UI browser pass: blocked because the isolated in-app browser cannot
@@ -59,7 +59,7 @@ These hardware/data gates cannot be honestly replaced with source assertions.
 
 ## Independent recheck later on 10 November 2026
 
-- Re-ran the complete suite from clean `main`: **125/125 passed** after the
+- Re-ran the complete suite from clean `main`: **126/126 passed** after the
   live UI findings were repaired.
 - Rebuilt the production web bundle with Vite 6.4.6: passed.
 - Reparsed the supplied real `ITEMFILE.DBF` by SHA-256

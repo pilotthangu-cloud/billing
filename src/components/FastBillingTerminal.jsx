@@ -1254,7 +1254,6 @@ export default function FastBillingTerminal({
             }`}>F2</kbd>
             <span>Patient</span>
           </span>
-          {!counterOnlyMode && <>
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1262,7 +1261,6 @@ export default function FastBillingTerminal({
             }`}>F3</kbd>
             <span className="font-bold text-amber-600">Substitutes</span>
           </span>
-          </>}
           {!counterOnlyMode && <>
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
@@ -1271,6 +1269,7 @@ export default function FastBillingTerminal({
             }`}>F4</kbd>
             <span className="font-bold text-sky-600">Rx History</span>
           </span>
+          </>}
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1278,7 +1277,6 @@ export default function FastBillingTerminal({
             }`}>Enter</kbd>
             <span>Add / Next</span>
           </span>
-          </>}
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
@@ -1293,20 +1291,22 @@ export default function FastBillingTerminal({
             }`}>F7</kbd>
             <span>Reprint</span>
           </span>
-          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
-              theme === 'dark' ? 'bg-zinc-800 text-rose-400 border-zinc-700' : 'bg-white text-rose-700 border-slate-300'
-            }`}>F8</kbd>
-            <span className="font-bold text-rose-600">Return</span>
-          </span>
-          <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
-          <span className="flex items-center space-x-1">
-            <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
-              theme === 'dark' ? 'bg-zinc-800 text-amber-400 border-zinc-700' : 'bg-white text-amber-700 border-slate-300'
-            }`}>F12</kbd>
-            <span>Hold / Park</span>
-          </span>
+          {!counterOnlyMode && <>
+            <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
+            <span className="flex items-center space-x-1">
+              <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+                theme === 'dark' ? 'bg-zinc-800 text-rose-400 border-zinc-700' : 'bg-white text-rose-700 border-slate-300'
+              }`}>F8</kbd>
+              <span className="font-bold text-rose-600">Return</span>
+            </span>
+            <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
+            <span className="flex items-center space-x-1">
+              <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
+                theme === 'dark' ? 'bg-zinc-800 text-amber-400 border-zinc-700' : 'bg-white text-amber-700 border-slate-300'
+              }`}>F12</kbd>
+              <span>Hold / Park</span>
+            </span>
+          </>}
           <span className={theme === 'dark' ? 'text-zinc-700' : 'text-slate-400'}>|</span>
           <span className="flex items-center space-x-1">
             <kbd className={`px-1.5 py-0.5 rounded border font-bold ${
