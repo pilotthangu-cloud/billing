@@ -59,6 +59,7 @@ import {
 import { saveDailyBackupSnapshot } from './utils/backupEngine';
 import { isBatchExpired, isExpiryValid, normalizeExpiry } from './utils/billUtils';
 import { planBatchTransfer } from './utils/inventoryTransfer';
+import { preserveOtherBranchRecord, replaceBranchBatches } from './utils/branchImport';
 
 import initialMedicines from './data/medicines.json';
 
@@ -491,9 +492,10 @@ export default function App() {
         [targetStockKey]: safeStock,
         stock_shop1: targetStockKey === 'stock_shop1' ? safeStock : Number(existing?.stock_shop1 || 0),
         stock_shop2: targetStockKey === 'stock_shop2' ? safeStock : Number(existing?.stock_shop2 || 0),
-        // Never keep an old/master batch when the imported snapshot supplied no
-        // batch evidence. That was producing new stock under stale batches.
-        batches: Array.isArray(rec.batches) ? rec.batches.map(batch => ({ ...batch, branch_id: importBranchId })) : [],
+        // Replace only this branch's batches. A Main-shop import must never erase
+        // Polyclinic batches (and vice versa). If the snapshot has no batch
+        // evidence, stale batches are removed only for the imported branch.
+        batches: replaceBranchBatches(existing?.batches, rec.batches, importBranchId),
         isImported: true
       };
     };
@@ -501,7 +503,13 @@ export default function App() {
     const prepared = newRecords.map(prepareRecord).filter(Boolean);
     const preparedMap = new Map(prepared.map(m => [m.code, m]));
     const updated = mode === 'replace'
-      ? prepared
+      ? [
+          ...prepared,
+          ...medicines
+            .filter(m => !preparedMap.has(String(m.code || '').trim().toUpperCase()))
+            .map(m => preserveOtherBranchRecord(m, targetStockKey, importBranchId))
+            .filter(Boolean)
+        ]
       : [
           ...prepared.filter(m => !currentMap.has(m.code)),
           ...medicines.map(m => preparedMap.get(String(m.code || '').trim().toUpperCase()) || m)

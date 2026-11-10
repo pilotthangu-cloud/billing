@@ -1,4 +1,13 @@
-# 1.0.1-rc.1 repair checkpoint
+# 1.0.1-rc.2 repair checkpoint
+
+## rc.2 branch-isolation repair
+
+- A fresh DBF snapshot now replaces batches and stock only for the branch selected on the terminal.
+- Importing Main Pharmacy cannot erase Polyclinic batches; importing Polyclinic cannot erase Main batches.
+- Products omitted from one branch snapshot are retained when another branch still owns stock or batch evidence.
+- Four branch-import regression tests were added. The complete automated run now passes 109 checks.
+- The hidden Electron storage smoke test opened the desktop UI, wrote stock `435`, reopened storage, and read `435` back.
+- Both packaged applications contain the exact same production JavaScript bundle (SHA-256 `0214659bf295d190baab5e83358993094160f70a5f91675ecd70c7de0b9b3fcd`).
 
 Application source: `5bbdb28` (subsequent website-only download-link changes do not alter the packaged application).
 
@@ -37,7 +46,7 @@ This is a sample check, not a full inventory audit or transaction replay engine.
 - Built UI passed a hidden Electron smoke test with isolated storage and network blocked.
   It loaded the UI, exposed the desktop bridge, committed 435 and read back 435.
 - Production Vite build passed.
-- Both application archives inspected: 1.0.1-rc.1, expected bundle, reconciliation UI,
+- Both rc.2 application archives inspected: expected version and exact tested production bundle,
   compact receipt and storage diagnostics present; x64 machine 0x8664, x86 machine 0x014c.
 
 ## Portable artifacts
@@ -46,6 +55,8 @@ This is a sample check, not a full inventory audit or transaction replay engine.
 | --- | --- |
 | Beta.Pharmacy.POS.1.0.1-rc.1.x64.exe | 8D2885EB11B27E55F5F96E1752AB7C177DF595A4943D434E4D6117C07A55622C |
 | Beta.Pharmacy.POS.1.0.1-rc.1.win7-x86.exe | 0F68E71372223BACDD7D01669F2C34C215795ABD1B6D32CAC3C0E5F9D391902E |
+| Beta.Pharmacy.POS.1.0.1-rc.2.x64.exe | D6299145B84CBDF353390DE0D98496E12D0041C913920427DBD9CEF7C393EA3A |
+| Beta.Pharmacy.POS.1.0.1-rc.2.win7-x86.exe | ED98FC5EBF1CF62EDAFB9F570DAD259D4952EE7629A423D6AB7E9463E09627F0 |
 
 ## Still unverified / not implemented in this checkpoint
 
