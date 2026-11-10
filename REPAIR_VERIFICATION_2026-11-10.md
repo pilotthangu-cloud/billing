@@ -37,8 +37,8 @@ acceptance gates.
 ## Verification evidence
 
 - Node behavior/database suite: **29/29 passed**.
-- Counter verification runner: **94/94 passed**.
-- Combined automated result: **123/123 passed**.
+- Counter verification runner: **95/95 passed**.
+- Combined automated result: **124/124 passed**.
 - Production Vite build: **passed**.
 - Source whitespace/error check: **passed**.
 - Local UI browser pass: blocked because the isolated in-app browser cannot
@@ -56,3 +56,30 @@ acceptance gates.
    restore on the target PC.
 
 These hardware/data gates cannot be honestly replaced with source assertions.
+
+## Independent recheck later on 10 November 2026
+
+- Re-ran the complete suite from clean `main`: **124/124 passed** again.
+- Rebuilt the production web bundle with Vite 6.4.6: passed.
+- Reparsed the supplied real `ITEMFILE.DBF` by SHA-256
+  `0846BD68B509982B311341DB9C783F0F5C0327482E527454F2EC8602DB315B85`:
+  24,684 rows/products, 9,501 opening units, 89 positive-stock products and
+  zero negative-stock products. The earlier totals were reproduced exactly.
+- Verified the deployed Vercel HTML served the exact then-current local asset
+  hash. Live UI inspection then found Admin and unfinished management shortcuts
+  still visible even though routing blocked them. This was repaired and a new
+  regression assertion was added; deployment must be rechecked after push.
+- Production dependency audit: **0 known vulnerabilities**.
+- Development/packaging audit: six moderate `minimatch` advisories remain inside
+  Electron Builder's packaging-only dependency tree. npm proposes a breaking
+  Electron Builder downgrade; it was not forced. The non-breaking fixes updated
+  Vite to 6.4.6, Electron Builder internals to 26.18.1 and the selector parser.
+- Rebuilt current unpacked packages successfully:
+  - x64 PE machine `0x8664`, version `1.0.1-rc.3`, executable SHA-256
+    `EA35F466CFB7467EE36F7993F79C9C6A6253D3E66AC623D6FB6CEFDC6600FC09`.
+  - Windows 7 x86 PE machine `0x014C`, Electron 22.3.27, version `1.0.1-rc.3`,
+    executable SHA-256
+    `2E0C73FA609805D1C7A49C3110ECEC3BF8D241B4C17ACD7C7D04E4B8B266B513`.
+  - Both packages contain the identical application archive SHA-256
+    `66E64B633BFD544CBBE8154FB5CCFC7F2E67B60D5B3CD25ADA056425BD16D9B5`.
+- Both packages remain unsigned. A release installer is still withheld.

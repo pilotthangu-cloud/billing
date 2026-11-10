@@ -161,10 +161,10 @@ export default function TopNavigationMenu({
             )}
           </div>
 
-          <span className="text-slate-400">|</span>
+          {!counterOnlyMode && <span className="text-slate-400">|</span>}
 
           {/* Traditional Software Menu Dropdowns */}
-          <div className="flex items-center space-x-1 font-medium">
+          {!counterOnlyMode && <div className="flex items-center space-x-1 font-medium">
             {/* Masters */}
             <div className="relative">
               <button
@@ -452,7 +452,7 @@ export default function TopNavigationMenu({
                 </div>
               )}
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* Right: Cashier Shift Handover, Owner Admin Portal, Security Status, Cloud Sync, Theme Toggle & Clock */}
@@ -713,7 +713,7 @@ export default function TopNavigationMenu({
           </div>
 
           {/* Admin Session Status & 1-Click Lock / Unlock */}
-          {authenticatedRole === 'MANAGER' ? (
+          {!counterOnlyMode && (authenticatedRole === 'MANAGER' ? (
             <button
               onClick={onLogoutRole}
               className={`px-2 py-0.5 rounded border text-[10px] font-mono flex items-center space-x-1 font-bold cursor-pointer transition ${
@@ -739,7 +739,7 @@ export default function TopNavigationMenu({
               <Unlock className="w-3 h-3 text-slate-500" />
               <span>Admin Login</span>
             </button>
-          )}
+          ))}
 
           {/* Clock */}
           <div className={`px-2 py-0.5 rounded border font-mono ${
@@ -778,7 +778,7 @@ export default function TopNavigationMenu({
             </button>
           )}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => {
               if (onOpenCustomerHistory) onOpenCustomerHistory();
             }}
@@ -789,7 +789,7 @@ export default function TopNavigationMenu({
           >
             <User className="w-3.5 h-3.5 text-sky-500" />
             <span>Patient Rx History [F4]</span>
-          </button>
+          </button>}
 
           <button
             onClick={() => navigateTo('product-master')}
@@ -803,7 +803,7 @@ export default function TopNavigationMenu({
             <span>Product Master (24k)</span>
           </button>
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('purchases')}
             className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
               activePage === 'purchases'
@@ -813,7 +813,7 @@ export default function TopNavigationMenu({
           >
             <Truck className="w-3.5 h-3.5" />
             <span>Purchase Entry</span>
-          </button>
+          </button>}
 
           <button
             onClick={() => navigateTo('expiry')}
@@ -839,7 +839,7 @@ export default function TopNavigationMenu({
             <span>Batch Enquiry</span>
           </button>
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('supplier-master')}
             className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
               activePage === 'supplier-master'
@@ -849,9 +849,9 @@ export default function TopNavigationMenu({
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>Suppliers (370)</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('shortages')}
             className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
               activePage === 'shortages'
@@ -861,9 +861,9 @@ export default function TopNavigationMenu({
           >
             <Package className="w-3.5 h-3.5" />
             <span>Shortages</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('due-bills')}
             className={`px-2.5 py-1 rounded text-xs font-bold transition flex items-center space-x-1 ${
               activePage === 'due-bills'
@@ -873,9 +873,9 @@ export default function TopNavigationMenu({
           >
             <CreditCard className="w-3.5 h-3.5 text-amber-500" />
             <span>Due Bills</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('distributor-payments')}
             className={`px-2.5 py-1 rounded text-xs font-bold transition flex items-center space-x-1 ${
               activePage === 'distributor-payments'
@@ -885,9 +885,9 @@ export default function TopNavigationMenu({
           >
             <Banknote className="w-3.5 h-3.5 text-emerald-500" />
             <span>Payments</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('sales-register')}
             className={`px-3 py-1 rounded text-xs font-bold transition flex items-center space-x-1.5 ${
               activePage === 'sales-register'
@@ -897,9 +897,9 @@ export default function TopNavigationMenu({
           >
             <BarChart3 className="w-3.5 h-3.5" />
             <span>Sales & Margins</span>
-          </button>
+          </button>}
 
-          <button
+          {!counterOnlyMode && <button
             onClick={() => navigateTo('admin')}
             className={`px-3 py-1 rounded text-xs font-black transition flex items-center space-x-1.5 ${
               activePage === 'admin'
@@ -911,7 +911,7 @@ export default function TopNavigationMenu({
           >
             <Building2 className={`w-3.5 h-3.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
             <span>Admin HQ Portal</span>
-          </button>
+          </button>}
         </div>
 
         <div className={`flex items-center space-x-2 text-[10px] shrink-0 whitespace-nowrap pl-3 ${

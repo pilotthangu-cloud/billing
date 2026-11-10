@@ -189,6 +189,11 @@ assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent pri
 assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
 assert(topNavigationSource.includes('data-release-status="withdrawn"') && !topNavigationSource.includes('/releases/download/'), 'Website blocks unverified desktop installer downloads');
 assert(appJsx.includes("VITE_COUNTER_ONLY_MODE !== 'false'") && appJsx.includes('if (COUNTER_ONLY_MODE) return false'), 'Counter-only release disables onboarding and terminal lock by default');
+const restrictedCounterLabels = ['Admin Login', 'Patient Rx History [F4]', 'Purchase Entry', 'Suppliers (370)', 'Shortages', 'Due Bills', 'Payments', 'Sales & Margins', 'Admin HQ Portal'];
+assert(restrictedCounterLabels.every(label => {
+  const labelIndex = topNavigationSource.lastIndexOf(`>${label}<`);
+  return labelIndex >= 0 && topNavigationSource.slice(Math.max(0, labelIndex - 2200), labelIndex).includes('!counterOnlyMode');
+}) && topNavigationSource.includes('{!counterOnlyMode && <div className="flex items-center space-x-1 font-medium">'), 'Counter-only navigation hides every unfinished management shortcut and dropdown');
 assert(dbfReaderSource.includes("f.name.toUpperCase() === 'ITEMFILE.DBF'"), 'Folder import prefers the authoritative ITEMFILE.DBF among hundreds of DBF tables');
 assert(dbfReaderSource.includes("folderName.toUpperCase() === 'DATA'"), 'RETAILG parent import prefers current DATA over DATA-OLD');
 assert(databaseImportSource.includes('files.length > 1') && databaseImportSource.includes('multiple'), 'DBF picker supports Ctrl+A multi-file import');
