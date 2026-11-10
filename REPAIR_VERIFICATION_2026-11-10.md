@@ -66,12 +66,15 @@ These hardware/data gates cannot be honestly replaced with source assertions.
   `0846BD68B509982B311341DB9C783F0F5C0327482E527454F2EC8602DB315B85`:
   24,684 rows/products, 9,501 opening units, 89 positive-stock products and
   zero negative-stock products. The earlier totals were reproduced exactly.
-- Verified the deployed Vercel HTML served the exact then-current local asset
-  hash. Live UI inspection then found Admin and unfinished management shortcuts
+- Verified the deployed Vercel HTML serves the final local JavaScript asset
+  `assets/index-CPJRTze1.js`; both copies have SHA-256
+  `D02D338203EEC7B35B3A4FB94FFBA03A92EBCB04EC2DF3C86D46940EAD8AF571`.
+  Live UI inspection first found Admin and unfinished management shortcuts
   still visible even though routing blocked them. A second live pass also found
   patient-history, return, WhatsApp and held-bill controls inside the terminal.
   Both layers were removed from counter-only mode and regression assertions
-  were added; deployment must be rechecked after the final push.
+  were added. The final live pass confirms F3 and Enter remain visible, while
+  Admin, F4, F8, F12, return, WhatsApp, hold and management controls are absent.
 - Production dependency audit: **0 known vulnerabilities**.
 - Development/packaging audit: six moderate `minimatch` advisories remain inside
   Electron Builder's packaging-only dependency tree. npm proposes a breaking
@@ -79,10 +82,10 @@ These hardware/data gates cannot be honestly replaced with source assertions.
   Vite to 6.4.6, Electron Builder internals to 26.18.1 and the selector parser.
 - Rebuilt current unpacked packages successfully:
   - x64 PE machine `0x8664`, version `1.0.1-rc.3`, executable SHA-256
-    `C314277707D93279EA5E1C51E1A2C0E53122790819628D98F0D5E6D911E1CCFD`.
+    `79549DDCB068481B2F7E4B778F37FB4CE7A8BE553C0B2DE57BF4C2CFCA0EAAB2`.
   - Windows 7 x86 PE machine `0x014C`, Electron 22.3.27, version `1.0.1-rc.3`,
     executable SHA-256
-    `FE161BC907E4447F7F2432EFAFB61D2F398A43D499D53A85FCBECE710F8F11E2`.
+    `0AA64A30CB26F7131EE8BA00B28BF9569F1F7A263A5D29BD3D16AE4A7E8BE69A`.
   - Both packages contain the identical application archive SHA-256
-    `F5B84AFE8A2F4C46FEB1BF1CE8245455E2E0DAC5B89465424D36E3B37F819993`.
+    `2AF2AEA3C5491DD2F9461304A5F4FF51252F8AA9D1385073BCAEF56A23CC5F8F`.
 - Both packages remain unsigned. A release installer is still withheld.
