@@ -2,10 +2,11 @@
 
 ## Current decision
 
-The core source has been repaired and automated verification passes, but no
-desktop installer is released yet. Physical TVS printing, x64 target-PC launch,
-Windows 7 x86 launch, and a fresh complete shop DATA comparison remain mandatory
-acceptance gates.
+The core source has been repaired and automated verification passes. The full
+pharmacy interface and separate x64/Windows 7 x86 portable downloads were
+restored and published on 11 November 2026. Physical TVS printing, target-PC
+launches, and a fresh complete shop DATA comparison remain mandatory acceptance
+gates.
 
 ## Repairs completed
 
@@ -88,4 +89,23 @@ These hardware/data gates cannot be honestly replaced with source assertions.
     `0AA64A30CB26F7131EE8BA00B28BF9569F1F7A263A5D29BD3D16AE4A7E8BE69A`.
   - Both packages contain the identical application archive SHA-256
     `2AF2AEA3C5491DD2F9461304A5F4FF51252F8AA9D1385073BCAEF56A23CC5F8F`.
-- Both packages remain unsigned. A release installer is still withheld.
+- Both verification packages were unsigned at this stage. This status was
+  superseded by the published portable release described below.
+
+## Full-interface correction and published downloads — 11 November 2026
+
+- Reversed the counter-only default. Full pharmacy navigation, Admin, cashier,
+  shift, purchases, suppliers, returns, dues, payments, reports, patient history,
+  WhatsApp and hold/park workflows are visible again. Counter-only mode remains
+  available only through an explicit emergency environment override.
+- Re-ran the complete suite after restoration: **126/126 passed**.
+- Live Vercel inspection confirmed the full menus and workflows are visible.
+- Published GitHub release `v1.0.1-rc.3`; both website links returned HTTP 200:
+  - `Beta.Pharmacy.POS.64bit.exe` — 131,140,332 bytes — SHA-256
+    `63C76DDA429C82B3BAD3AFCE544E9F6C22BD2FCCBB047997FF350F00E8F2EADE`.
+  - `Beta.Pharmacy.POS.Win7.32bit.exe` — 85,443,558 bytes — SHA-256
+    `094B3DD8E5595940D7449317E0B041411D5A45E3C5F5A32F5A9AE936957601DF`.
+- The release workflow completed successfully from commit `71b7a5d` and also
+  published `SHA256SUMS.txt`.
+- The executables remain unsigned. Windows may show an unknown-publisher warning.
+  Physical TVS printing and the real Windows 7 computer still require shop tests.
