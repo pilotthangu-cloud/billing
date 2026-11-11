@@ -1,0 +1,74 @@
+name: Release Windows applications
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Run verification suite
+        run: npm test
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Build 64-bit portable application
+        run: >-
+          npx electron-builder --win portable --x64
+          --config.compression=normal
+          --config.directories.output=publish/x64
+          --config.win.artifactName=Beta.Pharmacy.POS.64bit.exe
+
+      - name: Build Windows 7 32-bit portable application
+        run: >-
+          npx electron-builder --config electron-builder-win7-ia32.json
+          --win portable --ia32
+          --config.compression=normal
+          --config.directories.output=publish/x86
+          --config.win.artifactName=Beta.Pharmacy.POS.Win7.32bit.exe
+
+      - name: Write SHA-256 checksums
+        shell: pwsh
+        run: |
+          $files = @(
+            'publish/x64/Beta.Pharmacy.POS.64bit.exe',
+            'publish/x86/Beta.Pharmacy.POS.Win7.32bit.exe'
+          )
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash
+            "$hash  $([IO.Path]::GetFileName($file))"
+          }
+          $lines | Set-Content -Encoding ascii -LiteralPath 'publish/SHA256SUMS.txt'
+
+      - name: Publish GitHub release files
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            'publish/x64/Beta.Pharmacy.POS.64bit.exe' `
+            'publish/x86/Beta.Pharmacy.POS.Win7.32bit.exe' `
+            'publish/SHA256SUMS.txt' `
+            --verify-tag `
+            --title "Beta Pharmacy POS $env:GITHUB_REF_NAME" `
+            --notes "Full pharmacy interface restored. Includes the current 64-bit Windows portable app and the Windows 7 compatible 32-bit portable app. Both files are unsigned; Windows may display a publisher warning. Physical TVS printer alignment must still be confirmed at the shop."
