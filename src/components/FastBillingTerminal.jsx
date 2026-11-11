@@ -60,7 +60,7 @@ export default function FastBillingTerminal({
   setHandoverNotice,
   authenticatedRole = null,
   onOpenImportModal,
-  counterOnlyMode = true
+  counterOnlyMode = false
 }) {
   // Input refs
   const searchInputRef = useRef(null);

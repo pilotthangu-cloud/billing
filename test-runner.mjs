@@ -188,13 +188,13 @@ assert(supabaseClientSource.includes(".upsert(chunk, { onConflict: 'medicine_cod
 assert(supabaseClientSource.includes('success: failures.length === 0'), 'Partial catalog upload cannot report success');
 assert(!electronMainSource.includes("ipcMain.emit('print-raw-tvs'"), 'Silent printer fallback awaits and returns the real spooler result');
 assert(electronMainSource.includes("error: 'Silent printing requires a raw ESC/P byte stream.'"), 'Silent printer cannot falsely report success without printable data');
-assert(topNavigationSource.includes('data-release-status="withdrawn"') && !topNavigationSource.includes('/releases/download/'), 'Website blocks unverified desktop installer downloads');
-assert(appJsx.includes("VITE_COUNTER_ONLY_MODE !== 'false'") && appJsx.includes('if (COUNTER_ONLY_MODE) return false'), 'Counter-only release disables onboarding and terminal lock by default');
+assert(topNavigationSource.includes('Beta.Pharmacy.POS.64bit.exe') && topNavigationSource.includes('Beta.Pharmacy.POS.Win7.32bit.exe'), 'Website publishes distinct 64-bit and Windows 7 32-bit downloads');
+assert(appJsx.includes("VITE_COUNTER_ONLY_MODE === 'true'") && appJsx.includes('if (COUNTER_ONLY_MODE) return false'), 'Full pharmacy interface is the default and counter-only mode requires an explicit override');
 const restrictedCounterLabels = ['Admin Login', 'Patient Rx History [F4]', 'Purchase Entry', 'Suppliers (370)', 'Shortages', 'Due Bills', 'Payments', 'Sales & Margins', 'Admin HQ Portal'];
 assert(restrictedCounterLabels.every(label => {
   const labelIndex = topNavigationSource.lastIndexOf(`>${label}<`);
   return labelIndex >= 0 && topNavigationSource.slice(Math.max(0, labelIndex - 2200), labelIndex).includes('!counterOnlyMode');
-}) && topNavigationSource.includes('{!counterOnlyMode && <div className="flex items-center space-x-1 font-medium">'), 'Counter-only navigation hides every unfinished management shortcut and dropdown');
+}) && topNavigationSource.includes('{!counterOnlyMode && <div className="flex items-center space-x-1 font-medium">'), 'Emergency counter-only override can hide management shortcuts without removing them');
 assert(
   fastBillingSource.includes('!counterOnlyMode && onOpenCustomerHistory') &&
   fastBillingSource.includes('!counterOnlyMode && onOpenSalesReturn') &&

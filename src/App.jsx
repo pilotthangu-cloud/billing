@@ -68,7 +68,9 @@ import initialMedicines from './data/medicines.json';
 
 // Safe counter release: unfinished shift/admin/cloud workflows stay out of the
 // pharmacy UI unless an explicitly audited build opts back in.
-export const COUNTER_ONLY_MODE = import.meta.env.VITE_COUNTER_ONLY_MODE !== 'false';
+// Full pharmacy mode is the normal release. Counter-only mode remains available
+// only as an explicit emergency deployment override.
+export const COUNTER_ONLY_MODE = import.meta.env.VITE_COUNTER_ONLY_MODE === 'true';
 const COUNTER_ONLY_ALLOWED_PAGES = new Set(['billing', 'product-master', 'expiry', 'batch-enquiry']);
 const isCounterOnlyPageAllowed = page => !COUNTER_ONLY_MODE || COUNTER_ONLY_ALLOWED_PAGES.has(page);
 
